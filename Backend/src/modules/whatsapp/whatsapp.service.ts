@@ -1,21 +1,60 @@
 import { Client, LocalAuth } from 'whatsapp-web.js';
 import QRCode from 'qrcode';
 
+import fs from 'fs';
+
 let qrCodeData: string | null = null;
 let isConnected = false;
 
+// Auto-detect installed Chrome or Edge executable on Windows
+function getExecutablePath() {
+  const possiblePaths = [
+    'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+    'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+    'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
+    'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe',
+    `${process.env.LOCALAPPDATA || ''}\\Google\\Chrome\\Application\\chrome.exe`,
+    `${process.env.LOCALAPPDATA || ''}\\Microsoft\\Edge\\Application\\msedge.exe`,
+  ];
+  for (const p of possiblePaths) {
+    if (fs.existsSync(p)) return p;
+  }
+  return undefined;
+}
+
+const execPath = getExecutablePath();
+
 // Initialize the WhatsApp Client
 const client = new Client({
-  authStrategy: new LocalAuth(), // Saves the session automatically in .wwebjs_auth/
+  authStrategy: new LocalAuth({ dataPath: './.wwebjs_auth' }),
   puppeteer: {
-    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    executablePath: execPath,
+    headless: true,
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-accelerated-2d-canvas',
+      '--no-first-run',
+      '--no-zygote',
+      '--disable-gpu'
+    ],
   }
 });
 
 client.on('qr', async (qr) => {
   // Generate QR code as a base64 Data URI so frontend can render it easily via <img src="..." />
-  console.log('\n[WhatsApp] QR Code received. Fetch it from the frontend to scan.\n');
+  console.log('\n======================================================');
+  console.log('📱 [WHATSAPP QR CODE] Scan with WhatsApp on your phone:');
+  console.log('======================================================');
+  try {
+    const terminalQr = await QRCode.toString(qr, { type: 'terminal', small: true });
+    console.log(terminalQr);
+  } catch (err) {
+    // ignore terminal format error if any
+  }
   qrCodeData = await QRCode.toDataURL(qr);
+  console.log('Frontend QR ready at: http://localhost:3000/owner/whatsapp\n');
 });
 
 client.on('ready', () => {
