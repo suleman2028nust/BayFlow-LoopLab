@@ -8,6 +8,7 @@ import whatsappRoutes from './modules/whatsapp/whatsapp.route';
 import shopRoutes from './modules/shop/shop.route';
 import { globalErrorHandler } from './common/middlewares/errorHandler';
 import { rateLimiter } from './common/middlewares/rateLimiter';
+import { setupSwagger } from './config/swagger';
 
 dotenv.config();
 
@@ -21,6 +22,9 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(rateLimiter); // Global rate limiter
+
+// Setup Swagger Documentation
+setupSwagger(app);
 
 // Routes
 app.use('/api/auth', authRoutes);
