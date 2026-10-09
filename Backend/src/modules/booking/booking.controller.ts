@@ -29,7 +29,8 @@ export const BookingController = {
     try {
       const id = req.params.id as string;
       const { labourCost, partsCost, notes } = req.body;
-      const result = await BookingService.addEstimate(id, { labourCost, partsCost, notes });
+      const user = (req as any).user;
+      const result = await BookingService.addEstimate(id, { labourCost, partsCost, notes }, user);
       res.status(200).json({ success: true, data: result });
     } catch (error) {
       next(error);

@@ -169,7 +169,7 @@ export const BookingService = {
   },
 
   // 4. Technician adds an Estimate (Parts + Labour)
-  async addEstimate(bookingId: string, data: { labourCost: number, partsCost: number, notes?: string }) {
+  async addEstimate(bookingId: string, data: { labourCost: number, partsCost: number, notes?: string }, user: { userId: string, role: string }) {
     return prisma.$transaction(async (tx) => {
       const totalCost = data.labourCost + data.partsCost;
       
@@ -199,7 +199,7 @@ export const BookingService = {
       });
 
       // Auto-transition to ESTIMATE_REVIEW
-      await this.updateStatus(bookingId, 'ESTIMATE_REVIEW', { userId: 'SYSTEM', role: 'TECHNICIAN' }, 'Estimate submitted');
+      await this.updateStatus(bookingId, 'ESTIMATE_REVIEW', user, 'Estimate submitted');
 
       return estimate;
     });
