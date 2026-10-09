@@ -7,7 +7,13 @@ export const validateRequest = (schema: ZodSchema) => {
       req.body = await schema.parseAsync(req.body);
       next();
     } catch (error: any) {
-      res.status(400).json({ success: false, errors: error.errors });
+      const firstErrorMessage = error.errors && error.errors.length > 0 ? error.errors[0].message : 'Validation failed';
+      res.status(400).json({
+        success: false,
+        message: firstErrorMessage,
+        errors: error.errors
+      });
     }
   };
 };
+

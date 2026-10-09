@@ -1,6 +1,6 @@
 import { prisma } from '../../config/prisma';
 import { redis } from '../../config/redis';
-import { sendEmail } from '../../config/brevo';
+import { sendOTPEmail, sendPasswordResetEmail } from '../../config/brevo';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { WhatsAppService } from '../whatsapp/whatsapp.service';
@@ -34,16 +34,38 @@ export const AuthService = {
 
     const otp = generateOTP();
     await redis.set(`otp:${result.email}`, otp, { ex: 300 }); // 5 mins TTL
+
+    console.log('\n======================================================');
+    console.log(`🔑 [BAYFLOW OTP CODE GENERATED]`);
+    console.log(`   Target Email : ${result.email}`);
+    console.log(`   OTP Code     : ${otp}`);
+    console.log(`   Expires In   : 5 Minutes`);
+    console.log('======================================================\n');
     
-    // Async email send (beautiful HTML template)
-    sendEmail(result.email, 'Your BayFlow Verification Code', otp).catch(console.error);
+    // 1. Send via Brevo REST API Email
+    sendOTPEmail(result.email, otp, data.name || 'User').catch((err) => {
+      console.error('⚠️ [Brevo Email Error]:', err.message || err);
+    });
+
+    // 2. Fallback: Send via WhatsApp if phone number provided
+    if (result.phoneNumber) {
+      WhatsAppService.sendMessage(
+        result.phoneNumber,
+        `Your BayFlow verification code is: ${otp}. Valid for 5 minutes.`
+      ).catch((err) => {
+        console.error('⚠️ [WhatsApp Dispatch Error]:', err.message || err);
+      });
+    }
     
-    return { message: 'Registration successful. Please verify your email.' };
+    return {
+      message: 'Registration successful. Please verify your email.',
+      email: result.email
+    };
   },
 
   async verifyOtp(data: any) {
     const storedOtp = await redis.get(`otp:${data.email}`);
-    if (!storedOtp || storedOtp !== data.otp) {
+    if (!storedOtp || String(storedOtp).trim() !== String(data.otp).trim()) {
       throw new Error('Invalid or expired OTP');
     }
 
@@ -108,14 +130,36 @@ export const AuthService = {
     const otp = generateOTP();
     await redis.set(`pwd_otp:${user.email}`, otp, { ex: 300 }); // 5 mins TTL
 
-    // Async email send
-    sendEmail(user.email, 'Password Reset Request', otp).catch(console.error);
-    return { message: 'Password reset OTP sent to email' };
+    console.log('\n======================================================');
+    console.log(`🔑 [BAYFLOW PASSWORD RESET OTP GENERATED]`);
+    console.log(`   Target Email : ${user.email}`);
+    console.log(`   OTP Code     : ${otp}`);
+    console.log(`   Expires In   : 5 Minutes`);
+    console.log('======================================================\n');
+
+    // 1. Send via Brevo REST API Email
+    sendPasswordResetEmail(user.email, otp, 'User').catch((err) => {
+      console.error('⚠️ [Brevo Email Error]:', err.message || err);
+    });
+
+    // 2. Send via WhatsApp if user has phone
+    if (user.phoneNumber) {
+      WhatsAppService.sendMessage(
+        user.phoneNumber,
+        `Your BayFlow password reset code is: ${otp}. Valid for 5 minutes.`
+      ).catch((err) => {
+        console.error('⚠️ [WhatsApp Dispatch Error]:', err.message || err);
+      });
+    }
+
+    return {
+      message: 'Password reset OTP sent to email'
+    };
   },
 
   async resetPassword(data: any) {
     const storedOtp = await redis.get(`pwd_otp:${data.email}`);
-    if (!storedOtp || storedOtp !== data.otp) {
+    if (!storedOtp || String(storedOtp).trim() !== String(data.otp).trim()) {
       throw new Error('Invalid or expired OTP');
     }
 

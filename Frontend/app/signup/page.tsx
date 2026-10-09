@@ -58,11 +58,8 @@ export default function SignupPage() {
         setErrorMsg(extractedError);
       }
     } catch (err: any) {
-      console.warn("Backend API unreachable, using smooth demo fallback:", err);
-      setSuccessMsg("Registration successful (Demo Mode)! Redirecting...");
-      setTimeout(() => {
-        router.push(`/verify?email=${encodeURIComponent(formData.email || "demo@bayflow.com")}`);
-      }, 1000);
+      console.error("Backend API Error during registration:", err);
+      setErrorMsg(err.message || "Unable to connect to BayFlow backend server. Please ensure the backend is running.");
     } finally {
       setLoading(false);
     }

@@ -18,6 +18,7 @@
     "seed": "ts-node src/../prisma/seed.ts"
   },
   "dependencies": {
+    "@getbrevo/brevo": "^6.0.3",
     "@upstash/redis": "^1.39.0",
     "bcrypt": "^6.0.0",
     "brevo": "^1.0.0",

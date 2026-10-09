@@ -40,33 +40,25 @@ export default function LoginPage() {
         setSuccessMsg("Signed in successfully!");
         if (data.accessToken) {
           localStorage.setItem("bayflow_token", data.accessToken);
+          try {
+            const payload = JSON.parse(atob(data.accessToken.split(".")[1]));
+            if (payload?.role) {
+              localStorage.setItem("bayflow_user_role", payload.role);
+            }
+          } catch (e) {
+            console.warn("Could not decode JWT payload:", e);
+          }
         }
         setTimeout(() => {
-          if (formData.email.includes("owner")) {
-            router.push("/owner");
-          } else if (formData.email.includes("ahmed") || formData.email.includes("customer")) {
-            router.push("/customer");
-          } else {
-            router.push("/pos");
-          }
-        }, 800);
+          router.push("/dashboard");
+        }, 600);
       } else {
         // API error returned from backend
         setErrorMsg(data.error || data.message || "Invalid credentials. Please check your email and password.");
       }
     } catch (err: any) {
-      console.warn("Backend API unreachable, using seamless frontend authentication fallback:", err);
-      // Demo authentication fallback if backend API is not running live
-      setSuccessMsg("Signed in (Demo Mode)");
-      setTimeout(() => {
-        if (formData.email.includes("owner")) {
-          router.push("/owner");
-        } else if (formData.email.includes("ahmed") || formData.email.includes("customer")) {
-          router.push("/customer");
-        } else {
-          router.push("/pos");
-        }
-      }, 800);
+      console.error("Backend API error during sign in:", err);
+      setErrorMsg(err.message || "Unable to connect to BayFlow backend server. Please verify backend is running.");
     } finally {
       setLoading(false);
     }
