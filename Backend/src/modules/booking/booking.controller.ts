@@ -27,7 +27,7 @@ export const BookingController = {
 
   async addEstimate(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       const { labourCost, partsCost, notes } = req.body;
       const result = await BookingService.addEstimate(id, { labourCost, partsCost, notes });
       res.status(200).json({ success: true, data: result });
@@ -38,7 +38,7 @@ export const BookingController = {
 
   async respondToEstimate(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       const { status } = req.body; // 'APPROVED' or 'REJECTED'
       const user = (req as any).user;
       
@@ -51,7 +51,7 @@ export const BookingController = {
 
   async addQcIssue(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       const { description } = req.body;
       const result = await BookingService.addQCIssue(id, description);
       res.status(201).json({ success: true, issue: result });
