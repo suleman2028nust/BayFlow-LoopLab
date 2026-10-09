@@ -131,5 +131,17 @@ export const BookingController = {
     } catch (error) {
       next(error);
     }
+  },
+
+  // Vehicle Service History (Brief §8.3)
+  async getVehicleHistory(req: Request, res: Response, next: NextFunction) {
+    try {
+      const plate = req.params.plate as string;
+      const history = await BookingService.getVehicleHistory(plate);
+      res.status(200).json({ success: true, data: history });
+    } catch (error) {
+      next(error);
+    }
   }
 };
+

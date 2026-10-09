@@ -156,5 +156,16 @@ export const ShopController = {
     } catch (error) {
       next(error);
     }
+  },
+
+  async getShopAnalytics(req: Request, res: Response, next: NextFunction) {
+    try {
+      const shopId = req.params.shopId || req.params.id;
+      const analytics = await ShopService.getShopAnalytics(shopId as string);
+      res.status(200).json({ success: true, data: analytics });
+    } catch (error) {
+      next(error);
+    }
   }
 };
+

@@ -6,6 +6,7 @@ import authRoutes from './modules/auth/auth.route';
 import bookingRoutes from './modules/booking/booking.route';
 import whatsappRoutes from './modules/whatsapp/whatsapp.route';
 import shopRoutes from './modules/shop/shop.route';
+import notificationRoutes from './modules/notification/notification.route';
 import { globalErrorHandler } from './common/middlewares/errorHandler';
 import { rateLimiter } from './common/middlewares/rateLimiter';
 import { setupSwagger } from './config/swagger';
@@ -31,6 +32,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/whatsapp', whatsappRoutes);
 app.use('/api/shops', shopRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Global Error Handler
 app.use(globalErrorHandler);
