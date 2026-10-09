@@ -264,5 +264,96 @@ export const ShopService = {
     }
 
     return prisma.service.delete({ where: { id: serviceId } });
-  }
+  },
+
+  // 10. Owner Analytics Overview (Brief §7.4 & §8.3)
+  async getShopAnalytics(shopId: string) {
+    const [
+      totalBookings,
+      bookingsByStatus,
+      completedBookings,
+      inventoryItems,
+      qcIssuesCount,
+      staffMembers,
+    ] = await Promise.all([
+      prisma.booking.count({ where: { shopId } }),
+      prisma.booking.groupBy({
+        by: ['status'],
+        where: { shopId },
+        _count: { status: true },
+      }),
+      prisma.booking.findMany({
+        where: {
+          shopId,
+          status: { in: ['COMPLETED', 'READY_FOR_PICKUP', 'ESTIMATE_APPROVED', 'IN_REPAIR'] },
+          estimateTotal: { not: null },
+        },
+        select: { estimateTotal: true },
+      }),
+      prisma.inventory.findMany({
+        where: { shopId },
+        select: { id: true, quantity: true, reorderLevel: true, unitPrice: true },
+      }),
+      prisma.qCIssue.count({
+        where: { booking: { shopId } },
+      }),
+      prisma.user.groupBy({
+        by: ['role'],
+        where: { shopId },
+        _count: { role: true },
+      }),
+    ]);
+
+    // Status map
+    const statusCounts: Record<string, number> = {};
+    bookingsByStatus.forEach((b) => {
+      statusCounts[b.status] = b._count.status;
+    });
+
+    // Total Revenue (PKR)
+    const totalRevenue = completedBookings.reduce((sum, b) => sum + (b.estimateTotal || 0), 0);
+
+    // Active in-progress repairs
+    const activeJobs = (statusCounts['INSPECTING'] || 0) + 
+      (statusCounts['ESTIMATE_REVIEW'] || 0) + 
+      (statusCounts['PARTS_PENDING'] || 0) + 
+      (statusCounts['PARTS_ORDERED'] || 0) + 
+      (statusCounts['PARTS_READY'] || 0) + 
+      (statusCounts['IN_REPAIR'] || 0) + 
+      (statusCounts['QC_PENDING'] || 0) + 
+      (statusCounts['QC_IN_PROGRESS'] || 0);
+
+    // Inventory metrics
+    const lowStockItems = inventoryItems.filter((i) => i.quantity <= i.reorderLevel);
+    const totalInventoryValue = inventoryItems.reduce((sum, i) => sum + i.quantity * i.unitPrice, 0);
+
+    // QC Fail metrics
+    const completedCount = statusCounts['COMPLETED'] || 0;
+    const qcTestedCount = completedCount + qcIssuesCount;
+    const qcPassRate = qcTestedCount > 0 ? Number(((completedCount / qcTestedCount) * 100).toFixed(1)) : 100;
+    const qcFailRate = qcTestedCount > 0 ? Number(((qcIssuesCount / qcTestedCount) * 100).toFixed(1)) : 0;
+
+    return {
+      shopId,
+      summary: {
+        totalBookings,
+        activeJobs,
+        completedBookings: completedCount,
+        totalRevenuePKR: totalRevenue,
+      },
+      statusDistribution: statusCounts,
+      inventorySummary: {
+        totalCatalogItems: inventoryItems.length,
+        lowStockCount: lowStockItems.length,
+        totalValuationPKR: totalInventoryValue,
+      },
+      qualityControl: {
+        totalQcIssuesLogged: qcIssuesCount,
+        qcPassRatePercent: qcPassRate,
+        qcFailRatePercent: qcFailRate,
+      },
+      staffBreakdown: staffMembers.map((s) => ({ role: s.role, count: s._count.role })),
+    };
+  },
 };
+

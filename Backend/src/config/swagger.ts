@@ -282,6 +282,15 @@ const options: swaggerJsdoc.Options = {
           responses: { 200: { description: 'List of generated slots with availability status' } }
         }
       },
+      '/api/shops/{id}/analytics': {
+        get: {
+          tags: ['Shop Management'],
+          summary: 'Owner Analytics Overview: Revenue, active repairs, inventory valuation, and QC pass/fail rates',
+          security: [{ bearerAuth: [] }],
+          parameters: [{ in: 'path', name: 'id', required: true, schema: { type: 'string' } }],
+          responses: { 200: { description: 'Returns aggregated shop metrics and statistics' } }
+        }
+      },
 
       // ==========================================
       // SERVICE CATALOG
@@ -600,6 +609,17 @@ const options: swaggerJsdoc.Options = {
           responses: { 200: { description: 'Audit trail history list' } }
         }
       },
+      '/api/bookings/vehicle/{plate}': {
+        get: {
+          tags: ['Bookings'],
+          summary: 'Vehicle Service History per registration plate (Brief §8.3)',
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            { in: 'path', name: 'plate', required: true, schema: { type: 'string' }, example: 'LEA-1234', description: 'Vehicle license plate number' }
+          ],
+          responses: { 200: { description: 'Returns complete repair and service history for the vehicle' } }
+        }
+      },
       '/api/bookings/{id}/assign': {
         post: {
           tags: ['Bookings (Workflow)'],
@@ -757,6 +777,40 @@ const options: swaggerJsdoc.Options = {
             }
           },
           responses: { 201: { description: 'Issue created, job sent back to IN_REPAIR' } }
+        }
+      },
+
+      // ==========================================
+      // IN-APP NOTIFICATIONS (BELL SYSTEM)
+      // ==========================================
+      '/api/notifications': {
+        get: {
+          tags: ['In-App Notifications'],
+          summary: 'Get current user notifications with unread count (Bell icon system)',
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            { in: 'query', name: 'limit', schema: { type: 'number', default: 50 }, description: 'Limit number of results' }
+          ],
+          responses: { 200: { description: 'Returns notifications array and unreadCount' } }
+        }
+      },
+      '/api/notifications/read-all': {
+        patch: {
+          tags: ['In-App Notifications'],
+          summary: 'Mark all user notifications as read',
+          security: [{ bearerAuth: [] }],
+          responses: { 200: { description: 'All notifications marked as read' } }
+        }
+      },
+      '/api/notifications/{id}/read': {
+        patch: {
+          tags: ['In-App Notifications'],
+          summary: 'Mark a single notification as read',
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            { in: 'path', name: 'id', required: true, schema: { type: 'string' } }
+          ],
+          responses: { 200: { description: 'Notification marked as read' } }
         }
       },
 

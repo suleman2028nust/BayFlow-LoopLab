@@ -2,6 +2,7 @@ import { prisma } from '../../config/prisma';
 import { redis } from '../../config/redis';
 import { WhatsAppService } from '../whatsapp/whatsapp.service';
 import { sendEmail } from '../../config/brevo';
+import { NotificationService } from '../notification/notification.service';
 
 // The Strict State Machine Rules
 export const BOOKING_MACHINE: any = {
@@ -24,8 +25,8 @@ export const BOOKING_MACHINE: any = {
   CANCELLED: { next: [], allowedRoles: [] }
 };
 
-// Helper: Notify Shop Staff (SA, Tech, Parts, QC, Owner)
-async function notifyShopStaff(shopId: string, roles: string[], message: string, subject: string = 'BayFlow Staff Alert') {
+// Helper: Notify Shop Staff (SA, Tech, Parts, QC, Owner) via In-App, WhatsApp, Email
+async function notifyShopStaff(shopId: string, roles: string[], message: string, subject: string = 'BayFlow Staff Alert', type: string = 'STAFF_ALERT', link?: string) {
   try {
     const staffMembers = await prisma.user.findMany({
       where: {
@@ -35,9 +36,21 @@ async function notifyShopStaff(shopId: string, roles: string[], message: string,
     });
 
     for (const staff of staffMembers) {
+      // 1. In-App Notification (Bell Icon)
+      NotificationService.createNotification({
+        userId: staff.id,
+        title: subject,
+        message,
+        type,
+        link
+      }).catch(console.error);
+
+      // 2. WhatsApp Notification
       if (staff.phoneNumber) {
         WhatsAppService.sendMessage(staff.phoneNumber, message).catch(console.error);
       }
+      
+      // 3. Email Notification
       if (staff.email) {
         sendEmail(staff.email, subject, message).catch(console.error);
       }
@@ -46,6 +59,7 @@ async function notifyShopStaff(shopId: string, roles: string[], message: string,
     console.error('Staff notification error:', err);
   }
 }
+
 
 export const BookingService = {
   // 1. Customer creates a booking
@@ -248,6 +262,14 @@ export const BookingService = {
 
     // Notify assigned technician
     const carName = (booking.vehicleDetails as any)?.make || 'Vehicle';
+    NotificationService.createNotification({
+      userId: tech.id,
+      title: 'Job Assigned to You',
+      message: `You have been assigned job #${booking.id} (${carName}). Please proceed with inspection.`,
+      type: 'JOB_ASSIGNED',
+      link: '/dashboard/technician'
+    }).catch(console.error);
+
     if (tech.phoneNumber) {
       WhatsAppService.sendMessage(tech.phoneNumber, `🔧 [BayFlow Job Assigned] You have been assigned job #${booking.id} (${carName}). Please proceed with inspection.`).catch(console.error);
     }
@@ -352,12 +374,21 @@ export const BookingService = {
           case 'ESTIMATE_APPROVED':
             msg = `✅ BayFlow: Thank you! Estimate approved. We are arranging the parts.`;
             // Staff notification: Notify Parts Person
-            notifyShopStaff(updatedBooking.shopId, ['PARTS_PERSON'], `📦 [Estimate Approved] Booking #${bookingId} approved. Prepare/order required parts.`, 'Parts Preparation Required');
+            notifyShopStaff(updatedBooking.shopId, ['PARTS_PERSON'], `📦 [Estimate Approved] Booking #${bookingId} approved. Prepare/order required parts.`, 'Parts Preparation Required', 'PARTS_PENDING');
             break;
           case 'PARTS_READY':
             msg = `⚙️ BayFlow: All replacement parts for ${carName} are ready. Repair is commencing.`;
             if (updatedBooking.technician?.phoneNumber) {
               WhatsAppService.sendMessage(updatedBooking.technician.phoneNumber, `📦 [Parts Ready] Parts for booking #${bookingId} (${carName}) are ready. You can begin repair.`).catch(console.error);
+            }
+            if (updatedBooking.assignedTechId) {
+              NotificationService.createNotification({
+                userId: updatedBooking.assignedTechId,
+                title: 'Parts Ready for Repair',
+                message: `Parts for booking #${bookingId} (${carName}) are allocated. You can proceed with repair.`,
+                type: 'PARTS_READY',
+                link: '/dashboard/technician'
+              }).catch(console.error);
             }
             break;
           case 'IN_REPAIR': 
@@ -365,7 +396,7 @@ export const BookingService = {
             break;
           case 'QC_PENDING':
             // Staff notification: Notify QC Inspectors
-            notifyShopStaff(updatedBooking.shopId, ['QC_INSPECTOR'], `🔍 [QC Required] Booking #${bookingId} (${carName}) is ready for Quality Check inspection.`, 'QC Inspection Pending');
+            notifyShopStaff(updatedBooking.shopId, ['QC_INSPECTOR'], `🔍 [QC Required] Booking #${bookingId} (${carName}) is ready for Quality Check inspection.`, 'QC Inspection Pending', 'QC_PENDING');
             break;
           case 'QC_IN_PROGRESS':
             msg = `🕵️‍♂️ BayFlow: The repair is done! Our inspector is now performing a final Quality Check (QC).`;
@@ -384,6 +415,15 @@ export const BookingService = {
         }
         
         if (msg) {
+          // In-App Notification for Customer
+          NotificationService.createNotification({
+            userId: updatedBooking.customerId,
+            title: subject,
+            message: msg,
+            type: newStatus,
+            link: `/customer/bookings/${bookingId}`
+          }).catch(console.error);
+
           if (updatedBooking.customer.phoneNumber) {
             WhatsAppService.sendMessage(updatedBooking.customer.phoneNumber, msg).catch(console.error);
           }
@@ -435,7 +475,8 @@ export const BookingService = {
       booking.shopId,
       ['SERVICE_ADVISOR', 'OWNER'],
       `📝 [Estimate Submitted] Technician submitted estimate for booking #${bookingId}: PKR ${totalCost}. Please review.`,
-      'Estimate Submitted for Review'
+      'Estimate Submitted for Review',
+      'ESTIMATE_REVIEW'
     );
 
     // Auto-transition to ESTIMATE_REVIEW
@@ -462,7 +503,8 @@ export const BookingService = {
       booking.shopId,
       ['SERVICE_ADVISOR', 'OWNER'],
       `📢 [Customer Decision] Customer has ${status} the estimate for booking #${bookingId}.`,
-      `Customer ${status} Estimate`
+      `Customer ${status} Estimate`,
+      nextStatus
     );
 
     return true;
@@ -470,6 +512,9 @@ export const BookingService = {
 
   // 9. QC Inspector logs a failure issue
   async addQCIssue(bookingId: string, description: string) {
+    const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
+    if (!booking) throw new Error('Booking not found');
+
     const issue = await prisma.qCIssue.create({
       data: {
         bookingId,
@@ -477,8 +522,51 @@ export const BookingService = {
       }
     });
 
+    // In-app alert for technician
+    if (booking.assignedTechId) {
+      NotificationService.createNotification({
+        userId: booking.assignedTechId,
+        title: 'QC Inspection Failed',
+        message: `QC Inspector flagged a defect on job #${bookingId}: "${description}". Vehicle returned to repair.`,
+        type: 'QC_FAILED',
+        link: '/dashboard/technician'
+      }).catch(console.error);
+    }
+
     // Send car back to technician
     await this.updateStatus(bookingId, 'IN_REPAIR', { userId: 'SYSTEM', role: 'QC_INSPECTOR' }, `QC Failed: ${description}`);
     return issue;
+  },
+
+  // 10. Vehicle Service History (Brief §8.3)
+  async getVehicleHistory(plate: string) {
+    const normalizedPlate = plate.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+    
+    const allBookings = await prisma.booking.findMany({
+      include: {
+        shop: { select: { id: true, name: true, city: true, phone: true } },
+        service: true,
+        estimate: true,
+        partsAllocated: { include: { inventory: true } },
+        qcIssues: true,
+        history: { orderBy: { timestamp: 'asc' } },
+        technician: { select: { id: true, email: true, phoneNumber: true } },
+        customer: { select: { id: true, email: true, phoneNumber: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const matched = allBookings.filter((b: any) => {
+      const v = b.vehicleDetails as any;
+      if (!v || !v.plate) return false;
+      return v.plate.replace(/[^a-zA-Z0-9]/g, '').toUpperCase() === normalizedPlate;
+    });
+
+    return {
+      plate: plate.toUpperCase(),
+      totalVisits: matched.length,
+      bookings: matched,
+    };
   }
 };
+
