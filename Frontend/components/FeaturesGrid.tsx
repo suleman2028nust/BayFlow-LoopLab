@@ -6,65 +6,60 @@ import { motion } from "framer-motion";
 const features = [
   {
     num: "01",
-    icon: "calendar_month",
-    accentColor: "group-hover:text-[#E85D22]",
-    hoverBorder: "hover:border-[#E85D22]/40",
-    title: "Intelligent Bookings",
+    icon: "storefront",
+    title: "Multi-Tenant Garages",
     description:
-      "Dynamic load balancing calculates exact mechanic certifications, bay lift heights, and expected job duration before accepting appointments.",
-    footerLabel: "BAY ALLOCATION",
-    footerStatus: "AUTOMATED",
-    statusColor: "text-[#1F5C45]",
+      "Every auto garage operates with its own independent team, inventory, services, and time slots. Owners manage multiple locations from one central login.",
+    badge: "TENANT ISOLATED",
   },
   {
     num: "02",
-    icon: "radar",
-    accentColor: "group-hover:text-[#1F5C45]",
-    hoverBorder: "hover:border-[#1F5C45]/40",
-    title: "Real-Time Job Tracking",
+    icon: "badge",
+    title: "5-Role POS Workflow",
     description:
-      "Live bay milestones, digital inspection work orders, and sub-second push feeds to keep vehicle owners informed without desk calls.",
-    footerLabel: "JOB LATENCY",
-    footerStatus: "< 150MS SYNC",
-    statusColor: "text-[#1F5C45]",
+      "Strict role guards for Service Advisor, Technician, Parts Person, QC Inspector, and Owner ensure every job step has single-point accountability.",
+    badge: "ROLE SECURED",
   },
   {
     num: "03",
     icon: "inventory_2",
-    accentColor: "group-hover:text-[#E85D22]",
-    hoverBorder: "hover:border-[#E85D22]/40",
-    title: "Connected Inventory",
+    title: "Stock & PO Procurement",
     description:
-      "Live OEM supplier integrations calculate consumption rates, automatically queuing brake pads, filters, and synthetic blends ahead of bay entry.",
-    footerLabel: "STOCK BUFFER",
-    footerStatus: "PREDICTIVE",
-    statusColor: "text-[#1F5C45]",
+      "Required parts automatically check live stock. Generate purchase orders, confirm shipment receipt, and reserve inventory per job card.",
+    badge: "AUTO INVENTORY",
+  },
+  {
+    num: "04",
+    icon: "support_agent",
+    title: "Voice & AI Front Desk",
+    description:
+      "Direct browser-to-browser WebRTC voice calls between SA and customer, plus an automated AI Front Desk for unanswered call summaries & tasks.",
+    badge: "INTEGRATED VOICE",
   },
 ];
 
 export default function FeaturesGrid() {
   return (
-    <section id="features" className="w-full px-4 sm:px-6 lg:px-8 py-16 sm:py-20 border-y border-[#2C2421]/10 relative bg-[#F8F8F5]">
+    <section id="platform" className="w-full px-4 sm:px-6 lg:px-8 py-20 bg-[#F4F4F1] border-t border-[#2C2421]/15">
       <div className="max-w-7xl mx-auto">
         {/* Section Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-14">
           <div className="max-w-2xl">
-            <div className="flex items-center gap-2 text-[#E85D22] text-xs uppercase tracking-widest mb-3 font-bold">
-              <span className="material-symbols-outlined text-[16px]">tune</span>
-              <span>The Next Generation Of Workshop Management</span>
+            <div className="flex items-center gap-2 text-[#111827] text-xs font-bold uppercase tracking-wider mb-3">
+              <span className="material-symbols-outlined text-base">apps</span>
+              <span>Core Platform Features</span>
             </div>
-            <h2 className="font-headline text-4xl sm:text-5xl uppercase text-[#2C2421] font-bold leading-tight">
-              Less Chaos. More Control.
+            <h2 className="font-headline text-3xl sm:text-5xl font-extrabold text-[#2C2421] tracking-tight leading-tight">
+              Designed For Real Garage Challenges.
             </h2>
           </div>
-          <p className="max-w-md text-sm sm:text-base text-[#6B5E59] leading-relaxed">
-            BayFlow unifies bays, diagnostic computers, OEM supplier catalogs, and client updates into a
-            synchronized, glass-cockpit operational interface.
+          <p className="max-w-md text-sm sm:text-base text-[#2C2421]/70 leading-relaxed font-normal">
+            BayFlow bridges the communication breakdown between vehicle owners, front desk advisors, repair technicians, and parts suppliers.
           </p>
         </div>
 
-        {/* 3 Minimal White Claymorphic Feature Modules */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* 4 Claymorphic White Feature Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {features.map((item, idx) => (
             <motion.div
               key={item.num}
@@ -72,28 +67,29 @@ export default function FeaturesGrid() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: idx * 0.1 }}
-              className={`p-6 bg-white rounded-lg border border-[#2C2421]/10 ${item.hoverBorder} transition-all duration-300 group flex flex-col justify-between min-h-[220px] shadow-[0_8px_24px_rgba(44,36,33,0.05),0_1px_3px_rgba(44,36,33,0.03)]`}
+              className="p-6 bg-white rounded-2xl border border-[#2C2421]/15 shadow-[0_8px_30px_rgba(44,36,33,0.05)] hover:shadow-[0_12px_40px_rgba(44,36,33,0.1)] hover:border-[#111827]/30 transition-all flex flex-col justify-between min-h-[260px] group"
             >
               <div>
-                <div className="flex items-center justify-between mb-4">
-                  <span className={`font-mono text-2xl font-bold text-[#8C7E78] ${item.accentColor} transition-colors`}>
-                    {item.num}
-                  </span>
-                  <span className={`material-symbols-outlined text-[#8C7E78] ${item.accentColor} transition-colors text-2xl`}>
-                    {item.icon}
-                  </span>
+                <div className="flex items-center justify-between mb-5">
+                  <div className="w-10 h-10 rounded-xl bg-[#111827]/10 group-hover:bg-[#111827] text-[#111827] group-hover:text-white flex items-center justify-center transition-colors">
+                    <span className="material-symbols-outlined text-xl">{item.icon}</span>
+                  </div>
+                  <span className="font-mono text-xs font-bold text-[#2C2421]/40">{item.num}</span>
                 </div>
-                <h3 className="font-headline text-xl uppercase text-[#2C2421] font-bold mb-2 tracking-wide">
+
+                <h3 className="font-headline text-lg font-bold text-[#2C2421] mb-2">
                   {item.title}
                 </h3>
-                <p className="text-xs sm:text-sm text-[#6B5E59] leading-relaxed">
+                <p className="text-xs sm:text-sm text-[#2C2421]/70 leading-relaxed font-normal">
                   {item.description}
                 </p>
               </div>
 
-              <div className="pt-4 mt-4 border-t border-[#2C2421]/10 flex items-center justify-between font-mono text-[11px] text-[#6B5E59]">
-                <span className="font-semibold uppercase tracking-wider">{item.footerLabel}</span>
-                <span className={`${item.statusColor} font-bold`}>{item.footerStatus}</span>
+              <div className="pt-4 mt-6 border-t border-[#2C2421]/10 flex items-center justify-between">
+                <span className="text-[10px] font-bold tracking-wider text-[#2C2421]/50 uppercase">{item.badge}</span>
+                <span className="material-symbols-outlined text-[#2C2421]/40 group-hover:text-[#111827] group-hover:translate-x-1 transition-all text-sm">
+                  arrow_forward
+                </span>
               </div>
             </motion.div>
           ))}

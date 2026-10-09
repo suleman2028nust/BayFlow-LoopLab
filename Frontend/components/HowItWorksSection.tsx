@@ -6,68 +6,72 @@ import { motion } from "framer-motion";
 const steps = [
   {
     num: "01",
-    title: "Connect Your Workshop",
-    desc: "Import service bay layouts, assign master technicians with certifications, and integrate your existing DMS and inventory catalogs in under 20 minutes.",
-    border: "border-[#E85D22]/40",
-    color: "text-[#E85D22]",
-    shadow: "shadow-[0_4px_14px_rgba(232,93,34,0.15)]",
+    role: "Customer",
+    title: "1. Online Booking",
+    desc: "Customer selects shop, problem (Oil Change / Check Engine), available time slot, enters plate & vehicle details. Status: PENDING.",
   },
   {
     num: "02",
-    title: "Manage Every Job",
-    desc: "Intelligently sequence repairs, monitor diagnostic scans in 3D bay views, and route parts straight to the technician's workstation without delays.",
-    border: "border-[#1F5C45]/40",
-    color: "text-[#1F5C45]",
-    shadow: "shadow-[0_4px_14px_rgba(31,92,69,0.15)]",
+    role: "Service Advisor & Tech",
+    title: "2. Inspection & Estimate",
+    desc: "SA assigns tech. Tech physically inspects car, adds required parts and labor estimate, then submits to SA for customer approval.",
   },
   {
     num: "03",
-    title: "Let BayFlow Handle The Details",
-    desc: "Coordinate customer SMS and WhatsApp status pings, execute automated OEM inventory replenishment, and let BayFlow AI answer incoming calls.",
-    border: "border-[#2C2421]/20",
-    color: "text-[#2C2421]",
-    shadow: "shadow-[0_4px_14px_rgba(44,36,33,0.08)]",
+    role: "Customer & Parts Person",
+    title: "3. Approval & Parts Allocation",
+    desc: "Customer approves estimate in portal. Parts person checks stock, orders missing items, and allocates parts to booking.",
+  },
+  {
+    num: "04",
+    role: "QC & Service Advisor",
+    title: "4. Quality Check & Pickup",
+    desc: "QC inspector road-tests vehicle. Passing moves status to READY_FOR_PICKUP; failing returns job to tech with logged issue.",
   },
 ];
 
 export default function HowItWorksSection() {
   return (
-    <section id="how-it-works" className="w-full px-4 sm:px-6 lg:px-8 py-16 sm:py-20 border-t border-[#2C2421]/10 bg-[#F4F4F1]">
+    <section id="how-it-works" className="w-full px-4 sm:px-6 lg:px-8 py-20 bg-white border-t border-[#2C2421]/15">
       <div className="max-w-7xl mx-auto">
-        <div className="max-w-xl mb-12 sm:mb-16">
-          <div className="text-[#E85D22] text-xs uppercase tracking-widest mb-2 font-bold">
-            Step-By-Step Deployment
+        <div className="max-w-2xl mb-14">
+          <div className="text-[#111827] text-xs font-bold uppercase tracking-wider mb-2">
+            The Complete Booking Journey
           </div>
-          <h2 className="font-headline text-4xl sm:text-5xl uppercase text-[#2C2421] font-bold leading-tight">
-            Precision Onboarding.
+          <h2 className="font-headline text-3xl sm:text-5xl font-extrabold text-[#2C2421] tracking-tight leading-tight">
+            15-Status State Machine Workflow.
           </h2>
+          <p className="mt-3 text-sm sm:text-base text-[#2C2421]/70">
+            From initial booking to physical inspection, customer approval, parts allocation, mandatory QC, and completed pick-up.
+          </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
-          {/* Connecting Line */}
-          <div className="hidden md:block absolute top-8 left-12 right-12 h-[1px] bg-gradient-to-r from-[#E85D22]/60 via-[#1F5C45]/40 to-transparent pointer-events-none z-0" />
-
-          {/* 3 Steps */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {steps.map((step, idx) => (
             <motion.div
               key={step.num}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: idx * 0.15 }}
-              className="relative z-10 flex flex-col gap-4"
+              transition={{ duration: 0.5, delay: idx * 0.1 }}
+              className="p-6 bg-[#F4F4F1]/60 rounded-2xl border border-[#2C2421]/15 shadow-sm flex flex-col justify-between"
             >
-              <div
-                className={`w-16 h-16 rounded-lg bg-white border ${step.border} flex items-center justify-center font-mono text-2xl font-black ${step.color} ${step.shadow}`}
-              >
-                {step.num}
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <span className="w-10 h-10 rounded-xl bg-white border border-[#2C2421]/15 flex items-center justify-center font-mono font-bold text-[#2C2421] text-sm shadow-sm">
+                    {step.num}
+                  </span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#111827] bg-[#111827]/10 px-2.5 py-1 rounded-full border border-[#111827]/20">
+                    {step.role}
+                  </span>
+                </div>
+                <h3 className="font-headline text-lg font-bold text-[#2C2421] mb-2">
+                  {step.title}
+                </h3>
+                <p className="text-xs sm:text-sm text-[#2C2421]/70 leading-relaxed font-normal">
+                  {step.desc}
+                </p>
               </div>
-              <h3 className="font-headline text-xl uppercase font-bold text-[#2C2421] tracking-wide">
-                {step.title}
-              </h3>
-              <p className="text-xs sm:text-sm text-[#6B5E59] leading-relaxed">
-                {step.desc}
-              </p>
             </motion.div>
           ))}
         </div>
