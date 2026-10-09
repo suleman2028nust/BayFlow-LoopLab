@@ -28,47 +28,41 @@ export default function Navbar({ onOpenDemo }: NavbarProps) {
         </Link>
 
         {/* Desktop Nav */}
-        <nav className="hidden md:flex items-center gap-6 lg:gap-8 text-xs font-semibold text-[#2C2421]/80">
-          <a
-            href="#platform"
+        <nav className="hidden md:flex items-center gap-5 lg:gap-7 text-xs font-semibold text-[#2C2421]/80">
+          <Link
+            href="/shops"
             className="hover:text-[#111827] transition-colors"
           >
-            Platform
-          </a>
-          <a
-            href="#roles-pos"
+            Find Shops &amp; Book
+          </Link>
+          <Link
+            href="/pos"
             className="hover:text-[#111827] transition-colors"
           >
             Shop POS
-          </a>
-          <a
-            href="#ai-concierge"
+          </Link>
+          <Link
+            href="/customer"
             className="hover:text-[#111827] transition-colors"
           >
-            AI Front Desk
-          </a>
-          <a
-            href="#how-it-works"
+            Customer Portal
+          </Link>
+          <Link
+            href="/owner"
             className="hover:text-[#111827] transition-colors"
           >
-            Workflow
-          </a>
-          <a
-            href="#shop-access"
-            className="hover:text-[#111827] transition-colors"
-          >
-            Roles
-          </a>
+            Owner
+          </Link>
         </nav>
 
         {/* Action Controls */}
         <div className="flex items-center gap-2 sm:gap-3">
-          <button
-            onClick={onOpenDemo}
+          <Link
+            href="/login"
             className="hidden sm:inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full text-xs font-semibold text-[#2C2421] hover:bg-[#F4F4F1] transition-all"
           >
             Sign In
-          </button>
+          </Link>
           <button
             onClick={onOpenDemo}
             className="bg-[#111827] hover:bg-[#0F172A] text-white text-xs font-bold px-4 py-2 rounded-full transition-all shadow-md shadow-[#111827]/20 flex items-center gap-1 hover:scale-105 active:scale-95"
@@ -99,41 +93,41 @@ export default function Navbar({ onOpenDemo }: NavbarProps) {
             exit={{ opacity: 0, scale: 0.95, y: -10 }}
             className="md:hidden mt-3 max-w-sm mx-auto bg-white border border-[#2C2421]/15 rounded-2xl px-6 py-5 flex flex-col gap-3 text-sm font-medium text-[#2C2421] shadow-xl"
           >
-            <a
-              href="#platform"
+            <Link
+              href="/shops"
               onClick={() => setMobileMenuOpen(false)}
               className="hover:text-[#111827] py-1"
             >
-              Platform Overview
-            </a>
-            <a
-              href="#roles-pos"
+              Find Shops &amp; Book
+            </Link>
+            <Link
+              href="/pos"
               onClick={() => setMobileMenuOpen(false)}
               className="hover:text-[#111827] py-1"
             >
               Shop POS Dashboards
-            </a>
-            <a
-              href="#ai-concierge"
+            </Link>
+            <Link
+              href="/customer"
               onClick={() => setMobileMenuOpen(false)}
               className="hover:text-[#111827] py-1"
             >
-              AI Front Desk &amp; Calling
-            </a>
-            <a
-              href="#how-it-works"
+              Customer Portal
+            </Link>
+            <Link
+              href="/owner"
               onClick={() => setMobileMenuOpen(false)}
               className="hover:text-[#111827] py-1"
             >
-              Booking Lifecycle
-            </a>
-            <a
-              href="#shop-access"
+              Owner Multi-Shop
+            </Link>
+            <Link
+              href="/login"
               onClick={() => setMobileMenuOpen(false)}
-              className="hover:text-[#111827] py-1"
+              className="hover:text-[#111827] py-1 font-bold text-[#E85D22]"
             >
-              Role Directory
-            </a>
+              Sign In Account
+            </Link>
             <div className="pt-3 border-t border-[#2C2421]/10 flex flex-col gap-2">
               <button
                 onClick={() => {

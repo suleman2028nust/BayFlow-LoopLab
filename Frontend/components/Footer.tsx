@@ -19,10 +19,10 @@ export default function Footer() {
         </div>
 
         <div className="flex items-center gap-6 font-medium text-[#2C2421]">
-          <a href="#platform" className="hover:text-[#111827] transition-colors">Platform</a>
-          <a href="#roles-pos" className="hover:text-[#111827] transition-colors">Shop POS</a>
-          <a href="#ai-concierge" className="hover:text-[#111827] transition-colors">AI Front Desk</a>
-          <a href="#shop-access" className="hover:text-[#111827] transition-colors">Directory</a>
+          <Link href="/shops" className="hover:text-[#111827] transition-colors">Find Shops</Link>
+          <Link href="/pos" className="hover:text-[#111827] transition-colors">Shop POS</Link>
+          <Link href="/customer" className="hover:text-[#111827] transition-colors">Customer Portal</Link>
+          <Link href="/owner" className="hover:text-[#111827] transition-colors">Owner Dashboard</Link>
         </div>
 
         <div className="text-[#2C2421]/50 text-[11px] font-mono">
