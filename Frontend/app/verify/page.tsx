@@ -105,7 +105,7 @@ export default function VerifyPage() {
       setLoading(false);
       setVerified(true);
       setTimeout(() => {
-        router.push("/");
+        router.push("/dashboard");
       }, 1000);
     }, 700);
   };
