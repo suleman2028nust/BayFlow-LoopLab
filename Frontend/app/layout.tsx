@@ -36,11 +36,11 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Chivo:wght@400;600;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
           rel="stylesheet"
         />
       </head>
-      <body className="bg-[#F4F4F1] text-[#2C2421] font-sans antialiased selection:bg-[#E85D22] selection:text-white min-h-screen">
+      <body className="bg-[#F4F4F1] text-[#2C2421] antialiased selection:bg-[#E85D22] selection:text-white min-h-screen">
         {children}
       </body>
     </html>

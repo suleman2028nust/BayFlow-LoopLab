@@ -49,7 +49,7 @@ export default function Navbar({ onOpenDemo }: NavbarProps) {
             How It Works
           </a>
           <a
-            href="#workshops"
+            href="#platform"
             className="text-xs uppercase tracking-widest text-[#6B5E59] hover:text-[#2C2421] transition-colors font-semibold"
           >
             For Workshops
@@ -58,21 +58,25 @@ export default function Navbar({ onOpenDemo }: NavbarProps) {
 
         {/* Action Controls */}
         <div className="flex items-center gap-3 sm:gap-4">
-          <button
-            onClick={onOpenDemo}
+          <Link
+            href="/login"
             className="hidden sm:inline-block text-xs uppercase tracking-widest text-[#6B5E59] hover:text-[#2C2421] transition-colors font-semibold"
           >
             Log In
-          </button>
-          <button
-            onClick={onOpenDemo}
+          </Link>
+          <Link
+            href="/signup"
             className="bg-[#2C2421] hover:bg-[#1a1513] text-white text-xs uppercase tracking-widest px-4 py-2 rounded font-bold transition-all shadow-[0_4px_14px_rgba(44,36,33,0.25)] hover:shadow-[0_6px_18px_rgba(44,36,33,0.35)]"
           >
             Get Started
-          </button>
-          <div className="w-8 h-8 rounded-full bg-[#1F5C45] flex items-center justify-center text-white shadow-sm">
+          </Link>
+          <Link
+            href="/login"
+            className="w-8 h-8 rounded-full bg-[#1F5C45] flex items-center justify-center text-white shadow-sm hover:opacity-90 transition-opacity"
+            title="Account"
+          >
             <span className="material-symbols-outlined text-[18px]">person</span>
-          </div>
+          </Link>
 
           {/* Mobile Menu Toggle Button */}
           <button
@@ -118,31 +122,27 @@ export default function Navbar({ onOpenDemo }: NavbarProps) {
               How It Works
             </a>
             <a
-              href="#workshops"
+              href="#platform"
               onClick={() => setMobileMenuOpen(false)}
               className="text-xs uppercase tracking-widest text-[#6B5E59] hover:text-[#2C2421] font-semibold py-1"
             >
               For Workshops
             </a>
             <div className="pt-2 border-t border-[#2C2421]/10 flex flex-col gap-2">
-              <button
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  onOpenDemo?.();
-                }}
+              <Link
+                href="/login"
+                onClick={() => setMobileMenuOpen(false)}
                 className="w-full text-center py-2 text-xs uppercase tracking-widest text-[#6B5E59] font-bold"
               >
                 Log In
-              </button>
-              <button
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  onOpenDemo?.();
-                }}
-                className="w-full bg-[#2C2421] text-white text-xs uppercase tracking-widest py-2.5 rounded font-bold shadow-md"
+              </Link>
+              <Link
+                href="/signup"
+                onClick={() => setMobileMenuOpen(false)}
+                className="w-full bg-[#2C2421] text-white text-xs uppercase tracking-widest py-2.5 rounded font-bold shadow-md text-center"
               >
                 Get Started
-              </button>
+              </Link>
             </div>
           </motion.div>
         )}
