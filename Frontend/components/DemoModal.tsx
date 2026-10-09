@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface DemoModalProps {
@@ -9,6 +10,7 @@ interface DemoModalProps {
 }
 
 export default function DemoModal({ isOpen, onClose }: DemoModalProps) {
+  const router = useRouter();
   const [selectedRole, setSelectedRole] = useState<string>("sa");
   const [isLogged, setIsLogged] = useState(false);
 
@@ -26,7 +28,14 @@ export default function DemoModal({ isOpen, onClose }: DemoModalProps) {
     setTimeout(() => {
       setIsLogged(false);
       onClose();
-    }, 1200);
+      if (selectedRole === "owner") {
+        router.push("/owner");
+      } else if (selectedRole === "customer") {
+        router.push("/customer");
+      } else {
+        router.push(`/pos?role=${selectedRole}`);
+      }
+    }, 800);
   };
 
   return (
