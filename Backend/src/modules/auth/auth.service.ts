@@ -77,16 +77,19 @@ export const AuthService = {
   },
 
   async generateTokens(user: any) {
+    const accessExpiresIn = (process.env.JWT_EXPIRES_IN || '15m') as any;
+    const refreshExpiresIn = (process.env.JWT_REFRESH_EXPIRES_IN || '7d') as any;
+
     const accessToken = jwt.sign(
       { userId: user.id, role: user.role, shopId: user.shopId },
       process.env.JWT_SECRET || 'secret',
-      { expiresIn: '15m' }
+      { expiresIn: accessExpiresIn }
     );
     
     const refreshToken = jwt.sign(
       { userId: user.id },
       process.env.JWT_REFRESH_SECRET || 'refresh-secret',
-      { expiresIn: '7d' }
+      { expiresIn: refreshExpiresIn }
     );
 
     await redis.set(`session:${user.id}`, refreshToken, { ex: 7 * 24 * 60 * 60 });

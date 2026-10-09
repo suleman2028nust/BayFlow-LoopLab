@@ -101,6 +101,7 @@ model Booking {
   history         BookingHistory[]
   partsAllocated  BookingPart[]
   qcIssues        QCIssue[]
+  callLogs        CallLog[]
   
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
@@ -225,4 +226,29 @@ model Notification {
 
   @@index([userId, isRead])
 }
+
+enum CallStatus {
+  RINGING
+  CONNECTED
+  MISSED
+  REJECTED
+  ENDED
+}
+
+model CallLog {
+  id         String     @id @default(uuid())
+  bookingId  String
+  booking    Booking    @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  callerId   String
+  receiverId String
+  roomUrl    String
+  roomName   String
+  status     CallStatus @default(RINGING)
+  duration   Int        @default(0) // seconds
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  @@index([bookingId])
+}
+
 

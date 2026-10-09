@@ -24,10 +24,12 @@ export default function Home() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#F4F4F1] text-[#2C2421]">
+    <div className="relative flex flex-col min-h-screen bg-[#F4F4F1] text-[#2C2421] selection:bg-[#1F5C45] selection:text-white overflow-x-hidden">
+      {/* Floating Navbar */}
       <Navbar onOpenDemo={handleOpenDemo} />
 
-      <main className="w-full pt-16 bg-[#F4F4F1] min-h-screen">
+      {/* Main Content Sections with Backdrop Blurs for Glass Depth */}
+      <main className="relative z-10 w-full pt-16 min-h-screen">
         <HeroSection onOpenDemo={handleOpenDemo} />
         <FeaturesGrid />
         <ShowcaseModules onOpenDemo={handleOpenDemo} />
