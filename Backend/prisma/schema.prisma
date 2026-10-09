@@ -46,9 +46,10 @@ model Shop {
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
   
-  users       User[]
-  bookings    Booking[]
-  inventory   Inventory[]
+  users          User[]
+  bookings       Booking[]
+  inventory      Inventory[]
+  purchaseOrders PurchaseOrder[]
 }
 
 model User {
@@ -88,9 +89,11 @@ model Booking {
   issuesReported  String[]      
   
   estimateTotal   Float?
+  estimate        Estimate?
   
   history         BookingHistory[]
   partsAllocated  BookingPart[]
+  qcIssues        QCIssue[]
   
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
@@ -120,7 +123,8 @@ model Inventory {
   reorderLevel Int           @default(5)
   unitPrice    Float
   
-  bookingParts BookingPart[]
+  bookingParts       BookingPart[]
+  purchaseOrderItems PurchaseOrderItem[]
 }
 
 model BookingPart {
@@ -131,4 +135,59 @@ model BookingPart {
   inventory   Inventory @relation(fields: [inventoryId], references: [id])
   quantity    Int
   priceLocked Float     // Locks the part price at the time of the estimate to avoid disputes
+}
+
+enum EstimateStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Estimate {
+  id          String         @id @default(uuid())
+  bookingId   String         @unique
+  booking     Booking        @relation(fields: [bookingId], references: [id])
+  labourCost  Float
+  partsCost   Float
+  totalCost   Float
+  status      EstimateStatus @default(PENDING)
+  notes       String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+}
+
+enum POStatus {
+  ORDERED
+  PARTIALLY_RECEIVED
+  RECEIVED
+}
+
+model PurchaseOrder {
+  id        String              @id @default(uuid())
+  shopId    String
+  shop      Shop                @relation(fields: [shopId], references: [id])
+  status    POStatus            @default(ORDERED)
+  items     PurchaseOrderItem[]
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+}
+
+model PurchaseOrderItem {
+  id              String        @id @default(uuid())
+  purchaseOrderId String
+  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id])
+  inventoryId     String
+  inventory       Inventory     @relation(fields: [inventoryId], references: [id])
+  quantity        Int
+  receivedQty     Int           @default(0)
+}
+
+model QCIssue {
+  id          String   @id @default(uuid())
+  bookingId   String
+  booking     Booking  @relation(fields: [bookingId], references: [id])
+  description String
+  resolved    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }

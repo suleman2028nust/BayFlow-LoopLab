@@ -25,4 +25,24 @@ router.patch(
   BookingController.updateStatus
 );
 
+router.post(
+  '/:id/estimate',
+  AuthGuard,
+  TenantGuard,
+  BookingController.addEstimate
+);
+
+router.post(
+  '/:id/estimate/respond',
+  AuthGuard,
+  BookingController.respondToEstimate
+);
+
+router.post(
+  '/:id/qc-issue',
+  AuthGuard,
+  TenantGuard,
+  BookingController.addQcIssue
+);
+
 export default router;

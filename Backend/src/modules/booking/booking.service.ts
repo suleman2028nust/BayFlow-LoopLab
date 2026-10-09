@@ -1,5 +1,6 @@
 import { prisma } from '../../config/prisma';
 import { redis } from '../../config/redis';
+import { WhatsAppService } from '../whatsapp/whatsapp.service';
 
 // The Strict State Machine Rules
 export const BOOKING_MACHINE: any = {
@@ -100,7 +101,8 @@ export const BookingService = {
     return prisma.$transaction(async (tx) => {
       const updatedBooking = await tx.booking.update({
         where: { id: bookingId },
-        data: { status: newStatus as any }
+        data: { status: newStatus as any },
+        include: { customer: true }
       });
 
       await tx.bookingHistory.create({
@@ -113,7 +115,95 @@ export const BookingService = {
         }
       });
 
+      // Send WhatsApp Notification in background (non-blocking)
+      if (updatedBooking.customer.phoneNumber) {
+        let msg = '';
+        switch(newStatus) {
+          case 'CONFIRMED': msg = `BayFlow: Your booking for ${(updatedBooking.vehicleDetails as any)?.make || 'your car'} is Confirmed! ✅`; break;
+          case 'INSPECTING': msg = `BayFlow: Our technician is currently inspecting your car. 🔍`; break;
+          case 'ESTIMATE_REVIEW': msg = `BayFlow: The inspection is complete. An estimate has been generated for your review. 📝`; break;
+          case 'IN_REPAIR': msg = `BayFlow: Good news! The repair work has officially started on your car. 🔧`; break;
+          case 'READY_FOR_PICKUP': msg = `BayFlow: Great news! Your car is Ready for Pickup! 🚗✨`; break;
+        }
+        
+        if (msg) {
+          // Fire and forget
+          WhatsAppService.sendMessage(updatedBooking.customer.phoneNumber, msg).catch(console.error);
+        }
+      }
+
       return updatedBooking;
+    });
+  },
+
+  // 4. Technician adds an Estimate (Parts + Labour)
+  async addEstimate(bookingId: string, data: { labourCost: number, partsCost: number, notes?: string }) {
+    return prisma.$transaction(async (tx) => {
+      const totalCost = data.labourCost + data.partsCost;
+      
+      const estimate = await tx.estimate.upsert({
+        where: { bookingId },
+        create: {
+          bookingId,
+          labourCost: data.labourCost,
+          partsCost: data.partsCost,
+          totalCost: totalCost,
+          notes: data.notes,
+          status: 'PENDING'
+        },
+        update: {
+          labourCost: data.labourCost,
+          partsCost: data.partsCost,
+          totalCost: totalCost,
+          notes: data.notes,
+          status: 'PENDING'
+        }
+      });
+
+      // Update Booking total
+      await tx.booking.update({
+        where: { id: bookingId },
+        data: { estimateTotal: totalCost }
+      });
+
+      // Auto-transition to ESTIMATE_REVIEW
+      await this.updateStatus(bookingId, 'ESTIMATE_REVIEW', { userId: 'SYSTEM', role: 'TECHNICIAN' }, 'Estimate submitted');
+
+      return estimate;
+    });
+  },
+
+  // 5. Customer Approves or Rejects Estimate
+  async respondToEstimate(bookingId: string, status: 'APPROVED' | 'REJECTED', customerId: string) {
+    const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
+    if (!booking || booking.customerId !== customerId) throw new Error('Unauthorized');
+
+    return prisma.$transaction(async (tx) => {
+      await tx.estimate.update({
+        where: { bookingId },
+        data: { status }
+      });
+
+      const nextStatus = status === 'APPROVED' ? 'ESTIMATE_APPROVED' : 'ESTIMATE_REJECTED';
+      await this.updateStatus(bookingId, nextStatus, { userId: customerId, role: 'CUSTOMER' }, `Estimate ${status.toLowerCase()}`);
+      
+      return true;
+    });
+  },
+
+  // 6. QC Inspector logs an issue
+  async addQCIssue(bookingId: string, description: string) {
+    return prisma.$transaction(async (tx) => {
+      const issue = await tx.qCIssue.create({
+        data: {
+          bookingId,
+          description
+        }
+      });
+
+      // Send car back to technician
+      await this.updateStatus(bookingId, 'IN_REPAIR', { userId: 'SYSTEM', role: 'QC_INSPECTOR' }, `QC Failed: ${description}`);
+      return issue;
     });
   }
 };

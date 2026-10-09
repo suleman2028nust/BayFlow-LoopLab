@@ -3,6 +3,7 @@ import { redis } from '../../config/redis';
 import { sendEmail } from '../../config/brevo';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import { WhatsAppService } from '../whatsapp/whatsapp.service';
 
 const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
 
@@ -52,6 +53,15 @@ export const AuthService = {
     });
 
     await redis.del(`otp:${data.email}`);
+
+    // Send Welcome WhatsApp Message if phone exists
+    if (user.phoneNumber) {
+      WhatsAppService.sendMessage(
+        user.phoneNumber,
+        `Welcome to BayFlow! 🎉 Your account is verified and ready to use.`
+      ).catch(console.error);
+    }
+
     return this.generateTokens(user);
   },
 
