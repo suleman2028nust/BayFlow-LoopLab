@@ -37,19 +37,22 @@ enum BookingStatus {
 }
 
 model Shop {
-  id          String      @id @default(uuid())
-  name        String
-  address     String?
-  city        String?
-  phone       String?
-  timezone    String      @default("Asia/Karachi")
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  id           String          @id @default(uuid())
+  name         String
+  address      String?
+  city         String?
+  phone        String?
+  timezone     String          @default("Asia/Karachi")
+  ownerId      String?
+  workingHours Json?           // e.g. { "open": "09:00", "close": "18:00", "slotDurationMinutes": 60, "daysOpen": [1,2,3,4,5,6] }
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
   
   users          User[]
   bookings       Booking[]
   inventory      Inventory[]
   purchaseOrders PurchaseOrder[]
+  services       Service[]
 }
 
 model User {
@@ -87,6 +90,9 @@ model Booking {
   
   vehicleDetails  Json          // Store exactly: { make, model, year, plate }
   issuesReported  String[]      
+  
+  serviceId       String?
+  service         Service?      @relation(fields: [serviceId], references: [id])
   
   estimateTotal   Float?
   estimate        Estimate?
@@ -191,3 +197,17 @@ model QCIssue {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
+
+model Service {
+  id              String    @id @default(uuid())
+  shopId          String
+  shop            Shop      @relation(fields: [shopId], references: [id])
+  name            String
+  description     String?
+  durationMinutes Int       @default(60)
+  basePrice       Float     @default(0)
+  bookings        Booking[]
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+

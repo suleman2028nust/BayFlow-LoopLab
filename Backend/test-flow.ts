@@ -14,12 +14,12 @@ async function run() {
   console.log('🚀 Starting end-to-end booking flow test...\n');
 
   try {
-    // 0. Update seeded customer phone number to target
+    // 0. Update seeded customer phone and email to target
     await prisma.user.update({
       where: { email: 'ahmed.customer@bayflow.demo' },
-      data: { phoneNumber: '923289082754' }
+      data: { phoneNumber: '923289082754', email: 'hassandev316@gmail.com' }
     });
-    console.log('✅ Updated test customer phone to 03289082754 for WhatsApp notifications.');
+    console.log('✅ Updated test customer phone to 03289082754 and email to hassandev316@gmail.com for notifications.');
 
     // Generate tokens directly bypassing Rate Limits
     const ownerDb = await prisma.user.findUnique({ where: { email: 'fatima@bayflow.demo' }});
@@ -37,7 +37,7 @@ async function run() {
     qcToken = jwt.sign({ userId: qcDb!.id, role: qcDb!.role, shopId: qcDb!.shopId }, jwtSecret);
     console.log('✅ QC Inspector token generated.');
 
-    const customerDb = await prisma.user.findUnique({ where: { email: 'ahmed.customer@bayflow.demo' }});
+    const customerDb = await prisma.user.findUnique({ where: { email: 'hassandev316@gmail.com' }});
     customerToken = jwt.sign({ userId: customerDb!.id, role: customerDb!.role }, jwtSecret);
     console.log('✅ Customer token generated.\n');
 
@@ -63,11 +63,12 @@ async function run() {
 
     // 6. Owner confirms Booking
     console.log('=> Owner confirms booking (CONFIRMED) [EXPECT WHATSAPP 1]');
-    await fetch(`${baseUrl}/bookings/${bookingId}/status`, {
+    const confRes = await fetch(`${baseUrl}/bookings/${bookingId}/status`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${ownerToken}` },
       body: JSON.stringify({ status: 'CONFIRMED', notes: 'See you tomorrow' })
-    });
+    }).then(r => r.json());
+    console.log('CONFIRMED Res:', confRes);
     await wait(4000);
 
     // 7. Owner assigns Tech
@@ -102,6 +103,15 @@ async function run() {
       body: JSON.stringify({ labourCost: 5000, partsCost: 10000, notes: 'Needs new oil filter and tuning' })
     }).then(r => r.json());
     console.log(estimateRes);
+    await wait(4000);
+
+    // 9.5 Owner reviews and sends to customer
+    console.log('=> Owner reviews estimate (AWAITING_CUSTOMER) [EXPECT WHATSAPP 4.5]');
+    await fetch(`${baseUrl}/bookings/${bookingId}/status`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${ownerToken}` },
+      body: JSON.stringify({ status: 'AWAITING_CUSTOMER' })
+    });
     await wait(4000);
 
     // 10. Customer Approves Estimate

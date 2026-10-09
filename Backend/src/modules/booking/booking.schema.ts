@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 export const createBookingSchema = z.object({
   shopId: z.string().uuid(),
+  serviceId: z.string().optional(),
   slotTime: z.string().datetime(), // ISO 8601 string
   vehicleDetails: z.object({
     make: z.string().min(1),
