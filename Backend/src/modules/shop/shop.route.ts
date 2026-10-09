@@ -23,6 +23,9 @@ router.post('/staff', AuthGuard, RBACGuard(['OWNER']), ShopController.addStaff);
 router.post('/:shopId/team', AuthGuard, TenantGuard, RBACGuard(['OWNER']), ShopController.addStaff);
 router.delete('/:shopId/team/:userId', AuthGuard, TenantGuard, RBACGuard(['OWNER']), ShopController.removeStaff);
 
+// 4.1 Owner Analytics
+router.get('/:shopId/analytics', AuthGuard, TenantGuard, RBACGuard(['OWNER', 'SERVICE_ADVISOR']), ShopController.getShopAnalytics);
+
 // 5. Slot system
 router.get('/:shopId/slots', ShopController.getSlots);
 

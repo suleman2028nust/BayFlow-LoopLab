@@ -11,6 +11,9 @@ const router = Router();
 // 1. List bookings (role-scoped)
 router.get('/', AuthGuard, TenantGuard, BookingController.getAll);
 
+// 1.1 Vehicle Service History (Brief §8.3)
+router.get('/vehicle/:plate', AuthGuard, BookingController.getVehicleHistory);
+
 // 2. Get single booking by ID
 router.get('/:id', AuthGuard, TenantGuard, BookingController.getById);
 
