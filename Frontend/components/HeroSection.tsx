@@ -1,7 +1,6 @@
 "use client";
 
-import React from "react";
-import Image from "next/image";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 
 interface HeroSectionProps {
@@ -9,177 +8,313 @@ interface HeroSectionProps {
 }
 
 export default function HeroSection({ onOpenDemo }: HeroSectionProps) {
+  const [activeTab, setActiveTab] = useState<"live-job" | "multi-shop" | "ai-voice">("live-job");
+
   return (
-    <section className="relative w-full min-h-[960px] flex flex-col justify-between px-4 sm:px-6 lg:px-8 py-10 overflow-hidden bg-[#F4F4F1]">
-      {/* Ambient Subtle Warm Floor Glows */}
-      <div className="pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 w-[900px] h-[480px] bg-[#E85D22]/5 blur-[140px] rounded-full" />
-      <div className="pointer-events-none absolute bottom-0 right-0 w-[500px] h-[500px] bg-[#1F5C45]/5 blur-[120px] rounded-full" />
+    <section className="relative w-full pt-28 pb-16 lg:pt-36 lg:pb-24 overflow-hidden bg-[#F4F4F1]">
+      {/* Background Subtle Warm Carbon Glow */}
+      <div className="pointer-events-none absolute top-12 left-1/2 -translate-x-1/2 w-[700px] h-[350px] bg-gradient-to-tr from-[#111827]/5 via-slate-200/50 to-transparent blur-[130px] rounded-full" />
 
-      <div className="max-w-7xl mx-auto w-full flex flex-col justify-between flex-1">
-        {/* HUD Sub-Header / Status Bar */}
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="w-full flex items-center justify-between pb-4 border-b border-[#2C2421]/10 text-[#6B5E59] text-xs"
-        >
-          <div className="flex items-center gap-2">
-            <span className="relative flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#1F5C45] opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#1F5C45]"></span>
-            </span>
-            <span className="text-[#1F5C45] font-bold tracking-widest text-[11px] uppercase">
-              DECK // ORCHESTRATION ACTIVE
-            </span>
-            <span className="text-[#8C7E78] hidden md:inline-block">|</span>
-            <span className="hidden md:inline-block text-[#8C7E78] font-mono text-[11px]">
-              OCTANE-OS V4.8.2
-            </span>
-          </div>
-          <div className="flex items-center gap-4 sm:gap-6 font-mono text-xs">
-            <span className="hidden sm:inline-block text-[#6B5E59]">
-              LIVE BAYS: <strong className="text-[#2C2421] font-bold">18 / 20 OCCUPIED</strong>
-            </span>
-            <span className="bg-white px-2.5 py-1 rounded text-[#1F5C45] border border-[#1F5C45]/30 font-bold shadow-[0_2px_8px_rgba(44,36,33,0.04)]">
-              LATENCY: 4.2ms
-            </span>
-          </div>
-        </motion.div>
-
-        {/* Monumental Typography Split Layout */}
-        <div className="relative w-full my-auto flex flex-col items-center justify-center py-6 sm:py-8">
-          {/* Top Massive Line */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.1 }}
-            className="w-full text-center"
-          >
-            <h1 className="font-headline text-[clamp(3.75rem,11vw,9.5rem)] leading-none font-extrabold uppercase tracking-tight text-[#2C2421] drop-shadow-[0_4px_12px_rgba(44,36,33,0.08)]">
-              YOUR WORKSHOP.
-            </h1>
-          </motion.div>
-
-          {/* Central Cinematic Bay Telemetry Stage */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="relative w-full max-w-6xl -my-4 md:-my-10 z-20 group"
-          >
-            {/* Glow Boundary Halo */}
-            <div className="absolute -inset-1 rounded-xl bg-gradient-to-r from-[#E85D22]/20 via-[#1F5C45]/15 to-[#E85D22]/20 blur-md opacity-60 group-hover:opacity-100 transition duration-700 pointer-events-none" />
-
-            {/* Framing Container */}
-            <div className="relative rounded-lg overflow-hidden bg-white border border-[#2C2421]/10 shadow-[0_20px_50px_rgba(44,36,33,0.12),0_1px_3px_rgba(44,36,33,0.06)]">
-              {/* Image Container with Natural Light Hypercar */}
-              <div className="relative aspect-[16/8] sm:aspect-[21/9] md:aspect-[2.35/1] w-full overflow-hidden bg-[#ECE8E5]">
-                <img
-                  alt="State-of-the-art luxury automotive hypercar service workshop with natural architectural daylight and warm titanium supercar on flush ground lift bay"
-                  className="w-full h-full object-cover object-center transform scale-100 group-hover:scale-[1.01] transition-transform duration-1000 ease-out"
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuB7op07soz9VWsNoCcWz1_tHUFPE06zBlX-o9u0fy4zNLf5StVnBRZlUA1r5B0aGuBx8rjFkTMTq1yUosS7OlD9r6FUSuNVeiyHXFiYZAIPIHPwbZdvaYwLe8snoYcnxfgcn9C-xef7rkRndUHUXp6MOiQwdW8zmVGapjJqkGOSL0_AYK4ynltlNoebvrNYQFOnHtvtKp2No9ct_f81wxz2xz74-1no1_jLTIB9m3t5m_eG2xLbEXmR"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-white/80 via-transparent to-white/40 pointer-events-none" />
-
-                {/* Precision HUD Diagnostics Overlays (Pure White claymorphic pills) */}
-                <div className="absolute top-4 left-4 flex flex-col gap-1.5 pointer-events-none">
-                  <div className="flex items-center gap-2 bg-white/95 backdrop-blur-md px-3 py-1.5 rounded border border-[#E85D22]/30 shadow-[0_4px_12px_rgba(44,36,33,0.08)]">
-                    <span className="w-2 h-2 rounded-full bg-[#E85D22] animate-pulse" />
-                    <span className="text-[10px] sm:text-xs text-[#E85D22] tracking-widest font-bold uppercase">
-                      BAY 04 / ACTIVE CALIBRATION
-                    </span>
-                  </div>
-                  <span className="font-mono text-[10px] sm:text-[11px] text-[#2C2421] pl-1 font-semibold">
-                    VIN: ZHWUA59S7LLA04912
-                  </span>
-                </div>
-
-                <div className="absolute top-4 right-4 hidden sm:flex items-center gap-3 bg-white/95 backdrop-blur-md px-3.5 py-1.5 rounded border border-[#1F5C45]/30 shadow-[0_4px_12px_rgba(44,36,33,0.08)]">
-                  <span className="font-mono text-xs text-[#6B5E59]">LIDAR ALIGNMENT:</span>
-                  <span className="font-mono text-xs text-[#1F5C45] font-bold">99.84% PRECISION</span>
-                </div>
-
-                {/* Lower Diagnostics Crosshairs */}
-                <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between pointer-events-none">
-                  <div className="flex items-center gap-4">
-                    <div className="bg-white/95 backdrop-blur-md px-3.5 py-1.5 rounded border border-[#2C2421]/10 shadow-[0_4px_12px_rgba(44,36,33,0.08)]">
-                      <span className="text-[10px] text-[#8C7E78] block font-semibold uppercase tracking-wider">
-                        EST. COMPLETION
-                      </span>
-                      <span className="font-mono text-xs text-[#2C2421] font-bold">16:45:00 UTC</span>
-                    </div>
-                    <div className="hidden md:block bg-white/95 backdrop-blur-md px-3.5 py-1.5 rounded border border-[#1F5C45]/20 shadow-[0_4px_12px_rgba(44,36,33,0.08)]">
-                      <span className="text-[10px] text-[#8C7E78] block font-semibold uppercase tracking-wider">
-                        TORQUE SYNC
-                      </span>
-                      <span className="font-mono text-xs text-[#1F5C45] font-bold">
-                        STAGE 3 (NOMINAL)
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 bg-white/95 border border-[#1F5C45]/40 px-3.5 py-1.5 rounded backdrop-blur-md shadow-[0_4px_12px_rgba(44,36,33,0.08)]">
-                    <span className="material-symbols-outlined text-[#1F5C45] text-[16px]">sensors</span>
-                    <span className="font-mono text-[10px] sm:text-[11px] text-[#1F5C45] font-bold">
-                      TELEMETRY STREAM CONNECTED
-                    </span>
-                  </div>
-                </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        {/* 2-Column Hero Header Layout: Left-Aligned Text & Right-Positioned Luxury Car */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center mb-16">
+          {/* Left Column: Text & Action Controls */}
+          <div className="lg:col-span-7 flex flex-col items-start text-left">
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="mb-6"
+            >
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white border border-[#2C2421]/15 text-[#2C2421] text-xs font-semibold shadow-sm">
+                <span className="flex h-2 w-2 relative">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#111827] opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-[#111827]"></span>
+                </span>
+                <span>Multi-Tenant Auto Repair Shop Platform</span>
               </div>
-            </div>
-          </motion.div>
+            </motion.div>
 
-          {/* Bottom Massive Line */}
+            <motion.h1
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="font-headline text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-[#2C2421] leading-[1.1]"
+            >
+              The Operating System for{" "}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#111827] via-[#1E293B] to-[#111827]">
+                Auto Repair Garages
+              </span>
+            </motion.h1>
+
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="mt-6 text-base sm:text-lg text-[#2C2421]/80 max-w-xl font-normal leading-relaxed"
+            >
+              Connect customer bookings, technician estimates, parts inventory, mandatory quality control, and AI front desk into one clean, role-based platform.
+            </motion.p>
+
+            {/* Action CTAs */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+              className="mt-8 flex flex-wrap items-center gap-4"
+            >
+              <button
+                onClick={onOpenDemo}
+                className="px-6 py-3.5 rounded-xl bg-[#111827] hover:bg-[#0F172A] text-white font-bold text-sm shadow-xl shadow-[#111827]/15 transition-all flex items-center gap-2 group hover:scale-[1.02]"
+              >
+                <span className="material-symbols-outlined text-lg">play_circle</span>
+                <span>Launch Platform</span>
+                <span className="material-symbols-outlined text-base group-hover:translate-x-1 transition-transform">
+                  arrow_forward
+                </span>
+              </button>
+              <a
+                href="#roles-pos"
+                className="px-6 py-3.5 rounded-xl bg-white hover:bg-[#F4F4F1] border border-[#2C2421]/15 text-[#2C2421] font-semibold text-sm transition-all flex items-center gap-2 shadow-sm hover:scale-[1.02]"
+              >
+                <span className="material-symbols-outlined text-[#111827] text-lg">view_cozy</span>
+                <span>Explore 5 Roles</span>
+              </a>
+            </motion.div>
+          </div>
+
+          {/* Right Column: Sleek Silver Luxury Car Visual */}
           <motion.div
-            initial={{ opacity: 0, y: -30 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, x: 30 }}
+            animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8, delay: 0.3 }}
-            className="w-full text-center"
+            className="lg:col-span-5 relative flex items-center justify-center"
           >
-            <h2 className="font-headline text-[clamp(3.75rem,11vw,9.5rem)] leading-none font-extrabold uppercase tracking-tight text-[#2C2421] drop-shadow-[0_4px_12px_rgba(44,36,33,0.08)]">
-              IN MOTION.
-            </h2>
+            {/* Soft Ambient Background Radial Glow */}
+            <div className="absolute w-72 h-72 bg-gradient-to-tr from-[#111827]/10 to-slate-300/40 blur-3xl rounded-full pointer-events-none" />
+            
+            <img
+              src="/assets/luxury_silver_car.png"
+              alt="Sleek Silver Luxury Vehicle"
+              className="relative z-10 w-full max-w-lg lg:max-w-none object-contain mix-blend-multiply filter drop-shadow-[0_15px_25px_rgba(44,36,33,0.08)] hover:scale-105 transition-transform duration-500 pointer-events-none"
+            />
           </motion.div>
         </div>
 
-        {/* Editorial Subtitle & Conversion Deck */}
+        {/* Pure White Minimal Dashboard Preview Container */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.4 }}
-          className="w-full max-w-4xl mx-auto flex flex-col items-center text-center gap-6 pb-4 z-30"
+          className="mt-14 max-w-5xl mx-auto rounded-2xl bg-white border border-[#2C2421]/12 shadow-[0_20px_50px_rgba(44,36,33,0.06)] overflow-hidden"
         >
-          <p className="text-base sm:text-lg text-[#6B5E59] max-w-2xl font-light leading-relaxed">
-            One intelligent, mission-critical platform engineered for bookings, technician dispatch,
-            telemetry-linked repairs, inventory, and automated customer concierge.
-          </p>
-
-          <div className="flex flex-wrap items-center justify-center gap-4">
-            <button
-              onClick={onOpenDemo}
-              className="bg-[#2C2421] hover:bg-[#1a1513] text-white text-xs uppercase tracking-widest px-8 py-3.5 rounded font-bold shadow-[0_6px_20px_rgba(44,36,33,0.25)] hover:shadow-[0_8px_26px_rgba(44,36,33,0.35)] transition-all flex items-center gap-2 group"
-            >
-              <span>Explore BayFlow</span>
-              <span className="material-symbols-outlined text-[18px] group-hover:translate-x-1 transition-transform">
-                arrow_forward
+          {/* Dashboard Window Header Bar */}
+          <div className="px-6 py-4 bg-[#F4F4F1]/70 border-b border-[#2C2421]/12 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 rounded-full bg-[#2C2421]/20" />
+                <div className="w-3 h-3 rounded-full bg-[#2C2421]/20" />
+                <div className="w-3 h-3 rounded-full bg-[#2C2421]/20" />
+              </div>
+              <span className="font-semibold text-xs text-[#2C2421] flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-[#111827]" />
+                Lahore Auto Care — Service Workspace
               </span>
-            </button>
-            <a
-              href="#how-it-works"
-              className="bg-white hover:bg-[#F4F4F1] text-[#2C2421] text-xs uppercase tracking-widest px-6 py-3.5 rounded font-bold border border-[#2C2421]/20 shadow-[0_2px_8px_rgba(44,36,33,0.06)] hover:border-[#2C2421]/40 transition-all flex items-center gap-2"
-            >
-              <span>See How It Works</span>
-              <span className="material-symbols-outlined text-[18px]">play_arrow</span>
-            </a>
+            </div>
+
+            <div className="flex items-center gap-1.5 bg-white p-1 rounded-xl border border-[#2C2421]/12 shadow-sm">
+              <button
+                onClick={() => setActiveTab("live-job")}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  activeTab === "live-job"
+                    ? "bg-[#111827] text-white shadow-sm font-bold"
+                    : "text-[#2C2421]/70 hover:text-[#2C2421]"
+                }`}
+              >
+                Active Job Card
+              </button>
+              <button
+                onClick={() => setActiveTab("multi-shop")}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  activeTab === "multi-shop"
+                    ? "bg-[#111827] text-white shadow-sm font-bold"
+                    : "text-[#2C2421]/70 hover:text-[#2C2421]"
+                }`}
+              >
+                Multi-Shop View
+              </button>
+              <button
+                onClick={() => setActiveTab("ai-voice")}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  activeTab === "ai-voice"
+                    ? "bg-[#111827] text-white shadow-sm font-bold"
+                    : "text-[#2C2421]/70 hover:text-[#2C2421]"
+                }`}
+              >
+                AI Front Desk
+              </button>
+            </div>
           </div>
 
-          {/* Technical Scroll Indicator */}
-          <div className="flex flex-col items-center gap-1.5 pt-2 text-[#8C7E78]">
-            <span className="text-[10px] tracking-widest uppercase font-semibold">
-              Scroll to Telemetry Deck
-            </span>
-            <div className="w-4 h-7 rounded-full border border-[#2C2421]/20 p-1 flex justify-center bg-white">
-              <div className="w-1 h-2 rounded-full bg-[#E85D22] animate-bounce" />
-            </div>
+          {/* Dashboard Preview Body */}
+          <div className="p-6 lg:p-8 bg-white">
+            {activeTab === "live-job" && (
+              <div className="flex flex-col gap-6">
+                {/* Vehicle Header Card */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-xl bg-[#F4F4F1]/60 border border-[#2C2421]/12">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-[#111827]/10 border border-[#111827]/15 flex items-center justify-center text-[#111827]">
+                      <span className="material-symbols-outlined text-2xl">directions_car</span>
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-extrabold text-base text-[#2C2421]">Honda Civic 2016</span>
+                        <span className="font-mono text-xs px-2.5 py-0.5 rounded bg-white text-[#2C2421] border border-[#2C2421]/15 font-bold">
+                          LEA-1234
+                        </span>
+                      </div>
+                      <div className="text-xs text-[#2C2421]/70 mt-1">
+                        Customer: <strong className="text-[#2C2421]">Ahmed Khan</strong> • Tech: <strong className="text-[#2C2421]">Imran Mechanic</strong>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <span className="px-3.5 py-1.5 rounded-full text-xs font-bold bg-[#111827]/10 text-[#111827] border border-[#111827]/20">
+                      ESTIMATE_APPROVED
+                    </span>
+                    <button
+                      onClick={onOpenDemo}
+                      className="px-4 py-2 rounded-xl bg-[#111827] hover:bg-[#0F172A] text-white text-xs font-bold transition-colors shadow-sm"
+                    >
+                      Assign Parts
+                    </button>
+                  </div>
+                </div>
+
+                {/* Streamlined Step Bar */}
+                <div className="p-4 rounded-xl bg-[#F4F4F1]/60 border border-[#2C2421]/12">
+                  <div className="text-xs text-[#2C2421] font-bold mb-3 flex items-center justify-between">
+                    <span>BOOKING WORKFLOW</span>
+                    <span className="text-[#111827] font-bold">Step 3 of 5</span>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs">
+                    <div className="p-2.5 rounded-lg bg-[#111827]/10 border border-[#111827]/20 text-[#111827] text-center font-bold">
+                      ✓ 1. Booking
+                    </div>
+                    <div className="p-2.5 rounded-lg bg-[#111827]/10 border border-[#111827]/20 text-[#111827] text-center font-bold">
+                      ✓ 2. Inspection
+                    </div>
+                    <div className="p-2.5 rounded-lg bg-[#111827] text-white text-center font-bold shadow-sm">
+                      ● 3. Approved
+                    </div>
+                    <div className="p-2.5 rounded-lg bg-white border border-[#2C2421]/12 text-[#2C2421]/50 text-center">
+                      4. Parts
+                    </div>
+                    <div className="p-2.5 rounded-lg bg-white border border-[#2C2421]/12 text-[#2C2421]/50 text-center">
+                      5. QC &amp; Pick-up
+                    </div>
+                  </div>
+                </div>
+
+                {/* Breakdown Details */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-5 rounded-xl bg-white border border-[#2C2421]/12 shadow-sm">
+                    <div className="text-xs font-bold text-[#2C2421] uppercase tracking-wider mb-3 flex items-center justify-between">
+                      <span>Itemized Estimate</span>
+                      <span className="text-[#111827] font-bold text-sm">PKR 16,100</span>
+                    </div>
+                    <ul className="text-xs text-[#2C2421]/80 space-y-2">
+                      <li className="flex justify-between py-1 border-b border-[#2C2421]/10">
+                        <span>Ignition Coil x1</span>
+                        <span className="text-[#2C2421] font-semibold">PKR 6,500</span>
+                      </li>
+                      <li className="flex justify-between py-1 border-b border-[#2C2421]/10">
+                        <span>Engine Oil 4L</span>
+                        <span className="text-[#2C2421] font-semibold">PKR 5,200</span>
+                      </li>
+                      <li className="flex justify-between py-1">
+                        <span>Labor Charge</span>
+                        <span className="text-[#2C2421] font-semibold">PKR 4,400</span>
+                      </li>
+                    </ul>
+                  </div>
+
+                  <div className="p-5 rounded-xl bg-white border border-[#2C2421]/12 shadow-sm flex flex-col justify-between">
+                    <div>
+                      <div className="text-xs font-bold text-[#2C2421] uppercase tracking-wider mb-2">
+                        Customer Activity Log
+                      </div>
+                      <p className="text-xs text-[#2C2421]/80 leading-relaxed">
+                        Customer approved estimate via mobile portal at <strong className="text-[#111827]">10:14 AM</strong>.
+                      </p>
+                    </div>
+                    <div className="pt-4 border-t border-[#2C2421]/10 flex items-center justify-between text-xs">
+                      <span className="text-[#2C2421]/60">Next Step:</span>
+                      <span className="font-bold text-[#111827]">Allocate Parts</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeTab === "multi-shop" && (
+              <div className="p-6 rounded-xl bg-[#F4F4F1]/60 border border-[#2C2421]/12 space-y-4">
+                <div className="flex items-center justify-between pb-3 border-b border-[#2C2421]/12">
+                  <span className="font-bold text-sm text-[#2C2421]">Multi-Shop Owner View</span>
+                  <span className="text-xs bg-[#111827]/10 text-[#111827] px-2.5 py-1 rounded-full border border-[#111827]/20 font-semibold">
+                    2 Locations Active
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="p-5 rounded-xl bg-white border border-[#111827]/30 shadow-sm flex flex-col justify-between">
+                    <div>
+                      <div className="font-bold text-[#2C2421] text-base">Lahore Auto Care</div>
+                      <div className="text-xs text-[#2C2421]/60 mt-1">Gulberg III • 4 Team Members</div>
+                    </div>
+                    <div className="mt-4 pt-3 border-t border-[#2C2421]/10 flex items-center justify-between text-xs">
+                      <span className="text-[#111827] font-bold">12 Active Jobs</span>
+                      <span className="px-2.5 py-0.5 rounded bg-[#111827] text-white font-bold text-[11px]">Selected</span>
+                    </div>
+                  </div>
+                  <div className="p-5 rounded-xl bg-white border border-[#2C2421]/12 shadow-sm flex flex-col justify-between">
+                    <div>
+                      <div className="font-bold text-[#2C2421] text-base">Karachi Speed Repair</div>
+                      <div className="text-xs text-[#2C2421]/60 mt-1">Clifton • 6 Team Members</div>
+                    </div>
+                    <div className="mt-4 pt-3 border-t border-[#2C2421]/10 flex items-center justify-between text-xs">
+                      <span className="text-[#2C2421]/70 font-medium">18 Active Jobs</span>
+                      <button onClick={onOpenDemo} className="text-[#111827] hover:underline font-bold">
+                        Switch Shop
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeTab === "ai-voice" && (
+              <div className="p-6 rounded-xl bg-[#F4F4F1]/60 border border-[#2C2421]/12 space-y-4">
+                <div className="flex items-center justify-between pb-3 border-b border-[#2C2421]/12">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#111827] animate-pulse" />
+                    <span className="font-bold text-sm text-[#2C2421]">AI Front Desk Call Assistant</span>
+                  </div>
+                  <span className="text-xs text-[#2C2421]/60 font-medium">Automatic Call Transcript</span>
+                </div>
+                <div className="p-4 rounded-xl bg-white border border-[#2C2421]/12 text-xs space-y-3 font-sans leading-relaxed">
+                  <div className="text-[#2C2421]/80">
+                    <span className="text-[#111827] font-bold">[AI FRONT DESK]:</span> &ldquo;Hello! Thanks for calling Lahore Auto Care. Your Honda Civic estimate of PKR 16,100 is ready for approval in your portal link.&rdquo;
+                  </div>
+                  <div className="text-[#2C2421]">
+                    <span className="text-[#111827] font-bold">[CALLER AHMED]:</span> &ldquo;Great, approving now.&rdquo;
+                  </div>
+                  <div className="p-3 rounded-lg bg-[#111827]/5 border border-[#111827]/15 text-[#111827] font-medium mt-2">
+                    <strong>Auto Task Logged:</strong> Customer reminded &amp; estimate approved.
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </motion.div>
       </div>

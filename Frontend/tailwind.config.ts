@@ -12,8 +12,9 @@ const config: Config = {
     extend: {
       colors: {
         "bay-espresso": "#2C2421",
-        "bay-orange": "#E85D22",
-        "bay-emerald": "#1F5C45",
+        "bay-obsidian": "#111827",
+        "bay-carbon": "#0F172A",
+        "bay-slate": "#1E293B",
         "bay-stone": "#8C7E78",
         "bay-muted": "#6B5E59",
         "bay-cream": "#F4F4F1",

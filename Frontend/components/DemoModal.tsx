@@ -9,35 +9,24 @@ interface DemoModalProps {
 }
 
 export default function DemoModal({ isOpen, onClose }: DemoModalProps) {
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    workshopName: "",
-    bayCount: "4-8",
-  });
-  const [isSubmitted, setIsSubmitted] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [selectedRole, setSelectedRole] = useState<string>("sa");
+  const [isLogged, setIsLogged] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
+  const roles = [
+    { id: "owner", title: "Shop Owner", name: "Fatima Raza", email: "owner@bayflow.com", badge: "Multi-Shop Manager" },
+    { id: "sa", title: "Service Advisor", name: "Bilal SA", email: "sa@bayflow.com", badge: "Front Desk & Estimates" },
+    { id: "tech", title: "Technician", name: "Imran Mechanic", email: "tech@bayflow.com", badge: "Assigned Repairs" },
+    { id: "parts", title: "Parts Person", name: "Usman Parts", email: "parts@bayflow.com", badge: "Inventory & POs" },
+    { id: "qc", title: "QC Inspector", name: "Sara QC", email: "qc@bayflow.com", badge: "Mandatory Quality Check" },
+    { id: "customer", title: "Customer Portal", name: "Ahmed Khan", email: "ahmed@mail.com", badge: "Bookings & Estimates" },
+  ];
+
+  const handleLaunch = () => {
+    setIsLogged(true);
     setTimeout(() => {
-      setIsLoading(false);
-      setIsSubmitted(true);
-    }, 800);
-  };
-
-  const handleReset = () => {
-    setIsSubmitted(false);
-    setFormData({
-      name: "",
-      email: "",
-      phone: "",
-      workshopName: "",
-      bayCount: "4-8",
-    });
-    onClose();
+      setIsLogged(false);
+      onClose();
+    }, 1200);
   };
 
   return (
@@ -50,7 +39,7 @@ export default function DemoModal({ isOpen, onClose }: DemoModalProps) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-[#2C2421]/60 backdrop-blur-sm transition-opacity"
+            className="fixed inset-0 bg-[#2C2421]/40 backdrop-blur-sm transition-opacity"
           />
 
           {/* Modal Container */}
@@ -59,19 +48,24 @@ export default function DemoModal({ isOpen, onClose }: DemoModalProps) {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="relative w-full max-w-lg bg-white rounded-xl shadow-[0_20px_60px_rgba(44,36,33,0.25)] border border-[#2C2421]/10 overflow-hidden z-10"
+            className="relative w-full max-w-xl bg-white rounded-2xl shadow-2xl border border-[#2C2421]/15 overflow-hidden z-10"
           >
             {/* Header */}
-            <div className="p-6 bg-[#F4F4F1] border-b border-[#2C2421]/10 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#E85D22] animate-pulse" />
-                <h3 className="font-headline text-lg uppercase tracking-wider text-[#2C2421] font-bold">
-                  Schedule Workshop Demo
-                </h3>
+            <div className="p-6 bg-[#F4F4F1] border-b border-[#2C2421]/15 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-[#111827]/10 text-[#111827] flex items-center justify-center font-bold">
+                  <span className="material-symbols-outlined text-lg">person</span>
+                </div>
+                <div>
+                  <h3 className="font-headline text-base font-bold text-[#2C2421]">
+                    Sign In &amp; Select Active Role
+                  </h3>
+                  <span className="text-xs text-[#2C2421]/60">BayFlow Multi-Tenant Auto Repair Platform</span>
+                </div>
               </div>
               <button
                 onClick={onClose}
-                className="w-8 h-8 rounded-full bg-white border border-[#2C2421]/10 flex items-center justify-center text-[#6B5E59] hover:text-[#2C2421] transition-colors"
+                className="w-8 h-8 rounded-full bg-white border border-[#2C2421]/15 flex items-center justify-center text-[#2C2421]/60 hover:text-[#2C2421] transition-colors shadow-sm"
               >
                 <span className="material-symbols-outlined text-lg">close</span>
               </button>
@@ -79,118 +73,57 @@ export default function DemoModal({ isOpen, onClose }: DemoModalProps) {
 
             {/* Content */}
             <div className="p-6">
-              {isSubmitted ? (
-                <div className="text-center py-8 flex flex-col items-center gap-4">
-                  <div className="w-14 h-14 rounded-full bg-[#1F5C45]/10 border border-[#1F5C45]/30 flex items-center justify-center text-[#1F5C45]">
+              {isLogged ? (
+                <div className="text-center py-8 flex flex-col items-center gap-3">
+                  <div className="w-14 h-14 rounded-full bg-[#111827]/10 border border-[#111827]/20 flex items-center justify-center text-[#111827]">
                     <span className="material-symbols-outlined text-3xl">check_circle</span>
                   </div>
-                  <h4 className="font-headline text-2xl uppercase text-[#2C2421] font-bold">
-                    Demo Reserved Successfully
+                  <h4 className="font-headline text-xl font-bold text-[#2C2421]">
+                    Signed In Successfully!
                   </h4>
-                  <p className="text-xs sm:text-sm text-[#6B5E59] max-w-sm">
-                    Our technical deployment team will connect with you within 2 business hours to configure
-                    your workshop telemetry preview.
+                  <p className="text-xs text-[#2C2421]/80 max-w-sm">
+                    Loaded workspace for <strong className="text-[#2C2421]">{roles.find(r => r.id === selectedRole)?.name}</strong>.
                   </p>
-                  <button
-                    onClick={handleReset}
-                    className="mt-4 bg-[#2C2421] hover:bg-[#1a1513] text-white text-xs uppercase tracking-widest px-6 py-2.5 rounded font-bold transition-all shadow"
-                  >
-                    Done
-                  </button>
                 </div>
               ) : (
-                <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-                  <div>
-                    <label className="block text-xs font-mono uppercase tracking-wider text-[#6B5E59] mb-1 font-semibold">
-                      Your Full Name
-                    </label>
-                    <input
-                      required
-                      type="text"
-                      placeholder="Marcus Vance"
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      className="w-full px-3.5 py-2.5 text-xs sm:text-sm bg-[#F8F8F5] border border-[#2C2421]/15 rounded text-[#2C2421] placeholder-[#8C7E78] focus:outline-none focus:border-[#E85D22] transition-colors"
-                    />
-                  </div>
+                <div className="space-y-4">
+                  <p className="text-xs text-[#2C2421]/70 font-medium">
+                    Choose a staff role or customer account to launch their scoped workspace:
+                  </p>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-mono uppercase tracking-wider text-[#6B5E59] mb-1 font-semibold">
-                        Work Email
-                      </label>
-                      <input
-                        required
-                        type="email"
-                        placeholder="marcus@vancemotors.com"
-                        value={formData.email}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        className="w-full px-3.5 py-2.5 text-xs sm:text-sm bg-[#F8F8F5] border border-[#2C2421]/15 rounded text-[#2C2421] placeholder-[#8C7E78] focus:outline-none focus:border-[#E85D22] transition-colors"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-mono uppercase tracking-wider text-[#6B5E59] mb-1 font-semibold">
-                        Phone / WhatsApp
-                      </label>
-                      <input
-                        required
-                        type="tel"
-                        placeholder="+1 (555) 019-2834"
-                        value={formData.phone}
-                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                        className="w-full px-3.5 py-2.5 text-xs sm:text-sm bg-[#F8F8F5] border border-[#2C2421]/15 rounded text-[#2C2421] placeholder-[#8C7E78] focus:outline-none focus:border-[#E85D22] transition-colors"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-mono uppercase tracking-wider text-[#6B5E59] mb-1 font-semibold">
-                        Workshop / Dealership Name
-                      </label>
-                      <input
-                        required
-                        type="text"
-                        placeholder="Apex Performance Studio"
-                        value={formData.workshopName}
-                        onChange={(e) => setFormData({ ...formData, workshopName: e.target.value })}
-                        className="w-full px-3.5 py-2.5 text-xs sm:text-sm bg-[#F8F8F5] border border-[#2C2421]/15 rounded text-[#2C2421] placeholder-[#8C7E78] focus:outline-none focus:border-[#E85D22] transition-colors"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-mono uppercase tracking-wider text-[#6B5E59] mb-1 font-semibold">
-                        Active Service Bays
-                      </label>
-                      <select
-                        value={formData.bayCount}
-                        onChange={(e) => setFormData({ ...formData, bayCount: e.target.value })}
-                        className="w-full px-3.5 py-2.5 text-xs sm:text-sm bg-[#F8F8F5] border border-[#2C2421]/15 rounded text-[#2C2421] focus:outline-none focus:border-[#E85D22] transition-colors"
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {roles.map((r) => (
+                      <button
+                        key={r.id}
+                        onClick={() => setSelectedRole(r.id)}
+                        className={`p-3.5 rounded-xl text-left border transition-all flex flex-col justify-between gap-1.5 ${
+                          selectedRole === r.id
+                            ? "bg-[#111827]/10 border-[#111827] shadow-sm"
+                            : "bg-white border-[#2C2421]/15 hover:border-[#2C2421]/30"
+                        }`}
                       >
-                        <option value="1-3">1 - 3 Bays</option>
-                        <option value="4-8">4 - 8 Bays</option>
-                        <option value="9-16">9 - 16 Bays</option>
-                        <option value="16+">16+ Enterprise Bays</option>
-                      </select>
-                    </div>
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-xs text-[#2C2421]">{r.title}</span>
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#F4F4F1] text-[#2C2421]/70 border border-[#2C2421]/15">
+                            {r.badge}
+                          </span>
+                        </div>
+                        <div className="text-xs text-[#2C2421]/80 font-medium">{r.name}</div>
+                        <div className="text-[11px] font-mono text-[#2C2421]/50">{r.email}</div>
+                      </button>
+                    ))}
                   </div>
 
-                  <div className="pt-2">
+                  <div className="pt-3 border-t border-[#2C2421]/10 flex items-center justify-between">
+                    <span className="text-xs text-[#2C2421]/60 font-medium">Default password: <code className="bg-[#F4F4F1] px-1 py-0.5 rounded text-[#2C2421]">role123</code></span>
                     <button
-                      type="submit"
-                      disabled={isLoading}
-                      className="w-full bg-[#2C2421] hover:bg-[#1a1513] text-white text-xs uppercase tracking-widest py-3.5 rounded font-bold transition-all shadow-[0_4px_14px_rgba(44,36,33,0.25)] flex items-center justify-center gap-2"
+                      onClick={handleLaunch}
+                      className="px-5 py-2.5 bg-[#111827] hover:bg-[#0F172A] text-white font-bold text-xs rounded-xl shadow transition-all"
                     >
-                      {isLoading ? (
-                        <span>Initializing Deck...</span>
-                      ) : (
-                        <>
-                          <span>Deploy Workshop Preview</span>
-                          <span className="material-symbols-outlined text-sm">arrow_forward</span>
-                        </>
-                      )}
+                      Sign In &amp; Launch
                     </button>
                   </div>
-                </form>
+                </div>
               )}
             </div>
           </motion.div>

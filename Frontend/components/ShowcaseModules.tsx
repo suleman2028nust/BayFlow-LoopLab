@@ -1,355 +1,402 @@
 "use client";
 
 import React, { useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface ShowcaseModulesProps {
   onOpenDemo?: () => void;
 }
 
 export default function ShowcaseModules({ onOpenDemo }: ShowcaseModulesProps) {
-  const [reordered, setReordered] = useState(false);
-
-  const handleReorder = () => {
-    setReordered(true);
-    setTimeout(() => setReordered(false), 3000);
-  };
+  const [activeRole, setActiveRole] = useState<"sa" | "tech" | "parts" | "qc" | "owner">("sa");
+  const [qcStatus, setQcStatus] = useState<"pending" | "pass" | "fail">("pending");
+  const [partsInStock, setPartsInStock] = useState(0);
 
   return (
-    <section id="platform" className="w-full px-4 sm:px-6 lg:px-8 py-16 sm:py-20 flex flex-col gap-16 bg-[#F4F4F1]">
-      <div className="max-w-7xl mx-auto w-full flex flex-col gap-12 sm:gap-16">
-        {/* =========================================================================
-            SHOWCASE 1: EVERY SLOT UNDER CONTROL (CALENDAR & BAY DISPATCH)
-            ========================================================================= */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center bg-white p-6 sm:p-8 lg:p-10 rounded-xl border border-[#2C2421]/10 shadow-[0_10px_30px_rgba(44,36,33,0.06),0_1px_3px_rgba(44,36,33,0.04)]"
-        >
-          <div className="lg:col-span-5 flex flex-col gap-4">
-            <div className="flex items-center gap-2 text-[#E85D22] text-xs uppercase tracking-widest font-bold">
-              <span className="w-2 h-2 rounded-full bg-[#E85D22]" />
-              <span>CAPACITY DISPATCH // ENGINE</span>
-            </div>
-            <h3 className="font-headline text-3xl sm:text-4xl uppercase font-bold text-[#2C2421] tracking-wide leading-tight">
-              Every Slot. Under Control.
-            </h3>
-            <p className="text-sm sm:text-base text-[#6B5E59] leading-relaxed">
-              Prevent double bookings, optimize technician skill assignments, and balance high-performance
-              dyno bays against fast lube bays with algorithmic scheduling.
-            </p>
-            <div className="grid grid-cols-2 gap-4 pt-2">
-              <div className="p-3.5 bg-[#F8F8F5] rounded border border-[#2C2421]/10">
-                <div className="font-mono text-2xl font-bold text-[#2C2421]">99.1%</div>
-                <div className="text-[10px] text-[#1F5C45] uppercase font-bold tracking-wider">
-                  Bay Utilization Rate
-                </div>
-              </div>
-              <div className="p-3.5 bg-[#F8F8F5] rounded border border-[#2C2421]/10">
-                <div className="font-mono text-2xl font-bold text-[#2C2421]">0.0%</div>
-                <div className="text-[10px] text-[#6B5E59] uppercase font-semibold tracking-wider">
-                  Scheduling Collisions
-                </div>
-              </div>
-            </div>
+    <section id="roles-pos" className="w-full px-4 sm:px-6 lg:px-8 py-20 bg-white border-t border-[#2C2421]/15">
+      <div className="max-w-7xl mx-auto flex flex-col gap-12">
+        {/* Section Header */}
+        <div className="text-center max-w-3xl mx-auto">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#111827]/10 border border-[#111827]/15 text-[#111827] text-xs font-semibold mb-4">
+            <span className="material-symbols-outlined text-base">badge</span>
+            <span>ROLE-BASED WORKSHOP POS ENGINE</span>
           </div>
+          <h2 className="font-headline text-3xl sm:text-5xl font-extrabold text-[#2C2421] tracking-tight leading-tight">
+            Role-Based Workflows. Total Accountability.
+          </h2>
+          <p className="mt-4 text-base text-[#2C2421]/70 leading-relaxed font-normal">
+            Every staff member sees only the work that is theirs. Switch between roles below to test how BayFlow isolates access and enforces strict state transitions.
+          </p>
+        </div>
 
-          {/* Interactive Workshop Bay Calendar Mockup */}
-          <div className="lg:col-span-7 bg-[#FBFBFA] rounded-lg p-4 sm:p-6 border border-[#2C2421]/10 flex flex-col gap-3 text-xs shadow-inner">
-            <div className="flex items-center justify-between pb-3 border-b border-[#2C2421]/10">
-              <div className="flex items-center gap-2">
-                <span className="text-xs uppercase tracking-wider text-[#2C2421] font-bold">
-                  WORKSHOP SCHEDULE
-                </span>
-                <span className="text-[10px] bg-white px-2 py-0.5 rounded text-[#6B5E59] border border-[#2C2421]/10 font-semibold">
-                  TODAY / SHIFT A
-                </span>
-              </div>
-              <div className="flex items-center gap-1.5 text-xs text-[#1F5C45] font-mono font-bold">
-                <span className="w-2 h-2 bg-[#1F5C45] rounded-full animate-pulse" />
-                <span>LIVE RE-ROUTING ENABLED</span>
-              </div>
-            </div>
+        {/* Role Tab Controls */}
+        <div className="flex items-center justify-center gap-2 flex-wrap bg-[#F4F4F1] p-2 rounded-2xl border border-[#2C2421]/15 max-w-4xl mx-auto w-full">
+          <button
+            onClick={() => setActiveRole("sa")}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${
+              activeRole === "sa"
+                ? "bg-[#111827] text-white shadow-md"
+                : "text-[#2C2421]/70 hover:text-[#2C2421] hover:bg-white/60"
+            }`}
+          >
+            <span className="material-symbols-outlined text-lg">headset_mic</span>
+            <span>Service Advisor</span>
+          </button>
+          <button
+            onClick={() => setActiveRole("tech")}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${
+              activeRole === "tech"
+                ? "bg-[#111827] text-white shadow-md"
+                : "text-[#2C2421]/70 hover:text-[#2C2421] hover:bg-white/60"
+            }`}
+          >
+            <span className="material-symbols-outlined text-lg">engineering</span>
+            <span>Technician</span>
+          </button>
+          <button
+            onClick={() => setActiveRole("parts")}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${
+              activeRole === "parts"
+                ? "bg-[#111827] text-white shadow-md"
+                : "text-[#2C2421]/70 hover:text-[#2C2421] hover:bg-white/60"
+            }`}
+          >
+            <span className="material-symbols-outlined text-lg">inventory_2</span>
+            <span>Parts Person</span>
+          </button>
+          <button
+            onClick={() => setActiveRole("qc")}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${
+              activeRole === "qc"
+                ? "bg-[#111827] text-white shadow-md"
+                : "text-[#2C2421]/70 hover:text-[#2C2421] hover:bg-white/60"
+            }`}
+          >
+            <span className="material-symbols-outlined text-lg">fact_check</span>
+            <span>QC Inspector</span>
+          </button>
+          <button
+            onClick={() => setActiveRole("owner")}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${
+              activeRole === "owner"
+                ? "bg-[#111827] text-white shadow-md"
+                : "text-[#2C2421]/70 hover:text-[#2C2421] hover:bg-white/60"
+            }`}
+          >
+            <span className="material-symbols-outlined text-lg">admin_panel_settings</span>
+            <span>Shop Owner</span>
+          </button>
+        </div>
 
-            {/* Bay Card 1 */}
-            <div className="p-3.5 rounded bg-white border border-[#1F5C45]/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-[0_2px_8px_rgba(44,36,33,0.04)] hover:shadow-md transition-shadow">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded bg-[#1F5C45]/10 flex items-center justify-center text-[#1F5C45] font-mono font-bold text-sm">
-                  B1
-                </div>
-                <div>
-                  <div className="font-headline text-base text-[#2C2421] font-bold flex items-center gap-2">
-                    <span>Ferrari 296 GTB</span>
-                    <span className="bg-[#1F5C45]/15 text-[#1F5C45] text-[10px] px-1.5 py-0.5 rounded uppercase font-bold tracking-wider">
-                      10K km Inspection
-                    </span>
-                  </div>
-                  <div className="font-mono text-[11px] text-[#6B5E59]">
-                    TECH: Marco R. (Master EV/Hybrid)
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 justify-between sm:justify-end">
-                <div className="font-mono text-xs text-right">
-                  <span className="text-[#8C7E78] block font-semibold text-[10px] uppercase">
-                    TIME REMAINING
-                  </span>
-                  <span className="text-[#1F5C45] font-bold">01h 14m</span>
-                </div>
-                <div className="w-16 bg-[#ECE8E5] h-2 rounded-full overflow-hidden">
-                  <div className="bg-[#1F5C45] h-full w-[72%]" />
-                </div>
-              </div>
-            </div>
-
-            {/* Bay Card 2 */}
-            <div className="p-3.5 rounded bg-white border border-[#E85D22]/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-[0_2px_8px_rgba(44,36,33,0.04)] hover:shadow-md transition-shadow">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded bg-[#E85D22]/10 flex items-center justify-center text-[#E85D22] font-mono font-bold text-sm">
-                  B2
-                </div>
-                <div>
-                  <div className="font-headline text-base text-[#2C2421] font-bold flex items-center gap-2">
-                    <span>Porsche 911 GT3 RS</span>
-                    <span className="bg-[#E85D22]/15 text-[#E85D22] text-[10px] px-1.5 py-0.5 rounded uppercase font-bold tracking-wider">
-                      Carbon Brake Flush
-                    </span>
-                  </div>
-                  <div className="font-mono text-[11px] text-[#6B5E59]">
-                    TECH: Alex Vance (Chassis Lead)
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 justify-between sm:justify-end">
-                <div className="font-mono text-xs text-right">
-                  <span className="text-[#8C7E78] block font-semibold text-[10px] uppercase">
-                    TIME REMAINING
-                  </span>
-                  <span className="text-[#E85D22] font-bold">00h 35m</span>
-                </div>
-                <div className="w-16 bg-[#ECE8E5] h-2 rounded-full overflow-hidden">
-                  <div className="bg-[#E85D22] h-full w-[85%]" />
-                </div>
-              </div>
-            </div>
-
-            {/* Bay Card 3 */}
-            <div className="p-3.5 rounded bg-white border border-[#2C2421]/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-[0_2px_8px_rgba(44,36,33,0.04)] hover:shadow-md transition-shadow">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded bg-[#F4F4F1] flex items-center justify-center text-[#2C2421] font-mono font-bold text-sm">
-                  B3
-                </div>
-                <div>
-                  <div className="font-headline text-base text-[#2C2421] font-bold flex items-center gap-2">
-                    <span>McLaren Artura</span>
-                    <span className="bg-[#1F5C45]/15 text-[#1F5C45] text-[10px] px-1.5 py-0.5 rounded uppercase font-bold tracking-wider">
-                      QC Passed / Ready
-                    </span>
-                  </div>
-                  <div className="font-mono text-[11px] text-[#6B5E59]">
-                    TECH: Elena Cole (Powertrain)
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 justify-between sm:justify-end">
-                <div className="font-mono text-xs text-right">
-                  <span className="text-[#8C7E78] block font-semibold text-[10px] uppercase">
-                    STATUS
-                  </span>
-                  <span className="text-[#1F5C45] font-bold">Ready for Pickup</span>
-                </div>
-                <div className="w-16 bg-[#ECE8E5] h-2 rounded-full overflow-hidden">
-                  <div className="bg-[#1F5C45] h-full w-[100%]" />
-                </div>
-              </div>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* =========================================================================
-            SHOWCASE 2: FROM ARRIVAL TO READY (LIFECYCLE PIPELINE)
-            ========================================================================= */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center bg-white p-6 sm:p-8 lg:p-10 rounded-xl border border-[#2C2421]/10 shadow-[0_10px_30px_rgba(44,36,33,0.06),0_1px_3px_rgba(44,36,33,0.04)]"
-        >
-          {/* Visual Column */}
-          <div className="lg:col-span-7 order-2 lg:order-1 relative rounded-lg overflow-hidden border border-[#2C2421]/10 bg-[#ECE8E5] group">
-            <div className="relative aspect-[16/10] w-full">
-              <img
-                alt="Modern automotive inspection bay in natural daylight"
-                className="w-full h-full object-cover object-center group-hover:scale-[1.02] transition-transform duration-700"
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuB7op07soz9VWsNoCcWz1_tHUFPE06zBlX-o9u0fy4zNLf5StVnBRZlUA1r5B0aGuBx8rjFkTMTq1yUosS7OlD9r6FUSuNVeiyHXFiYZAIPIHPwbZdvaYwLe8snoYcnxfgcn9C-xef7rkRndUHUXp6MOiQwdW8zmVGapjJqkGOSL0_AYK4ynltlNoebvrNYQFOnHtvtKp2No9ct_f81wxz2xz74-1no1_jLTIB9m3t5m_eG2xLbEXmR"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-white/90 via-transparent to-white/30 pointer-events-none" />
-
-              {/* Overlaid HUD Sensor Tag */}
-              <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-md px-3.5 py-2 rounded border border-[#1F5C45]/40 flex items-center gap-3 shadow-[0_4px_12px_rgba(44,36,33,0.08)]">
-                <span className="material-symbols-outlined text-[#1F5C45] text-xl">biotech</span>
-                <div>
-                  <span className="text-[10px] text-[#8C7E78] block font-semibold uppercase tracking-wider">
-                    ACTIVE TELEMETRY HOOK
-                  </span>
-                  <span className="font-mono text-xs text-[#2C2421] font-bold">
-                    OBD-III DIGITAL TWIN REALTIME
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Text & Live Stage Pipeline */}
-          <div className="lg:col-span-5 order-1 lg:order-2 flex flex-col gap-4">
-            <div className="flex items-center gap-2 text-[#1F5C45] text-xs uppercase tracking-widest font-bold">
-              <span className="w-2 h-2 rounded-full bg-[#1F5C45]" />
-              <span>LIFECYCLE PIPELINE</span>
-            </div>
-            <h3 className="font-headline text-3xl sm:text-4xl uppercase font-bold text-[#2C2421] tracking-wide leading-tight">
-              From Arrival To Ready.
-            </h3>
-            <p className="text-sm sm:text-base text-[#6B5E59] leading-relaxed">
-              Track each vehicle from intake scans to test-bench validation. Empower your team with
-              automated transitions that trigger parts ordering, client approval SMS, and billing.
-            </p>
-
-            {/* Stepper Pipeline UI Component */}
-            <div className="flex flex-col gap-2 pt-2">
-              <div className="flex items-center gap-2.5 text-xs font-mono">
-                <span className="w-5 h-5 rounded-full bg-[#1F5C45] text-white flex items-center justify-center font-bold text-[10px]">
-                  ✓
-                </span>
-                <span className="text-[#2C2421] font-semibold">INTAKE &amp; DIAGNOSTIC SCAN</span>
-                <span className="text-[#8C7E78] ml-auto text-[11px]">09:12 AM</span>
-              </div>
-              <div className="w-0.5 h-3 bg-[#1F5C45] ml-2.5" />
-
-              <div className="flex items-center gap-2.5 text-xs font-mono">
-                <span className="w-5 h-5 rounded-full bg-[#1F5C45] text-white flex items-center justify-center font-bold text-[10px]">
-                  ✓
-                </span>
-                <span className="text-[#2C2421] font-semibold">ESTIMATE DIGITAL SIGN-OFF</span>
-                <span className="text-[#8C7E78] ml-auto text-[11px]">09:40 AM</span>
-              </div>
-              <div className="w-0.5 h-3 bg-[#E85D22] ml-2.5" />
-
-              <div className="flex items-center gap-2.5 text-xs font-mono">
-                <span className="w-5 h-5 rounded-full bg-[#E85D22] animate-pulse text-white flex items-center justify-center font-bold text-[10px]">
-                  ●
-                </span>
-                <span className="text-[#E85D22] font-bold">ACTIVE MECHANICAL REPAIR</span>
-                <span className="text-[#E85D22] font-bold ml-auto text-[11px]">IN PROGRESS</span>
-              </div>
-              <div className="w-0.5 h-3 bg-[#2C2421]/20 ml-2.5" />
-
-              <div className="flex items-center gap-2.5 text-xs font-mono text-[#8C7E78]">
-                <span className="w-5 h-5 rounded-full border border-[#2C2421]/30 flex items-center justify-center text-[10px] font-semibold">
-                  4
-                </span>
-                <span>CALIBRATION &amp; DYN-RUN</span>
-                <span className="ml-auto text-[11px]">QUEUED</span>
-              </div>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* =========================================================================
-            SHOWCASE 3: NEVER LOSE TRACK (INVENTORY TELEMETRY TABLE)
-            ========================================================================= */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center bg-white p-6 sm:p-8 lg:p-10 rounded-xl border border-[#2C2421]/10 shadow-[0_10px_30px_rgba(44,36,33,0.06),0_1px_3px_rgba(44,36,33,0.04)]"
-        >
-          <div className="lg:col-span-5 flex flex-col gap-4">
-            <div className="flex items-center gap-2 text-[#E85D22] text-xs uppercase tracking-widest font-bold">
-              <span className="w-2 h-2 rounded-full bg-[#E85D22]" />
-              <span>STOCK MATRIX // OEM RESTOCK</span>
-            </div>
-            <h3 className="font-headline text-3xl sm:text-4xl uppercase font-bold text-[#2C2421] tracking-wide leading-tight">
-              Never Lose Track.
-            </h3>
-            <p className="text-sm sm:text-base text-[#6B5E59] leading-relaxed">
-              Prevent downtime waiting on parts. Real-time shelf counting, automated safety buffers, and
-              direct API purchasing sync with OEM suppliers.
-            </p>
-            <div className="flex items-center gap-4 pt-2">
-              <button
-                onClick={handleReorder}
-                className="bg-[#2C2421] hover:bg-[#1a1513] text-white text-xs uppercase tracking-widest px-4 py-2.5 rounded font-bold transition-all shadow-[0_4px_14px_rgba(44,36,33,0.2)]"
+        {/* Live Interactive Role Workspace Card */}
+        <div className="bg-[#F4F4F1]/60 rounded-2xl border border-[#2C2421]/15 shadow-sm p-6 lg:p-8 max-w-5xl mx-auto w-full min-h-[440px] flex flex-col justify-between">
+          <AnimatePresence mode="wait">
+            {/* SERVICE ADVISOR VIEW */}
+            {activeRole === "sa" && (
+              <motion.div
+                key="sa"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -15 }}
+                className="space-y-6"
               >
-                {reordered ? "PO #8843 Dispatched ✓" : "Trigger OEM Reorder"}
-              </button>
-              <span className="font-mono text-xs text-[#1F5C45] font-bold">AUTO-SAFETY: ACTIVE</span>
-            </div>
-          </div>
-
-          {/* Inventory Telemetry Table */}
-          <div className="lg:col-span-7 bg-[#FBFBFA] rounded-lg border border-[#2C2421]/10 overflow-hidden text-xs shadow-inner">
-            <div className="px-4 py-3 bg-[#F4F4F1] border-b border-[#2C2421]/10 flex items-center justify-between font-mono text-xs">
-              <span className="text-[#2C2421] font-bold">CENTRAL INVENTORY TELEMETRY</span>
-              <span className="text-[#1F5C45] font-bold">48 ITEMS SYNCHRONIZED</span>
-            </div>
-            <div className="divide-y divide-[#2C2421]/10 bg-white">
-              {/* Row 1 */}
-              <div className="px-4 py-3 flex items-center justify-between hover:bg-[#F8F8F5] transition-colors">
-                <div>
-                  <div className="font-bold text-[#2C2421] text-sm">
-                    Carbon Ceramic Rotor Kit (Front)
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-[#2C2421]/15 pb-4 gap-2">
+                  <div>
+                    <span className="text-xs text-[#111827] font-mono font-bold uppercase">
+                      ROLE: SERVICE ADVISOR (Bilal)
+                    </span>
+                    <h3 className="text-2xl font-bold text-[#2C2421]">Active Bookings &amp; Estimates Review</h3>
                   </div>
-                  <div className="font-mono text-[11px] text-[#6B5E59]">
-                    SKU: BREM-CC-992-01 • BIN: A-14
+                  <span className="px-3 py-1 bg-[#111827]/10 text-[#111827] border border-[#111827]/20 text-xs font-mono rounded-full font-bold">
+                    SA Scoped Dashboard
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-5 bg-white rounded-xl border border-[#2C2421]/15 shadow-sm space-y-3">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="font-mono text-[#2C2421]/60 font-semibold">#BK-9021 • PENDING</span>
+                      <span className="text-[#111827] font-bold">Friday 10:00 AM</span>
+                    </div>
+                    <div className="text-sm font-bold text-[#2C2421]">
+                      Honda Civic 2016 <span className="text-xs font-mono font-normal text-[#2C2421]/60">(LEA-1234)</span>
+                    </div>
+                    <p className="text-xs text-[#2C2421]/80 leading-relaxed">
+                      Customer Note: Check Engine Light &amp; Engine Vibration at Idle.
+                    </p>
+                    <div className="pt-2 flex items-center gap-2">
+                      <button
+                        onClick={onOpenDemo}
+                        className="px-3.5 py-2 bg-[#111827] hover:bg-[#0F172A] text-white text-xs font-bold rounded-lg shadow-sm"
+                      >
+                        Confirm &amp; Assign Tech (Imran)
+                      </button>
+                      <button className="px-3 py-2 bg-[#F4F4F1] hover:bg-[#e8e8e3] text-[#2C2421] text-xs font-semibold rounded-lg border border-[#2C2421]/15">
+                        Decline
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="p-5 bg-white rounded-xl border border-[#2C2421]/15 shadow-sm space-y-3">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="font-mono text-[#2C2421]/60 font-semibold">#BK-9018 • ESTIMATE_REVIEW</span>
+                      <span className="text-[#111827] font-bold">Submitted by Tech Imran</span>
+                    </div>
+                    <div className="text-sm font-bold text-[#2C2421]">Toyota Corolla 2021</div>
+                    <div className="text-xs text-[#2C2421]/80 font-mono">
+                      Parts: PKR 12,600 | Proposed Labor: PKR 4,000
+                    </div>
+                    <div className="pt-2 flex items-center gap-2">
+                      <button
+                        onClick={onOpenDemo}
+                        className="px-3.5 py-2 bg-[#111827] hover:bg-[#0F172A] text-white text-xs font-bold rounded-lg shadow-sm flex items-center gap-1.5"
+                      >
+                        <span className="material-symbols-outlined text-sm">send</span>
+                        Send to Customer
+                      </button>
+                    </div>
                   </div>
                 </div>
-                <div className="text-right">
-                  <div className="font-mono text-sm text-[#1F5C45] font-bold">4 Sets Left</div>
-                  <div className="text-[10px] text-[#1F5C45] font-semibold">Buffer: Safe</div>
-                </div>
-              </div>
+              </motion.div>
+            )}
 
-              {/* Row 2 */}
-              <div className="px-4 py-3 flex items-center justify-between hover:bg-[#F8F8F5] transition-colors bg-[#E85D22]/5">
-                <div>
-                  <div className="font-bold text-[#2C2421] text-sm flex items-center gap-2">
-                    <span>Motul 300V 5W-40 Synthetic (20L)</span>
-                    <span className="bg-[#E85D22]/15 text-[#E85D22] text-[9px] px-1.5 py-0.5 rounded uppercase font-bold tracking-wider">
-                      AUTO-QUEUED
+            {/* TECHNICIAN VIEW */}
+            {activeRole === "tech" && (
+              <motion.div
+                key="tech"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -15 }}
+                className="space-y-6"
+              >
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-[#2C2421]/15 pb-4 gap-2">
+                  <div>
+                    <span className="text-xs text-[#111827] font-mono font-bold uppercase">
+                      ROLE: TECHNICIAN (Imran Mechanic)
+                    </span>
+                    <h3 className="text-2xl font-bold text-[#2C2421]">Assigned Diagnostic &amp; Repair Work</h3>
+                  </div>
+                  <span className="px-3 py-1 bg-[#111827]/10 text-[#111827] border border-[#111827]/20 text-xs font-mono rounded-full font-bold">
+                    My Assigned Jobs Only
+                  </span>
+                </div>
+
+                <div className="p-5 bg-white rounded-xl border border-[#2C2421]/15 shadow-sm space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="font-bold text-[#2C2421] text-base">Honda Civic 2016 — Physical Inspection</span>
+                    <span className="px-3 py-1 rounded-full bg-[#111827]/10 text-[#111827] text-xs font-mono font-bold border border-[#111827]/20">
+                      INSPECTING
                     </span>
                   </div>
-                  <div className="font-mono text-[11px] text-[#6B5E59]">
-                    SKU: MOT-300V-540 • BIN: L-02
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="font-mono text-sm text-[#E85D22] font-bold">2 Casks (Low)</div>
-                  <div className="text-[10px] text-[#E85D22] font-semibold">PO #8842 Dispatched</div>
-                </div>
-              </div>
 
-              {/* Row 3 */}
-              <div className="px-4 py-3 flex items-center justify-between hover:bg-[#F8F8F5] transition-colors">
-                <div>
-                  <div className="font-bold text-[#2C2421] text-sm">
-                    HV High-Voltage Service Fuse 800V
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs font-mono">
+                    <div className="p-3 bg-[#F4F4F1] rounded-lg border border-[#2C2421]/15">
+                      <span className="text-[#2C2421]/60 block text-[10px]">Diagnosis</span>
+                      <span className="text-[#2C2421] font-bold">Faulty Ignition Coil</span>
+                    </div>
+                    <div className="p-3 bg-[#F4F4F1] rounded-lg border border-[#2C2421]/15">
+                      <span className="text-[#2C2421]/60 block text-[10px]">Parts Required</span>
+                      <span className="text-[#2C2421] font-bold">Ignition Coil x1</span>
+                    </div>
+                    <div className="p-3 bg-[#F4F4F1] rounded-lg border border-[#2C2421]/15">
+                      <span className="text-[#2C2421]/60 block text-[10px]">Labor Estimate</span>
+                      <span className="text-[#111827] font-bold">PKR 4,000</span>
+                    </div>
                   </div>
-                  <div className="font-mono text-[11px] text-[#6B5E59]">
-                    SKU: TYCO-EV-800 • BIN: E-09
+
+                  <div className="pt-2 flex items-center justify-between">
+                    <span className="text-xs text-[#2C2421]/70">Technician submits estimate to Service Advisor for client dispatch.</span>
+                    <button
+                      onClick={onOpenDemo}
+                      className="px-4 py-2.5 bg-[#111827] hover:bg-[#0F172A] text-white text-xs font-bold rounded-xl shadow-sm"
+                    >
+                      Submit Estimate to SA
+                    </button>
                   </div>
                 </div>
-                <div className="text-right">
-                  <div className="font-mono text-sm text-[#2C2421] font-bold">12 Units</div>
-                  <div className="text-[10px] text-[#1F5C45] font-semibold">Buffer: Nominal</div>
+              </motion.div>
+            )}
+
+            {/* PARTS PERSON VIEW */}
+            {activeRole === "parts" && (
+              <motion.div
+                key="parts"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -15 }}
+                className="space-y-6"
+              >
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-[#2C2421]/15 pb-4 gap-2">
+                  <div>
+                    <span className="text-xs text-[#111827] font-mono font-bold uppercase">
+                      ROLE: PARTS PERSON (Usman Inventory)
+                    </span>
+                    <h3 className="text-2xl font-bold text-[#2C2421]">Inventory Allocation &amp; Purchase Orders</h3>
+                  </div>
+                  <span className="px-3 py-1 bg-[#111827]/10 text-[#111827] border border-[#111827]/20 text-xs font-mono rounded-full font-bold">
+                    Stock Desk
+                  </span>
                 </div>
-              </div>
-            </div>
-          </div>
-        </motion.div>
+
+                <div className="p-5 bg-white rounded-xl border border-[#2C2421]/15 shadow-sm space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-xs font-mono text-[#2C2421]/60">SKU: IGN-COIL-CIVIC-16</span>
+                      <div className="text-base font-bold text-[#2C2421]">Honda Civic Ignition Coil</div>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-xs text-[#2C2421]/60 block">Current Stock</span>
+                      <span className={`text-lg font-bold font-mono ${partsInStock > 0 ? "text-[#111827]" : "text-red-700"}`}>
+                        {partsInStock} Units
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="p-3.5 bg-[#F4F4F1] rounded-xl text-xs text-[#2C2421] flex items-center justify-between border border-[#2C2421]/15">
+                    <span>
+                      {partsInStock === 0
+                        ? "Stock Shortage for Booking #BK-9021. Create Purchase Order to receive item."
+                        : "Stock Ready. Click allocate to deduct from stock and move booking to IN_REPAIR."}
+                    </span>
+                    {partsInStock === 0 ? (
+                      <button
+                        onClick={() => setPartsInStock(1)}
+                        className="px-3.5 py-2 bg-[#111827] hover:bg-[#0F172A] text-white text-xs font-bold rounded-lg shadow-sm"
+                      >
+                        Confirm PO Delivery (+1)
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => setPartsInStock(0)}
+                        className="px-3.5 py-2 bg-[#111827] hover:bg-[#0F172A] text-white text-xs font-bold rounded-lg shadow-sm"
+                      >
+                        Allocate to Booking
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* QC INSPECTOR VIEW */}
+            {activeRole === "qc" && (
+              <motion.div
+                key="qc"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -15 }}
+                className="space-y-6"
+              >
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-[#2C2421]/15 pb-4 gap-2">
+                  <div>
+                    <span className="text-xs text-[#111827] font-mono font-bold uppercase">
+                      ROLE: QC INSPECTOR (Sara QC)
+                    </span>
+                    <h3 className="text-2xl font-bold text-[#2C2421]">Shared Quality Control Queue</h3>
+                  </div>
+                  <span className="px-3 py-1 bg-[#111827]/10 text-[#111827] border border-[#111827]/20 text-xs font-mono rounded-full font-bold">
+                    Mandatory Pass Gate
+                  </span>
+                </div>
+
+                <div className="p-5 bg-white rounded-xl border border-[#2C2421]/15 shadow-sm space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="font-bold text-[#2C2421] text-base">Job Inspection: Honda Civic 2016 (LEA-1234)</span>
+                    <span className="text-xs font-mono text-[#2C2421]/60 font-semibold">Inspector: Sara</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+                    <div className="p-3 bg-[#F4F4F1] rounded-lg border border-[#2C2421]/15 text-[#2C2421]">
+                      ✓ Ignition Coil Spark Check
+                    </div>
+                    <div className="p-3 bg-[#F4F4F1] rounded-lg border border-[#2C2421]/15 text-[#2C2421]">
+                      ✓ Engine Idle Smoothness
+                    </div>
+                    <div className="p-3 bg-[#F4F4F1] rounded-lg border border-[#2C2421]/15 text-[#2C2421] font-semibold">
+                      {qcStatus === "fail" ? "⚠️ Minor Oil Leak" : "● Oil Seal Inspection"}
+                    </div>
+                  </div>
+
+                  <div className="pt-2 flex items-center gap-3">
+                    <button
+                      onClick={() => setQcStatus("pass")}
+                      className="px-4 py-2.5 bg-[#111827] hover:bg-[#0F172A] text-white text-xs font-bold rounded-xl shadow-sm flex items-center gap-1.5"
+                    >
+                      <span className="material-symbols-outlined text-sm">check_circle</span>
+                      Pass QC (Ready for Pickup)
+                    </button>
+                    <button
+                      onClick={() => setQcStatus("fail")}
+                      className="px-4 py-2.5 bg-stone-800 hover:bg-stone-900 text-white text-xs font-bold rounded-xl shadow-sm flex items-center gap-1.5"
+                    >
+                      <span className="material-symbols-outlined text-sm">cancel</span>
+                      Fail QC (Return Issue)
+                    </button>
+                  </div>
+
+                  {qcStatus === "fail" && (
+                    <div className="p-3.5 bg-stone-100 border border-stone-300 rounded-xl text-xs text-[#2C2421] font-mono">
+                      <strong>Issue Logged:</strong> Minor oil leak. Job status reset to <code>IN_REPAIR</code>.
+                    </div>
+                  )}
+                  {qcStatus === "pass" && (
+                    <div className="p-3.5 bg-[#111827]/10 border border-[#111827]/20 rounded-xl text-xs text-[#111827] font-mono">
+                      <strong>QC Passed!</strong> Job moved to <code>READY_FOR_PICKUP</code>.
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+
+            {/* SHOP OWNER VIEW */}
+            {activeRole === "owner" && (
+              <motion.div
+                key="owner"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -15 }}
+                className="space-y-6"
+              >
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-[#2C2421]/15 pb-4 gap-2">
+                  <div>
+                    <span className="text-xs text-[#111827] font-mono font-bold uppercase">
+                      ROLE: SHOP OWNER (Fatima Raza)
+                    </span>
+                    <h3 className="text-2xl font-bold text-[#2C2421]">Multi-Shop Control &amp; Team Management</h3>
+                  </div>
+                  <span className="px-3 py-1 bg-[#111827]/10 text-[#111827] border border-[#111827]/20 text-xs font-mono rounded-full font-bold">
+                    Owner Dashboard
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="p-4 bg-white rounded-xl border border-[#2C2421]/15 shadow-sm">
+                    <div className="text-xs text-[#2C2421]/60 font-medium">Total Garage Bookings</div>
+                    <div className="text-2xl font-bold text-[#2C2421] font-mono mt-1">142</div>
+                  </div>
+                  <div className="p-4 bg-white rounded-xl border border-[#2C2421]/15 shadow-sm">
+                    <div className="text-xs text-[#2C2421]/60 font-medium">Average Turnaround</div>
+                    <div className="text-2xl font-bold text-[#111827] font-mono mt-1">3.2 Hours</div>
+                  </div>
+                  <div className="p-4 bg-white rounded-xl border border-[#2C2421]/15 shadow-sm">
+                    <div className="text-xs text-[#2C2421]/60 font-medium">QC Pass Rate</div>
+                    <div className="text-2xl font-bold text-[#111827] font-mono mt-1">94.8%</div>
+                  </div>
+                </div>
+
+                <div className="p-4 bg-white rounded-xl border border-[#2C2421]/15 shadow-sm flex items-center justify-between text-xs">
+                  <span className="text-[#2C2421]/70 font-medium">Owners can configure services, manage shop team accounts, and monitor multi-branch performance.</span>
+                  <button
+                    onClick={onOpenDemo}
+                    className="px-4 py-2 bg-[#111827] hover:bg-[#0F172A] text-white font-bold rounded-xl shadow-sm"
+                  >
+                    Open Owner Dashboard
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
     </section>
   );
