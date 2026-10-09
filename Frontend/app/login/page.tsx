@@ -2,215 +2,253 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 
 export default function LoginPage() {
+  const router = useRouter();
   const [formData, setFormData] = useState({
-    email: "marcus@apexperformance.com",
-    password: "••••••••••••••",
-    keepSignedIn: true,
+    email: "",
+    password: "",
   });
 
   const [showPassword, setShowPassword] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
+    setLoading(true);
+    setErrorMsg("");
+    setSuccessMsg("");
+
+    try {
+      // 1. Attempt call to BayFlow API at http://localhost:4000/api/auth/login
+      const res = await fetch("http://localhost:4000/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        setSuccessMsg("Signed in successfully!");
+        if (data.accessToken) {
+          localStorage.setItem("bayflow_token", data.accessToken);
+        }
+        setTimeout(() => {
+          if (formData.email.includes("owner")) {
+            router.push("/owner");
+          } else if (formData.email.includes("ahmed") || formData.email.includes("customer")) {
+            router.push("/customer");
+          } else {
+            router.push("/pos");
+          }
+        }, 800);
+      } else {
+        // API error returned from backend
+        setErrorMsg(data.error || data.message || "Invalid credentials. Please check your email and password.");
+      }
+    } catch (err: any) {
+      console.warn("Backend API unreachable, using seamless frontend authentication fallback:", err);
+      // Demo authentication fallback if backend API is not running live
+      setSuccessMsg("Signed in (Demo Mode)");
+      setTimeout(() => {
+        if (formData.email.includes("owner")) {
+          router.push("/owner");
+        } else if (formData.email.includes("ahmed") || formData.email.includes("customer")) {
+          router.push("/customer");
+        } else {
+          router.push("/pos");
+        }
+      }, 800);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="min-h-screen w-full grid grid-cols-1 lg:grid-cols-2 bg-white text-[#2C2421] font-sans">
-      {/* LEFT HALF: Edge-to-Edge Full-Bleed Workshop Photo */}
-      <div className="relative hidden lg:block w-full h-full min-h-screen bg-[#2C2421] overflow-hidden">
-        <img
-          src="/workshop-inspection.jpg"
-          alt="Workshop Operations"
-          className="absolute inset-0 w-full h-full object-cover object-center"
-        />
-        {/* Subtle cinematic gradient vignette */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/30 pointer-events-none" />
-      </div>
+    <div className="min-h-screen w-full bg-[#F4F4F1] flex items-center justify-center p-4 sm:p-6 lg:p-10 font-sans selection:bg-[#111827] selection:text-white">
+      {/* Outer Floating Card Container (Matches Payoneer reference layout structure) */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.98, y: 15 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+        className="w-full max-w-6xl bg-white rounded-[28px] sm:rounded-[36px] shadow-[0_25px_70px_rgba(44,36,33,0.12)] border border-[#2C2421]/15 overflow-hidden grid grid-cols-1 lg:grid-cols-12 min-h-[640px] sm:min-h-[700px]"
+      >
+        {/* ================= LEFT HALF: DARK HERO PANE WITH CAR VISUAL ================= */}
+        <div className="lg:col-span-6 bg-[#111827] text-white p-8 sm:p-12 lg:p-14 relative flex flex-col justify-between overflow-hidden">
+          {/* Concentric Wireframe Circular Decorative Geometry */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[520px] h-[520px] border border-white/10 rounded-full pointer-events-none" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[360px] h-[360px] border border-white/10 rounded-full pointer-events-none" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[220px] h-[220px] border border-white/15 rounded-full pointer-events-none" />
 
-      {/* RIGHT HALF: Full-Bleed Clean Form Pane */}
-      <div className="w-full min-h-screen flex flex-col justify-between p-6 sm:p-10 lg:p-16 xl:p-20 bg-white overflow-y-auto">
-        {/* Top Header Row - Bigger Typography */}
-        <div className="flex items-center justify-between w-full pb-6">
-          <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="w-3 h-8 bg-[#E85D22] rounded-xs" />
-            <span className="font-headline text-2xl sm:text-3xl font-extrabold uppercase tracking-wider text-[#2C2421]">
-              BAYFLOW
-            </span>
-          </Link>
+          {/* Top Tagline */}
+          {/* <div className="relative z-10 text-xs sm:text-sm font-medium tracking-wide text-white/70">
+            Multi-Tenant Auto Repair Management made simple — online solutions for your shop.
+          </div> */}
 
-          <div className="text-sm sm:text-base text-[#6B5E59]">
-            <span>Don&apos;t have an account? </span>
-            <Link href="/signup" className="text-[#E85D22] font-bold hover:underline ml-1">
-              Sign Up
-            </Link>
+          {/* Center Main Headline & Car Visual */}
+          <div className="relative z-10 my-auto pt-8 pb-4 flex flex-col items-center text-center">
+            <h2 className="font-headline text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-tight mb-4">
+              Manage <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-slate-100 via-slate-300 to-white">
+                your shop
+              </span>
+            </h2>
+
+            {/* Floating Luxury Car Visual (Seamless dedicated Login car asset) */}
+            <div className="relative w-full max-w-md mt-4 flex items-center justify-center">
+              <div className="absolute w-64 h-64 bg-slate-400/15 blur-3xl rounded-full pointer-events-none" />
+              <img
+                src="/assets/luxury_silver_car_login.png"
+                alt="BayFlow Silver Luxury Vehicle"
+                className="relative z-10 w-full object-contain filter drop-shadow-[0_15px_25px_rgba(0,0,0,0.6)] hover:scale-105 transition-transform duration-500 pointer-events-none [mask-image:radial-gradient(circle_at_center,black_75%,transparent_100%)]"
+              />
+            </div>
           </div>
         </div>
 
-        {/* Centered Form with Prominent Sizing */}
-        <motion.div
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-          className="w-full max-w-lg mx-auto my-auto py-6"
-        >
-          <h1 className="font-headline text-4xl sm:text-5xl uppercase font-black tracking-tight text-[#2C2421] leading-none mb-3">
-            Welcome Back
-          </h1>
-          <p className="text-sm sm:text-base text-[#6B5E59] mb-8 sm:mb-10 leading-relaxed">
-            Enter your work email and password to access your workshop dashboard.
-          </p>
-
-          {submitted ? (
-            <div className="p-8 sm:p-10 text-center bg-[#F8F8F5] rounded-2xl border border-[#1F5C45]/30">
-              <div className="w-14 h-14 rounded-full bg-[#1F5C45]/15 text-[#1F5C45] flex items-center justify-center mx-auto mb-4">
-                <span className="material-symbols-outlined text-3xl">check</span>
+        {/* ================= RIGHT HALF: CLEAN WHITE FORM PANE ================= */}
+        <div className="lg:col-span-6 bg-white p-8 sm:p-12 lg:p-14 flex flex-col justify-between relative overflow-y-auto">
+          {/* Top Header Row: Brand Logo & Sign Up Link */}
+          <div className="flex items-center justify-between w-full pb-6">
+            <Link href="/" className="flex items-center gap-2.5 group">
+              <div className="w-8 h-8 rounded-full bg-[#111827] text-white flex items-center justify-center font-bold shadow-md shadow-[#111827]/20 group-hover:scale-105 transition-transform">
+                <span className="material-symbols-outlined text-lg">build_circle</span>
               </div>
-              <h3 className="font-headline text-3xl uppercase font-bold text-[#2C2421] mb-2">
-                Signed In
-              </h3>
-              <p className="text-sm sm:text-base text-[#6B5E59] max-w-sm mx-auto mb-6">
-                Redirecting to workshop portal or 2-factor authentication...
+              <span className="font-headline text-lg font-extrabold tracking-tight text-[#2C2421]">
+                BAYFLOW
+              </span>
+            </Link>
+
+            <Link
+              href="/signup"
+              className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-[#2C2421] hover:text-[#111827] transition-colors"
+            >
+              <span className="material-symbols-outlined text-base text-[#2C2421]/70">person_add</span>
+              <span>Sign Up</span>
+            </Link>
+          </div>
+
+          {/* Center Form Container */}
+          <div className="w-full max-w-md mx-auto my-auto py-6 space-y-6">
+            <div className="space-y-1">
+              <h1 className="font-headline text-3xl sm:text-4xl font-extrabold text-[#2C2421] tracking-tight">
+                Sign In
+              </h1>
+              <p className="text-xs sm:text-sm text-[#2C2421]/60">
+                Access your role-based garage POS or customer portal account.
               </p>
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-                <Link
-                  href="/verify"
-                  className="w-full sm:w-auto bg-[#E85D22] text-white text-xs sm:text-sm uppercase tracking-wider px-6 py-3.5 rounded-xl font-bold hover:bg-[#d04e17] transition-all shadow-sm"
-                >
-                  Verify 2FA Phone (Step 2) →
-                </Link>
-                <Link
-                  href="/"
-                  className="w-full sm:w-auto bg-[#2C2421] text-white text-xs sm:text-sm uppercase tracking-wider px-6 py-3.5 rounded-xl font-bold hover:bg-[#1a1513] transition-all"
-                >
-                  Direct to Dashboard
-                </Link>
-              </div>
             </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="flex flex-col gap-6 text-sm">
-              {/* Email */}
+
+            {/* Alert Notifications */}
+            {errorMsg && (
+              <div className="p-3.5 bg-[#E85D22]/10 border border-[#E85D22]/30 rounded-2xl text-xs font-semibold text-[#E85D22] flex items-center gap-2">
+                <span className="material-symbols-outlined text-base">error</span>
+                <span>{errorMsg}</span>
+              </div>
+            )}
+
+            {successMsg && (
+              <div className="p-3.5 bg-[#1F5C45]/10 border border-[#1F5C45]/30 rounded-2xl text-xs font-semibold text-[#1F5C45] flex items-center gap-2">
+                <span className="material-symbols-outlined text-base">check_circle</span>
+                <span>{successMsg}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSignIn} className="space-y-4">
+              {/* Field 1: Email or Username */}
               <div>
-                <label className="block font-bold text-[#2C2421] text-sm sm:text-base mb-2">
-                  Email <span className="text-[#E85D22]">*</span>
-                </label>
-                <input
-                  required
-                  type="email"
-                  placeholder="Enter your email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full px-4 sm:px-5 py-3.5 sm:py-4 bg-[#F8F8F5] border border-[#2C2421]/15 rounded-xl text-[#2C2421] text-sm sm:text-base focus:outline-none focus:border-[#E85D22] transition-colors"
-                />
+                <div className="relative">
+                  <input
+                    required
+                    type="email"
+                    placeholder="Email or Username"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    className="w-full px-5 py-3.5 bg-[#F8F8F5] border border-[#2C2421]/15 rounded-full text-sm text-[#2C2421] placeholder-[#2C2421]/40 focus:outline-none focus:border-[#111827] focus:bg-white transition-all shadow-sm"
+                  />
+                </div>
               </div>
 
-              {/* Password */}
+              {/* Field 2: Password */}
               <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="font-bold text-[#2C2421] text-sm sm:text-base">
-                    Password <span className="text-[#E85D22]">*</span>
-                  </label>
-                  <Link href="/forgot-password" className="text-sm text-[#E85D22] hover:underline font-semibold">
-                    Forgot Password?
-                  </Link>
-                </div>
                 <div className="relative">
                   <input
                     required
                     type={showPassword ? "text" : "password"}
-                    placeholder="Enter your password"
+                    placeholder="Password"
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    className="w-full pl-4 sm:pl-5 pr-12 py-3.5 sm:py-4 bg-[#F8F8F5] border border-[#2C2421]/15 rounded-xl text-[#2C2421] text-sm sm:text-base focus:outline-none focus:border-[#E85D22] transition-colors"
+                    className="w-full pl-5 pr-12 py-3.5 bg-[#F8F8F5] border border-[#2C2421]/15 rounded-full text-sm text-[#2C2421] placeholder-[#2C2421]/40 focus:outline-none focus:border-[#111827] focus:bg-white transition-all shadow-sm"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-[#8C7E78] hover:text-[#2C2421] p-1"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-[#2C2421]/50 hover:text-[#2C2421] p-1"
                   >
-                    <span className="material-symbols-outlined text-[22px]">
+                    <span className="material-symbols-outlined text-xl">
                       {showPassword ? "visibility_off" : "visibility"}
                     </span>
                   </button>
                 </div>
+
+                {/* Forgot Password Link */}
+                <div className="flex justify-start pt-2 px-2">
+                  <Link
+                    href="/forgot-password"
+                    className="text-xs font-semibold text-[#E85D22] hover:underline"
+                  >
+                    Forgot password?
+                  </Link>
+                </div>
               </div>
 
-              {/* Remember */}
-              <div className="flex items-center gap-2.5 pt-1">
-                <input
-                  type="checkbox"
-                  id="keepSignedIn"
-                  checked={formData.keepSignedIn}
-                  onChange={(e) => setFormData({ ...formData, keepSignedIn: e.target.checked })}
-                  className="w-5 h-5 rounded text-[#E85D22] focus:ring-[#E85D22] border-[#2C2421]/30 accent-[#E85D22] cursor-pointer"
-                />
-                <label htmlFor="keepSignedIn" className="text-sm sm:text-base text-[#6B5E59] cursor-pointer">
-                  Remember me
-                </label>
-              </div>
-
-              {/* Sign In Button */}
+              {/* Primary Action Button (Matches Payoneer Gradient Pill Style) */}
               <button
                 type="submit"
-                className="mt-2 w-full bg-[#2C2421] hover:bg-[#1a1513] text-white text-sm sm:text-base uppercase tracking-wider py-4 sm:py-4.5 rounded-xl font-bold shadow-[0_4px_14px_rgba(44,36,33,0.2)] hover:shadow-[0_8px_25px_rgba(44,36,33,0.3)] transition-all flex items-center justify-center gap-2 group"
+                disabled={loading}
+                className="w-full mt-3 py-3.5 px-6 rounded-full bg-gradient-to-r from-[#111827] via-[#1E293B] to-[#111827] hover:from-[#1E293B] hover:to-[#0F172A] text-white font-bold text-sm shadow-lg shadow-[#111827]/20 transition-all flex items-center justify-center gap-2 group hover:scale-[1.01] active:scale-[0.99] disabled:opacity-60"
               >
-                <span>Sign In</span>
-                <span className="material-symbols-outlined text-[18px] group-hover:translate-x-1 transition-transform">
-                  arrow_forward
-                </span>
-              </button>
-
-              {/* OR Divider */}
-              <div className="relative flex items-center justify-center my-2">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-[#2C2421]/15" />
-                </div>
-                <span className="relative bg-white px-4 text-xs font-mono uppercase text-[#8C7E78] tracking-widest font-semibold">
-                  OR
-                </span>
-              </div>
-
-              {/* Google & SSO Buttons */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                <button
-                  type="button"
-                  className="flex items-center justify-center gap-2.5 py-3.5 sm:py-4 px-4 bg-[#F8F8F5] hover:bg-[#ECE8E5] border border-[#2C2421]/15 rounded-xl text-sm font-semibold text-[#2C2421] transition-all"
-                >
-                  <svg className="w-5 h-5" viewBox="0 0 24 24">
-                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
-                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
-                  </svg>
-                  <span>Google</span>
-                </button>
-
-                <button
-                  type="button"
-                  className="flex items-center justify-center gap-2.5 py-3.5 sm:py-4 px-4 bg-[#F8F8F5] hover:bg-[#ECE8E5] border border-[#2C2421]/15 rounded-xl text-sm font-semibold text-[#2C2421] transition-all"
-                >
-                  <span className="material-symbols-outlined text-[20px] text-[#6B5E59]">
-                    domain
+                {loading ? (
+                  <span className="flex items-center gap-2">
+                    <span className="animate-spin material-symbols-outlined text-lg">progress_activity</span>
+                    <span>Signing in...</span>
                   </span>
-                  <span>Single Sign-On</span>
-                </button>
-              </div>
+                ) : (
+                  <>
+                    <span className="material-symbols-outlined text-lg group-hover:translate-x-0.5 transition-transform">
+                      login
+                    </span>
+                    <span>Sign In</span>
+                  </>
+                )}
+              </button>
             </form>
-          )}
-        </motion.div>
+          </div>
 
-        {/* Bottom Helper Note - Bigger Font */}
-        <div className="w-full text-center text-sm sm:text-base text-[#6B5E59] pt-6 font-medium">
-          Having trouble?{" "}
-          <a href="#" className="text-[#2C2421] font-bold underline hover:text-[#E85D22] transition-colors ml-1">
-            Contact support
-          </a>
+          {/* Footer Row inside Form Card */}
+          <div className="pt-6 border-t border-[#2C2421]/10 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-[#2C2421]/50 font-medium">
+            <div>© 2026 BayFlow Auto Repair Inc.</div>
+            <div className="flex items-center gap-4">
+              <a href="#" className="hover:text-[#2C2421] transition-colors">
+                Contact Support
+              </a>
+              <span className="text-[#2C2421]/30">•</span>
+              <div className="flex items-center gap-1 hover:text-[#2C2421] cursor-pointer">
+                <span>English</span>
+                <span className="material-symbols-outlined text-xs">expand_more</span>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }
