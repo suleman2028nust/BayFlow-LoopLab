@@ -67,3 +67,7 @@ bayflow_enterprise_plan.md
 *architecture*.md
 docs/private/
 
+Backend/.wwebjs_auth/
+Backend/.wwebjs_cache/
+Backend/.wwebjs_auth/
+Backend/.wwebjs_cache/

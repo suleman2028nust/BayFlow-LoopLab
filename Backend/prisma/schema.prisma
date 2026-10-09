@@ -1,0 +1,193 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CUSTOMER
+  OWNER
+  SERVICE_ADVISOR
+  TECHNICIAN
+  PARTS_PERSON
+  QC_INSPECTOR
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  ASSIGNED
+  INSPECTING
+  ESTIMATE_REVIEW
+  AWAITING_CUSTOMER
+  ESTIMATE_APPROVED
+  ESTIMATE_REJECTED
+  PARTS_PENDING
+  PARTS_ORDERED
+  PARTS_READY
+  IN_REPAIR
+  QC_PENDING
+  QC_IN_PROGRESS
+  READY_FOR_PICKUP
+  COMPLETED
+  CANCELLED
+}
+
+model Shop {
+  id          String      @id @default(uuid())
+  name        String
+  address     String?
+  city        String?
+  phone       String?
+  timezone    String      @default("Asia/Karachi")
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  
+  users          User[]
+  bookings       Booking[]
+  inventory      Inventory[]
+  purchaseOrders PurchaseOrder[]
+}
+
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  phoneNumber  String?
+  passwordHash String
+  role         Role      @default(CUSTOMER)
+  isVerified   Boolean   @default(false)
+  
+  shopId       String?
+  shop         Shop?     @relation(fields: [shopId], references: [id])
+  
+  bookings     Booking[] @relation("CustomerBookings")
+  assignedJobs Booking[] @relation("AssignedTech")
+  
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model Booking {
+  id              String        @id @default(uuid())
+  
+  shopId          String
+  shop            Shop          @relation(fields: [shopId], references: [id])
+  
+  customerId      String
+  customer        User          @relation("CustomerBookings", fields: [customerId], references: [id])
+  
+  assignedTechId  String?
+  technician      User?         @relation("AssignedTech", fields: [assignedTechId], references: [id])
+  
+  status          BookingStatus @default(PENDING)
+  slotTime        DateTime
+  
+  vehicleDetails  Json          // Store exactly: { make, model, year, plate }
+  issuesReported  String[]      
+  
+  estimateTotal   Float?
+  estimate        Estimate?
+  
+  history         BookingHistory[]
+  partsAllocated  BookingPart[]
+  qcIssues        QCIssue[]
+  
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  
+  // Database level constraint to prevent double bookings (Backup to Redis lock)
+  @@unique([shopId, slotTime])
+}
+
+model BookingHistory {
+  id         String        @id @default(uuid())
+  bookingId  String
+  booking    Booking       @relation(fields: [bookingId], references: [id])
+  fromStatus BookingStatus
+  toStatus   BookingStatus
+  userId     String        // ID of the user who made the status change
+  notes      String?
+  timestamp  DateTime      @default(now())
+}
+
+model Inventory {
+  id           String        @id @default(uuid())
+  shopId       String
+  shop         Shop          @relation(fields: [shopId], references: [id])
+  sku          String
+  name         String
+  quantity     Int           @default(0)
+  reorderLevel Int           @default(5)
+  unitPrice    Float
+  
+  bookingParts       BookingPart[]
+  purchaseOrderItems PurchaseOrderItem[]
+}
+
+model BookingPart {
+  id          String    @id @default(uuid())
+  bookingId   String
+  booking     Booking   @relation(fields: [bookingId], references: [id])
+  inventoryId String
+  inventory   Inventory @relation(fields: [inventoryId], references: [id])
+  quantity    Int
+  priceLocked Float     // Locks the part price at the time of the estimate to avoid disputes
+}
+
+enum EstimateStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Estimate {
+  id          String         @id @default(uuid())
+  bookingId   String         @unique
+  booking     Booking        @relation(fields: [bookingId], references: [id])
+  labourCost  Float
+  partsCost   Float
+  totalCost   Float
+  status      EstimateStatus @default(PENDING)
+  notes       String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+}
+
+enum POStatus {
+  ORDERED
+  PARTIALLY_RECEIVED
+  RECEIVED
+}
+
+model PurchaseOrder {
+  id        String              @id @default(uuid())
+  shopId    String
+  shop      Shop                @relation(fields: [shopId], references: [id])
+  status    POStatus            @default(ORDERED)
+  items     PurchaseOrderItem[]
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+}
+
+model PurchaseOrderItem {
+  id              String        @id @default(uuid())
+  purchaseOrderId String
+  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id])
+  inventoryId     String
+  inventory       Inventory     @relation(fields: [inventoryId], references: [id])
+  quantity        Int
+  receivedQty     Int           @default(0)
+}
+
+model QCIssue {
+  id          String   @id @default(uuid())
+  bookingId   String
+  booking     Booking  @relation(fields: [bookingId], references: [id])
+  description String
+  resolved    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

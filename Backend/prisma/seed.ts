@@ -1,0 +1,121 @@
+import { PrismaClient, Role } from '@prisma/client';
+import bcrypt from 'bcrypt';
+
+const prisma = new PrismaClient();
+
+async function main() {
+  console.log('🌱 Starting database seed...');
+
+  // Password for all demo accounts
+  const passwordHash = await bcrypt.hash('demo1234', 12);
+
+  // 1. Create a Shop
+  const shop = await prisma.shop.create({
+    data: {
+      name: 'Lahore Auto Care',
+      city: 'Lahore',
+      address: 'Main Boulevard, Gulberg',
+      phone: '03001234567'
+    }
+  });
+
+  console.log(`✅ Shop created: ${shop.name}`);
+
+  // 2. Create Staff Accounts
+  const owner = await prisma.user.upsert({
+    where: { email: 'fatima@bayflow.demo' },
+    update: {},
+    create: {
+      email: 'fatima@bayflow.demo',
+      passwordHash,
+      role: Role.OWNER,
+      shopId: shop.id,
+      isVerified: true
+    }
+  });
+
+  const sa = await prisma.user.upsert({
+    where: { email: 'bilal.sa@bayflow.demo' },
+    update: {},
+    create: {
+      email: 'bilal.sa@bayflow.demo',
+      passwordHash,
+      role: Role.SERVICE_ADVISOR,
+      shopId: shop.id,
+      isVerified: true
+    }
+  });
+
+  const tech = await prisma.user.upsert({
+    where: { email: 'imran.tech@bayflow.demo' },
+    update: {},
+    create: {
+      email: 'imran.tech@bayflow.demo',
+      passwordHash,
+      role: Role.TECHNICIAN,
+      shopId: shop.id,
+      isVerified: true
+    }
+  });
+
+  const qc = await prisma.user.upsert({
+    where: { email: 'sara.qc@bayflow.demo' },
+    update: {},
+    create: {
+      email: 'sara.qc@bayflow.demo',
+      passwordHash,
+      role: Role.QC_INSPECTOR,
+      shopId: shop.id,
+      isVerified: true
+    }
+  });
+
+  const parts = await prisma.user.upsert({
+    where: { email: 'usman.parts@bayflow.demo' },
+    update: {},
+    create: {
+      email: 'usman.parts@bayflow.demo',
+      passwordHash,
+      role: Role.PARTS_PERSON,
+      shopId: shop.id,
+      isVerified: true
+    }
+  });
+
+  console.log('✅ Staff accounts created.');
+
+  // 3. Create a Customer Account
+  const customer = await prisma.user.upsert({
+    where: { email: 'ahmed.customer@bayflow.demo' },
+    update: {},
+    create: {
+      email: 'ahmed.customer@bayflow.demo',
+      passwordHash,
+      role: Role.CUSTOMER,
+      isVerified: true
+    }
+  });
+
+  console.log('✅ Customer account created.');
+
+  // 4. Create Inventory items
+  await prisma.inventory.createMany({
+    data: [
+      { shopId: shop.id, sku: 'PART-001', name: 'Ignition Coil', quantity: 5, unitPrice: 6500 },
+      { shopId: shop.id, sku: 'PART-002', name: 'Oil Filter (Honda)', quantity: 12, unitPrice: 900 },
+      { shopId: shop.id, sku: 'PART-003', name: 'Engine Oil 4L', quantity: 20, unitPrice: 5200 },
+    ]
+  });
+
+  console.log('✅ Inventory items seeded.');
+  console.log('🎉 Seeding complete. All accounts use password: "demo1234"');
+}
+
+main()
+  .catch((e) => {
+    console.error(e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });
