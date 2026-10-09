@@ -9,17 +9,18 @@ async function main() {
   // Password for all demo accounts
   const passwordHash = await bcrypt.hash('demo1234', 12);
 
-  // 1. Create a Shop
-  const shop = await prisma.shop.create({
-    data: {
-      name: 'Lahore Auto Care',
-      city: 'Lahore',
-      address: 'Main Boulevard, Gulberg',
-      phone: '03001234567'
-    }
+  // 1. Create Shops
+  const shop1 = await prisma.shop.create({
+    data: { name: 'Lahore Auto Care', city: 'Lahore', address: 'Main Boulevard, Gulberg', phone: '03001234567' }
+  });
+  const shop2 = await prisma.shop.create({
+    data: { name: 'Karachi Motors', city: 'Karachi', address: 'Clifton Block 5', phone: '03009876543' }
+  });
+  const shop3 = await prisma.shop.create({
+    data: { name: 'Islamabad Mechanics', city: 'Islamabad', address: 'F-8 Markaz', phone: '03001122334' }
   });
 
-  console.log(`✅ Shop created: ${shop.name}`);
+  console.log(`✅ Shops created: ${shop1.name}, ${shop2.name}, ${shop3.name}`);
 
   // 2. Create Staff Accounts
   const owner = await prisma.user.upsert({
@@ -29,7 +30,7 @@ async function main() {
       email: 'fatima@bayflow.demo',
       passwordHash,
       role: Role.OWNER,
-      shopId: shop.id,
+      shopId: shop1.id,
       isVerified: true
     }
   });
@@ -41,7 +42,7 @@ async function main() {
       email: 'bilal.sa@bayflow.demo',
       passwordHash,
       role: Role.SERVICE_ADVISOR,
-      shopId: shop.id,
+      shopId: shop1.id,
       isVerified: true
     }
   });
@@ -53,7 +54,7 @@ async function main() {
       email: 'imran.tech@bayflow.demo',
       passwordHash,
       role: Role.TECHNICIAN,
-      shopId: shop.id,
+      shopId: shop1.id,
       isVerified: true
     }
   });
@@ -65,7 +66,7 @@ async function main() {
       email: 'sara.qc@bayflow.demo',
       passwordHash,
       role: Role.QC_INSPECTOR,
-      shopId: shop.id,
+      shopId: shop1.id,
       isVerified: true
     }
   });
@@ -77,7 +78,7 @@ async function main() {
       email: 'usman.parts@bayflow.demo',
       passwordHash,
       role: Role.PARTS_PERSON,
-      shopId: shop.id,
+      shopId: shop1.id,
       isVerified: true
     }
   });
@@ -98,12 +99,12 @@ async function main() {
 
   console.log('✅ Customer account created.');
 
-  // 4. Create Inventory items
+  // 4. Create Inventory items for Shop 1
   await prisma.inventory.createMany({
     data: [
-      { shopId: shop.id, sku: 'PART-001', name: 'Ignition Coil', quantity: 5, unitPrice: 6500 },
-      { shopId: shop.id, sku: 'PART-002', name: 'Oil Filter (Honda)', quantity: 12, unitPrice: 900 },
-      { shopId: shop.id, sku: 'PART-003', name: 'Engine Oil 4L', quantity: 20, unitPrice: 5200 },
+      { shopId: shop1.id, sku: 'PART-001', name: 'Ignition Coil', quantity: 5, unitPrice: 6500 },
+      { shopId: shop1.id, sku: 'PART-002', name: 'Oil Filter (Honda)', quantity: 12, unitPrice: 900 },
+      { shopId: shop1.id, sku: 'PART-003', name: 'Engine Oil 4L', quantity: 20, unitPrice: 5200 },
     ]
   });
 
