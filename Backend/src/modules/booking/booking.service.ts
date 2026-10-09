@@ -1,6 +1,7 @@
 import { prisma } from '../../config/prisma';
 import { redis } from '../../config/redis';
 import { WhatsAppService } from '../whatsapp/whatsapp.service';
+import { sendEmail } from '../../config/brevo';
 
 // The Strict State Machine Rules
 export const BOOKING_MACHINE: any = {
@@ -115,20 +116,51 @@ export const BookingService = {
         }
       });
 
-      // Send WhatsApp Notification in background (non-blocking)
-      if (updatedBooking.customer.phoneNumber) {
-        let msg = '';
-        switch(newStatus) {
-          case 'CONFIRMED': msg = `BayFlow: Your booking for ${(updatedBooking.vehicleDetails as any)?.make || 'your car'} is Confirmed! ✅`; break;
-          case 'INSPECTING': msg = `BayFlow: Our technician is currently inspecting your car. 🔍`; break;
-          case 'ESTIMATE_REVIEW': msg = `BayFlow: The inspection is complete. An estimate has been generated for your review. 📝`; break;
-          case 'IN_REPAIR': msg = `BayFlow: Good news! The repair work has officially started on your car. 🔧`; break;
-          case 'READY_FOR_PICKUP': msg = `BayFlow: Great news! Your car is Ready for Pickup! 🚗✨`; break;
-        }
-        
-        if (msg) {
-          // Fire and forget
+      // Notifications (WhatsApp + Email) in background
+      let msg = '';
+      let subject = 'BayFlow Booking Update';
+      const carName = (updatedBooking.vehicleDetails as any)?.make || 'your car';
+
+      switch(newStatus) {
+        case 'CONFIRMED': 
+          msg = `🚗 BayFlow: Your booking request for ${carName} has been Accepted! We are waiting for you.`; 
+          break;
+        case 'ASSIGNED':
+          msg = `🔧 BayFlow: A technician has been assigned to ${carName}.`;
+          break;
+        case 'INSPECTING': 
+          msg = `🔍 BayFlow: Our technician is currently inspecting ${carName}. We will share the estimate shortly.`; 
+          break;
+        case 'AWAITING_CUSTOMER': 
+        case 'ESTIMATE_REVIEW': 
+          msg = `📝 BayFlow: The inspection is complete! The estimated bill is PKR ${updatedBooking.estimateTotal || '...'} Please check your portal to approve it.`; 
+          subject = 'Action Required: Repair Estimate Ready';
+          break;
+        case 'ESTIMATE_APPROVED':
+          msg = `✅ BayFlow: Thank you! Estimate approved. We are arranging the parts.`;
+          break;
+        case 'IN_REPAIR': 
+          msg = `⚙️ BayFlow: Good news! The repair work has officially started on ${carName}.`; 
+          break;
+        case 'QC_PENDING':
+        case 'QC_IN_PROGRESS':
+          msg = `🕵️‍♂️ BayFlow: The repair is done! Our inspector is now performing a final Quality Check (QC).`;
+          break;
+        case 'READY_FOR_PICKUP': 
+          msg = `🎉 BayFlow: Great news! ${carName} is 100% Ready for Pickup!`; 
+          subject = 'Your Car is Ready!';
+          break;
+        case 'COMPLETED':
+          msg = `🤝 BayFlow: Thank you for choosing us! Have a safe drive.`;
+          break;
+      }
+      
+      if (msg) {
+        if (updatedBooking.customer.phoneNumber) {
           WhatsAppService.sendMessage(updatedBooking.customer.phoneNumber, msg).catch(console.error);
+        }
+        if (updatedBooking.customer.email) {
+          sendEmail(updatedBooking.customer.email, subject, msg).catch(console.error);
         }
       }
 
