@@ -101,12 +101,20 @@ export default function SignupPage() {
               <p className="text-sm sm:text-base text-[#6B5E59] max-w-md mx-auto mb-6">
                 Check your inbox at <strong>{formData.email}</strong> to verify your account and get started.
               </p>
-              <Link
-                href="/"
-                className="inline-block bg-[#2C2421] text-white text-sm uppercase tracking-widest px-8 py-3.5 rounded-xl font-bold"
-              >
-                Return to Home
-              </Link>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                <Link
+                  href="/verify"
+                  className="w-full sm:w-auto bg-[#E85D22] text-white text-xs sm:text-sm uppercase tracking-wider px-6 py-3.5 rounded-xl font-bold hover:bg-[#d04e17] transition-all shadow-sm"
+                >
+                  Verify Phone Number (Step 2) →
+                </Link>
+                <Link
+                  href="/login"
+                  className="w-full sm:w-auto bg-[#2C2421] text-white text-xs sm:text-sm uppercase tracking-wider px-6 py-3.5 rounded-xl font-bold hover:bg-[#1a1513] transition-all"
+                >
+                  Go to Sign In
+                </Link>
+              </div>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="flex flex-col gap-5 text-sm">

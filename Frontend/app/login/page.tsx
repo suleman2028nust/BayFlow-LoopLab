@@ -74,14 +74,22 @@ export default function LoginPage() {
                 Signed In
               </h3>
               <p className="text-sm sm:text-base text-[#6B5E59] max-w-sm mx-auto mb-6">
-                Redirecting to your active telemetry deck...
+                Redirecting to workshop portal or 2-factor authentication...
               </p>
-              <Link
-                href="/"
-                className="inline-block bg-[#2C2421] text-white text-sm uppercase tracking-widest px-8 py-3.5 rounded-xl font-bold"
-              >
-                Go to Dashboard
-              </Link>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                <Link
+                  href="/verify"
+                  className="w-full sm:w-auto bg-[#E85D22] text-white text-xs sm:text-sm uppercase tracking-wider px-6 py-3.5 rounded-xl font-bold hover:bg-[#d04e17] transition-all shadow-sm"
+                >
+                  Verify 2FA Phone (Step 2) →
+                </Link>
+                <Link
+                  href="/"
+                  className="w-full sm:w-auto bg-[#2C2421] text-white text-xs sm:text-sm uppercase tracking-wider px-6 py-3.5 rounded-xl font-bold hover:bg-[#1a1513] transition-all"
+                >
+                  Direct to Dashboard
+                </Link>
+              </div>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="flex flex-col gap-6 text-sm">
@@ -106,9 +114,9 @@ export default function LoginPage() {
                   <label className="font-bold text-[#2C2421] text-sm sm:text-base">
                     Password <span className="text-[#E85D22]">*</span>
                   </label>
-                  <a href="#" className="text-sm text-[#E85D22] hover:underline font-semibold">
+                  <Link href="/forgot-password" className="text-sm text-[#E85D22] hover:underline font-semibold">
                     Forgot Password?
-                  </a>
+                  </Link>
                 </div>
                 <div className="relative">
                   <input
