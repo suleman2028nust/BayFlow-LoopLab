@@ -89,6 +89,53 @@ const options: swaggerJsdoc.Options = {
           responses: { 200: { description: 'Logged in successfully' } }
         }
       },
+      '/api/auth/logout': {
+        post: {
+          tags: ['Authentication'],
+          summary: 'Logout user',
+          responses: { 200: { description: 'Logged out successfully' } }
+        }
+      },
+      '/api/auth/forgot-password': {
+        post: {
+          tags: ['Authentication'],
+          summary: 'Send OTP for password reset',
+          requestBody: {
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    email: { type: 'string' },
+                  }
+                }
+              }
+            }
+          },
+          responses: { 200: { description: 'OTP sent to email' } }
+        }
+      },
+      '/api/auth/reset-password': {
+        post: {
+          tags: ['Authentication'],
+          summary: 'Reset password using OTP',
+          requestBody: {
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    email: { type: 'string' },
+                    otp: { type: 'string' },
+                    newPassword: { type: 'string' }
+                  }
+                }
+              }
+            }
+          },
+          responses: { 200: { description: 'Password reset successfully' } }
+        }
+      },
       '/api/bookings': {
         post: {
           tags: ['Bookings'],
