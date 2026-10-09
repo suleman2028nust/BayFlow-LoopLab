@@ -84,7 +84,7 @@ export default function LoginPage() {
                   Verify 2FA Phone (Step 2) →
                 </Link>
                 <Link
-                  href="/"
+                  href="/dashboard"
                   className="w-full sm:w-auto bg-[#2C2421] text-white text-xs sm:text-sm uppercase tracking-wider px-6 py-3.5 rounded-xl font-bold hover:bg-[#1a1513] transition-all"
                 >
                   Direct to Dashboard
