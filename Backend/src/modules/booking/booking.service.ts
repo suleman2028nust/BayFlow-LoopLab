@@ -170,39 +170,37 @@ export const BookingService = {
 
   // 4. Technician adds an Estimate (Parts + Labour)
   async addEstimate(bookingId: string, data: { labourCost: number, partsCost: number, notes?: string }, user: { userId: string, role: string }) {
-    return prisma.$transaction(async (tx) => {
-      const totalCost = data.labourCost + data.partsCost;
-      
-      const estimate = await tx.estimate.upsert({
-        where: { bookingId },
-        create: {
-          bookingId,
-          labourCost: data.labourCost,
-          partsCost: data.partsCost,
-          totalCost: totalCost,
-          notes: data.notes,
-          status: 'PENDING'
-        },
-        update: {
-          labourCost: data.labourCost,
-          partsCost: data.partsCost,
-          totalCost: totalCost,
-          notes: data.notes,
-          status: 'PENDING'
-        }
-      });
-
-      // Update Booking total
-      await tx.booking.update({
-        where: { id: bookingId },
-        data: { estimateTotal: totalCost }
-      });
-
-      // Auto-transition to ESTIMATE_REVIEW
-      await this.updateStatus(bookingId, 'ESTIMATE_REVIEW', user, 'Estimate submitted');
-
-      return estimate;
+    const totalCost = data.labourCost + data.partsCost;
+    
+    const estimate = await prisma.estimate.upsert({
+      where: { bookingId },
+      create: {
+        bookingId,
+        labourCost: data.labourCost,
+        partsCost: data.partsCost,
+        totalCost: totalCost,
+        notes: data.notes,
+        status: 'PENDING'
+      },
+      update: {
+        labourCost: data.labourCost,
+        partsCost: data.partsCost,
+        totalCost: totalCost,
+        notes: data.notes,
+        status: 'PENDING'
+      }
     });
+
+    // Update Booking total
+    await prisma.booking.update({
+      where: { id: bookingId },
+      data: { estimateTotal: totalCost }
+    });
+
+    // Auto-transition to ESTIMATE_REVIEW
+    await this.updateStatus(bookingId, 'ESTIMATE_REVIEW', user, 'Estimate submitted');
+
+    return estimate;
   },
 
   // 5. Customer Approves or Rejects Estimate
@@ -210,32 +208,28 @@ export const BookingService = {
     const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
     if (!booking || booking.customerId !== customerId) throw new Error('Unauthorized');
 
-    return prisma.$transaction(async (tx) => {
-      await tx.estimate.update({
-        where: { bookingId },
-        data: { status }
-      });
-
-      const nextStatus = status === 'APPROVED' ? 'ESTIMATE_APPROVED' : 'ESTIMATE_REJECTED';
-      await this.updateStatus(bookingId, nextStatus, { userId: customerId, role: 'CUSTOMER' }, `Estimate ${status.toLowerCase()}`);
-      
-      return true;
+    await prisma.estimate.update({
+      where: { bookingId },
+      data: { status }
     });
+
+    const nextStatus = status === 'APPROVED' ? 'ESTIMATE_APPROVED' : 'ESTIMATE_REJECTED';
+    await this.updateStatus(bookingId, nextStatus, { userId: customerId, role: 'CUSTOMER' }, `Estimate ${status.toLowerCase()}`);
+    
+    return true;
   },
 
   // 6. QC Inspector logs an issue
   async addQCIssue(bookingId: string, description: string) {
-    return prisma.$transaction(async (tx) => {
-      const issue = await tx.qCIssue.create({
-        data: {
-          bookingId,
-          description
-        }
-      });
-
-      // Send car back to technician
-      await this.updateStatus(bookingId, 'IN_REPAIR', { userId: 'SYSTEM', role: 'QC_INSPECTOR' }, `QC Failed: ${description}`);
-      return issue;
+    const issue = await prisma.qCIssue.create({
+      data: {
+        bookingId,
+        description
+      }
     });
+
+    // Send car back to technician
+    await this.updateStatus(bookingId, 'IN_REPAIR', { userId: 'SYSTEM', role: 'QC_INSPECTOR' }, `QC Failed: ${description}`);
+    return issue;
   }
 };
