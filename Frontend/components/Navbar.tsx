@@ -3,7 +3,6 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, ArrowUpRight, ShieldCheck, Activity, ChevronDown } from "lucide-react";
 
 interface NavbarProps {
   onOpenDemo?: () => void;
@@ -13,109 +12,80 @@ export default function Navbar({ onOpenDemo }: NavbarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <header className="w-full bg-[#fbfbfb] border-b border-gray-200 sticky top-0 z-50">
-      {/* Top Telemetry Sub-header Strip */}
-      <div className="border-b border-gray-200/80 bg-[#f4f4f5] text-[11px] font-mono-tech uppercase text-gray-500 py-1.5 px-4 sm:px-8">
-        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-3">
-            <span className="inline-flex items-center gap-1.5 text-gray-800 font-medium">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              STATUS: ALL SYSTEMS OPERATIONAL
-            </span>
-            <span className="hidden sm:inline text-gray-300">|</span>
-            <span className="hidden sm:inline text-gray-500">OCTOBER RELEASE (V1.2.4)</span>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <span className="hidden md:inline text-gray-500">UPTIME 99.98% / 24/7/365 REAL-TIME</span>
-            <span className="hidden md:inline text-gray-300">|</span>
-            <span className="inline-flex items-center gap-1 font-medium text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200/60">
-              <Activity className="w-3 h-3" /> LATENCY: &lt;12ms
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Navigation Bar */}
-      <nav className="max-w-7xl mx-auto px-4 sm:px-8 py-3.5 flex items-center justify-between">
-        {/* Brand Logo */}
+    <header className="fixed top-0 left-0 w-full z-50 bg-white/90 backdrop-blur-xl border-b border-[#2C2421]/10 shadow-[0_4px_20px_rgba(44,36,33,0.04)]">
+      <div className="h-16 w-full px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto flex items-center justify-between">
+        {/* Logo */}
         <Link href="/" className="flex items-center gap-2 group">
-          <div className="w-7 h-7 bg-[#ff4d15] text-white flex items-center justify-center font-black text-sm rounded-sm transform group-hover:rotate-6 transition-transform">
-            <svg viewBox="0 0 24 24" className="w-4 h-4 fill-current">
-              <path d="M12 2L2 22h20L12 2zm0 4.8l6.3 12.6H5.7L12 6.8z" />
+          <div className="flex items-center justify-center text-[#E85D22] transition-transform duration-300 group-hover:scale-105">
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path d="M2 17C6 17 8 7 12 7C16 7 18 17 22 17" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+              <path d="M5 12C8 12 9.5 9 12 9C14.5 9 16 12 19 12" stroke="currentColor" strokeLinecap="round" strokeOpacity="0.6" strokeWidth="1.5" />
             </svg>
           </div>
-          <span className="font-display text-2xl font-bold tracking-tight text-gray-900">
+          <span className="font-headline text-xl font-bold uppercase tracking-wider text-[#2C2421]">
             BAYFLOW
           </span>
         </Link>
 
-        {/* Desktop Nav Links */}
-        <div className="hidden md:flex items-center gap-8 text-[13px] font-medium tracking-wide">
-          <Link
+        {/* Desktop Nav */}
+        <nav className="hidden md:flex items-center gap-6 lg:gap-8">
+          <a
             href="#platform"
-            className="text-[#ff4d15] font-semibold tracking-wider flex items-center gap-1 hover:text-[#e03e0a] transition-colors"
+            aria-current="page"
+            className="text-xs uppercase tracking-widest text-[#E85D22] font-bold hover:text-[#d04e17] transition-colors"
           >
-            PLATFORM
-          </Link>
-          <Link
+            Platform
+          </a>
+          <a
             href="#features"
-            className="text-gray-600 hover:text-gray-900 tracking-wider transition-colors"
+            className="text-xs uppercase tracking-widest text-[#6B5E59] hover:text-[#2C2421] transition-colors font-semibold"
           >
-            FEATURES
-          </Link>
-          <Link
-            href="#live-demos"
-            className="text-gray-600 hover:text-gray-900 tracking-wider transition-colors"
+            Features
+          </a>
+          <a
+            href="#how-it-works"
+            className="text-xs uppercase tracking-widest text-[#6B5E59] hover:text-[#2C2421] transition-colors font-semibold"
           >
-            LIVE DEMOS
-          </Link>
-          <Link
-            href="#docs"
-            className="text-gray-600 hover:text-gray-900 tracking-wider transition-colors"
+            How It Works
+          </a>
+          <a
+            href="#workshops"
+            className="text-xs uppercase tracking-widest text-[#6B5E59] hover:text-[#2C2421] transition-colors font-semibold"
           >
-            DOCUMENTATION
-          </Link>
-        </div>
+            For Workshops
+          </a>
+        </nav>
 
-        {/* Action Buttons */}
-        <div className="hidden md:flex items-center gap-4">
+        {/* Action Controls */}
+        <div className="flex items-center gap-3 sm:gap-4">
           <button
             onClick={onOpenDemo}
-            className="text-xs font-mono-tech tracking-wider text-gray-700 hover:text-gray-950 font-semibold px-2 py-1.5 transition-colors"
+            className="hidden sm:inline-block text-xs uppercase tracking-widest text-[#6B5E59] hover:text-[#2C2421] transition-colors font-semibold"
           >
-            LOG IN
+            Log In
           </button>
-          
           <button
             onClick={onOpenDemo}
-            className="bg-[#ff4d15] hover:bg-[#e03e0a] text-white text-xs font-semibold uppercase tracking-wider px-5 py-2.5 rounded shadow-sm hover:shadow-md transition-all flex items-center gap-1.5 active:scale-95"
+            className="bg-[#2C2421] hover:bg-[#1a1513] text-white text-xs uppercase tracking-widest px-4 py-2 rounded font-bold transition-all shadow-[0_4px_14px_rgba(44,36,33,0.25)] hover:shadow-[0_6px_18px_rgba(44,36,33,0.35)]"
           >
-            GET STARTED
+            Get Started
           </button>
-
-          <div className="w-7 h-7 rounded-full bg-emerald-800 text-white flex items-center justify-center text-[11px] font-mono-tech font-bold">
-            0
+          <div className="w-8 h-8 rounded-full bg-[#1F5C45] flex items-center justify-center text-white shadow-sm">
+            <span className="material-symbols-outlined text-[18px]">person</span>
           </div>
-        </div>
 
-        {/* Mobile menu button */}
-        <div className="flex md:hidden items-center gap-2">
-          <button
-            onClick={onOpenDemo}
-            className="bg-[#ff4d15] text-white text-xs font-semibold uppercase px-3 py-1.5 rounded"
-          >
-            GET STARTED
-          </button>
+          {/* Mobile Menu Toggle Button */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="p-2 text-gray-700 hover:text-gray-900"
-            aria-label="Toggle menu"
+            className="md:hidden p-1.5 text-[#2C2421] hover:bg-[#F4F4F1] rounded transition-colors"
+            aria-label="Toggle navigation menu"
           >
-            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            <span className="material-symbols-outlined text-2xl">
+              {mobileMenuOpen ? "close" : "menu"}
+            </span>
           </button>
         </div>
-      </nav>
+      </div>
 
       {/* Mobile Drawer */}
       <AnimatePresence>
@@ -124,54 +94,54 @@ export default function Navbar({ onOpenDemo }: NavbarProps) {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            className="md:hidden border-t border-gray-200 bg-white px-4 py-4 space-y-3 font-medium text-sm"
+            className="md:hidden bg-white border-b border-[#2C2421]/10 px-6 py-4 flex flex-col gap-4 shadow-lg"
           >
-            <Link
+            <a
               href="#platform"
               onClick={() => setMobileMenuOpen(false)}
-              className="block py-2 text-[#ff4d15] font-semibold"
+              className="text-xs uppercase tracking-widest text-[#E85D22] font-bold py-1"
             >
-              PLATFORM
-            </Link>
-            <Link
+              Platform
+            </a>
+            <a
               href="#features"
               onClick={() => setMobileMenuOpen(false)}
-              className="block py-2 text-gray-700"
+              className="text-xs uppercase tracking-widest text-[#6B5E59] hover:text-[#2C2421] font-semibold py-1"
             >
-              FEATURES
-            </Link>
-            <Link
-              href="#live-demos"
+              Features
+            </a>
+            <a
+              href="#how-it-works"
               onClick={() => setMobileMenuOpen(false)}
-              className="block py-2 text-gray-700"
+              className="text-xs uppercase tracking-widest text-[#6B5E59] hover:text-[#2C2421] font-semibold py-1"
             >
-              LIVE DEMOS
-            </Link>
-            <Link
-              href="#docs"
+              How It Works
+            </a>
+            <a
+              href="#workshops"
               onClick={() => setMobileMenuOpen(false)}
-              className="block py-2 text-gray-700"
+              className="text-xs uppercase tracking-widest text-[#6B5E59] hover:text-[#2C2421] font-semibold py-1"
             >
-              DOCUMENTATION
-            </Link>
-            <div className="pt-2 border-t border-gray-100 flex gap-2">
+              For Workshops
+            </a>
+            <div className="pt-2 border-t border-[#2C2421]/10 flex flex-col gap-2">
               <button
                 onClick={() => {
                   setMobileMenuOpen(false);
                   onOpenDemo?.();
                 }}
-                className="w-full bg-gray-100 text-gray-800 text-xs font-semibold py-2.5 rounded"
+                className="w-full text-center py-2 text-xs uppercase tracking-widest text-[#6B5E59] font-bold"
               >
-                LOG IN
+                Log In
               </button>
               <button
                 onClick={() => {
                   setMobileMenuOpen(false);
                   onOpenDemo?.();
                 }}
-                className="w-full bg-[#ff4d15] text-white text-xs font-semibold py-2.5 rounded"
+                className="w-full bg-[#2C2421] text-white text-xs uppercase tracking-widest py-2.5 rounded font-bold shadow-md"
               >
-                GET STARTED
+                Get Started
               </button>
             </div>
           </motion.div>

@@ -37,3 +37,9 @@ pnpm-debug.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# architecture & internal docs
+*plan*.md
+*architecture*.md
+bayflow_enterprise_plan.md
+

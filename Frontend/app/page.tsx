@@ -4,42 +4,42 @@ import React, { useState } from "react";
 import Navbar from "@/components/Navbar";
 import HeroSection from "@/components/HeroSection";
 import FeaturesGrid from "@/components/FeaturesGrid";
-import CapacitySection from "@/components/CapacitySection";
-import WorkflowSection from "@/components/WorkflowSection";
-import InventorySection from "@/components/InventorySection";
+import ShowcaseModules from "@/components/ShowcaseModules";
 import AiConciergeSection from "@/components/AiConciergeSection";
-import OnboardingSection from "@/components/OnboardingSection";
+import HowItWorksSection from "@/components/HowItWorksSection";
 import CtaSection from "@/components/CtaSection";
-import TelemetryBar from "@/components/TelemetryBar";
+import DeveloperHandover from "@/components/DeveloperHandover";
 import Footer from "@/components/Footer";
 import DemoModal from "@/components/DemoModal";
 
 export default function Home() {
-  const [demoOpen, setDemoOpen] = useState(false);
+  const [demoModalOpen, setDemoModalOpen] = useState(false);
+
+  const handleOpenDemo = () => {
+    setDemoModalOpen(true);
+  };
+
+  const handleCloseDemo = () => {
+    setDemoModalOpen(false);
+  };
 
   return (
-    <main className="min-h-screen bg-[#fbfbfb] flex flex-col justify-between selection:bg-[#ff4d15] selection:text-white">
-      {/* Top Navigation & Status Ticker */}
-      <Navbar onOpenDemo={() => setDemoOpen(true)} />
+    <div className="flex flex-col min-h-screen bg-[#F4F4F1] text-[#2C2421]">
+      <Navbar onOpenDemo={handleOpenDemo} />
 
-      {/* Main Sections */}
-      <div className="flex-1">
-        <HeroSection onOpenDemo={() => setDemoOpen(true)} />
+      <main className="w-full pt-16 bg-[#F4F4F1] min-h-screen">
+        <HeroSection onOpenDemo={handleOpenDemo} />
         <FeaturesGrid />
-        <CapacitySection />
-        <WorkflowSection />
-        <InventorySection onOpenDemo={() => setDemoOpen(true)} />
-        <AiConciergeSection onOpenDemo={() => setDemoOpen(true)} />
-        <OnboardingSection />
-        <CtaSection onOpenDemo={() => setDemoOpen(true)} />
-        <TelemetryBar />
-      </div>
+        <ShowcaseModules onOpenDemo={handleOpenDemo} />
+        <AiConciergeSection onOpenDemo={handleOpenDemo} />
+        <HowItWorksSection />
+        <CtaSection onOpenDemo={handleOpenDemo} />
+        <DeveloperHandover />
+      </main>
 
-      {/* Footer */}
       <Footer />
 
-      {/* Interactive Live Demo Modal */}
-      <DemoModal isOpen={demoOpen} onClose={() => setDemoOpen(false)} />
-    </main>
+      <DemoModal isOpen={demoModalOpen} onClose={handleCloseDemo} />
+    </div>
   );
 }

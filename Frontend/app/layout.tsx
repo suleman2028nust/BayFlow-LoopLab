@@ -1,30 +1,25 @@
 import type { Metadata } from "next";
-import { Oswald, Inter, JetBrains_Mono } from "next/font/google";
+import { Barlow_Condensed, Chivo } from "next/font/google";
 import "./globals.css";
 
-const oswald = Oswald({
+const barlowCondensed = Barlow_Condensed({
   subsets: ["latin"],
-  weight: ["500", "600", "700"],
-  variable: "--font-display",
+  weight: ["600", "700", "800"],
+  variable: "--font-barlow",
   display: "swap",
 });
 
-const inter = Inter({
+const chivo = Chivo({
   subsets: ["latin"],
-  variable: "--font-inter",
-  display: "swap",
-});
-
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  variable: "--font-mono",
+  weight: ["400", "600", "700"],
+  variable: "--font-chivo",
   display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "BayFlow - Precision Workshop Intelligence & Automation",
-  description: "One intelligent, mission-critical platform engineered for bookings, technician dispatch, telemetry stream repairs, inventory, and automated customer concierge.",
+  title: "BAYFLOW | Precision Workshop Intelligence & Automation",
+  description:
+    "One intelligent, mission-critical platform engineered for bookings, technician dispatch, telemetry-linked repairs, inventory, and automated customer concierge.",
   icons: {
     icon: "/favicon.ico",
   },
@@ -36,8 +31,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${oswald.variable} ${inter.variable} ${jetbrainsMono.variable}`}>
-      <body className="antialiased bg-[#fbfbfb] text-[#111215] font-sans selection:bg-[#ff4d15] selection:text-white min-h-screen">
+    <html lang="en" className={`${barlowCondensed.variable} ${chivo.variable} scroll-smooth`}>
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+          rel="stylesheet"
+        />
+      </head>
+      <body className="bg-[#F4F4F1] text-[#2C2421] font-sans antialiased selection:bg-[#E85D22] selection:text-white min-h-screen">
         {children}
       </body>
     </html>

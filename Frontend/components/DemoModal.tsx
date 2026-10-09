@@ -2,7 +2,6 @@
 
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, CheckCircle2, ShieldCheck, ArrowRight, Sparkles } from "lucide-react";
 
 interface DemoModalProps {
   isOpen: boolean;
@@ -10,121 +9,186 @@ interface DemoModalProps {
 }
 
 export default function DemoModal({ isOpen, onClose }: DemoModalProps) {
-  const [submitted, setSubmitted] = useState(false);
-  const [email, setEmail] = useState("");
-  const [name, setName] = useState("");
-  const [bays, setBays] = useState("4-10");
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    workshopName: "",
+    bayCount: "4-8",
+  });
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
+    setIsLoading(true);
     setTimeout(() => {
-      setSubmitted(false);
-      onClose();
-    }, 2800);
+      setIsLoading(false);
+      setIsSubmitted(true);
+    }, 800);
+  };
+
+  const handleReset = () => {
+    setIsSubmitted(false);
+    setFormData({
+      name: "",
+      email: "",
+      phone: "",
+      workshopName: "",
+      bayCount: "4-8",
+    });
+    onClose();
   };
 
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neutral-950/60 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+          {/* Backdrop */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 15 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="fixed inset-0 bg-[#2C2421]/60 backdrop-blur-sm transition-opacity"
+          />
+
+          {/* Modal Container */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 15 }}
-            transition={{ duration: 0.25 }}
-            className="w-full max-w-lg bg-white border border-gray-300 rounded-2xl shadow-2xl overflow-hidden relative"
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            className="relative w-full max-w-lg bg-white rounded-xl shadow-[0_20px_60px_rgba(44,36,33,0.25)] border border-[#2C2421]/10 overflow-hidden z-10"
           >
             {/* Header */}
-            <div className="bg-[#fcfcfc] border-b border-gray-200 p-5 sm:p-6 flex items-center justify-between">
-              <div>
-                <div className="text-[11px] font-mono-tech uppercase text-[#ff4d15] font-semibold tracking-wider">
-                  BAYFLOW WORKSHOP INTELLIGENCE
-                </div>
-                <h3 className="font-display text-2xl font-bold text-gray-900 mt-0.5">
-                  SCHEDULE LIVE WORKSHOP DEMO
+            <div className="p-6 bg-[#F4F4F1] border-b border-[#2C2421]/10 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#E85D22] animate-pulse" />
+                <h3 className="font-headline text-lg uppercase tracking-wider text-[#2C2421] font-bold">
+                  Schedule Workshop Demo
                 </h3>
               </div>
               <button
                 onClick={onClose}
-                className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-900 transition-colors"
+                className="w-8 h-8 rounded-full bg-white border border-[#2C2421]/10 flex items-center justify-center text-[#6B5E59] hover:text-[#2C2421] transition-colors"
               >
-                <X className="w-4 h-4" />
+                <span className="material-symbols-outlined text-lg">close</span>
               </button>
             </div>
 
             {/* Content */}
             <div className="p-6">
-              {submitted ? (
-                <div className="py-10 text-center space-y-3">
-                  <div className="w-14 h-14 bg-emerald-50 border border-emerald-200 text-emerald-600 rounded-full mx-auto flex items-center justify-center">
-                    <CheckCircle2 className="w-8 h-8" />
+              {isSubmitted ? (
+                <div className="text-center py-8 flex flex-col items-center gap-4">
+                  <div className="w-14 h-14 rounded-full bg-[#1F5C45]/10 border border-[#1F5C45]/30 flex items-center justify-center text-[#1F5C45]">
+                    <span className="material-symbols-outlined text-3xl">check_circle</span>
                   </div>
-                  <h4 className="font-display text-2xl font-bold text-gray-900">
-                    ACCESS CODE DISPATCHED
+                  <h4 className="font-headline text-2xl uppercase text-[#2C2421] font-bold">
+                    Demo Reserved Successfully
                   </h4>
-                  <p className="text-sm text-gray-600 max-w-xs mx-auto">
-                    We've provisioned a sandbox staging bay for <span className="font-semibold text-gray-900">{email}</span>. A solutions specialist will connect shortly.
+                  <p className="text-xs sm:text-sm text-[#6B5E59] max-w-sm">
+                    Our technical deployment team will connect with you within 2 business hours to configure
+                    your workshop telemetry preview.
                   </p>
+                  <button
+                    onClick={handleReset}
+                    className="mt-4 bg-[#2C2421] hover:bg-[#1a1513] text-white text-xs uppercase tracking-widest px-6 py-2.5 rounded font-bold transition-all shadow"
+                  >
+                    Done
+                  </button>
                 </div>
               ) : (
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                   <div>
-                    <label className="block text-xs font-mono-tech uppercase font-bold text-gray-700 mb-1.5">
+                    <label className="block text-xs font-mono uppercase tracking-wider text-[#6B5E59] mb-1 font-semibold">
                       Your Full Name
                     </label>
                     <input
+                      required
                       type="text"
-                      required
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      placeholder="e.g. Frank Reynolds"
-                      className="w-full text-sm font-sans bg-gray-50 border border-gray-300 rounded-lg px-3.5 py-2.5 text-gray-900 focus:outline-none focus:border-[#ff4d15] focus:bg-white transition-colors"
+                      placeholder="Marcus Vance"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      className="w-full px-3.5 py-2.5 text-xs sm:text-sm bg-[#F8F8F5] border border-[#2C2421]/15 rounded text-[#2C2421] placeholder-[#8C7E78] focus:outline-none focus:border-[#E85D22] transition-colors"
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-mono-tech uppercase font-bold text-gray-700 mb-1.5">
-                      Work Email
-                    </label>
-                    <input
-                      type="email"
-                      required
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="frank@apexmotorsports.com"
-                      className="w-full text-sm font-sans bg-gray-50 border border-gray-300 rounded-lg px-3.5 py-2.5 text-gray-900 focus:outline-none focus:border-[#ff4d15] focus:bg-white transition-colors"
-                    />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-mono uppercase tracking-wider text-[#6B5E59] mb-1 font-semibold">
+                        Work Email
+                      </label>
+                      <input
+                        required
+                        type="email"
+                        placeholder="marcus@vancemotors.com"
+                        value={formData.email}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        className="w-full px-3.5 py-2.5 text-xs sm:text-sm bg-[#F8F8F5] border border-[#2C2421]/15 rounded text-[#2C2421] placeholder-[#8C7E78] focus:outline-none focus:border-[#E85D22] transition-colors"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-mono uppercase tracking-wider text-[#6B5E59] mb-1 font-semibold">
+                        Phone / WhatsApp
+                      </label>
+                      <input
+                        required
+                        type="tel"
+                        placeholder="+1 (555) 019-2834"
+                        value={formData.phone}
+                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                        className="w-full px-3.5 py-2.5 text-xs sm:text-sm bg-[#F8F8F5] border border-[#2C2421]/15 rounded text-[#2C2421] placeholder-[#8C7E78] focus:outline-none focus:border-[#E85D22] transition-colors"
+                      />
+                    </div>
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-mono-tech uppercase font-bold text-gray-700 mb-1.5">
-                      Active Service Bays
-                    </label>
-                    <select
-                      value={bays}
-                      onChange={(e) => setBays(e.target.value)}
-                      className="w-full text-sm font-sans bg-gray-50 border border-gray-300 rounded-lg px-3.5 py-2.5 text-gray-900 focus:outline-none focus:border-[#ff4d15] focus:bg-white transition-colors"
-                    >
-                      <option value="1-3">1 - 3 Bays (Boutique / Specialist)</option>
-                      <option value="4-10">4 - 10 Bays (High-Performance Facility)</option>
-                      <option value="10+">10+ Bays (Multi-Location / Enterprise)</option>
-                    </select>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-mono uppercase tracking-wider text-[#6B5E59] mb-1 font-semibold">
+                        Workshop / Dealership Name
+                      </label>
+                      <input
+                        required
+                        type="text"
+                        placeholder="Apex Performance Studio"
+                        value={formData.workshopName}
+                        onChange={(e) => setFormData({ ...formData, workshopName: e.target.value })}
+                        className="w-full px-3.5 py-2.5 text-xs sm:text-sm bg-[#F8F8F5] border border-[#2C2421]/15 rounded text-[#2C2421] placeholder-[#8C7E78] focus:outline-none focus:border-[#E85D22] transition-colors"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-mono uppercase tracking-wider text-[#6B5E59] mb-1 font-semibold">
+                        Active Service Bays
+                      </label>
+                      <select
+                        value={formData.bayCount}
+                        onChange={(e) => setFormData({ ...formData, bayCount: e.target.value })}
+                        className="w-full px-3.5 py-2.5 text-xs sm:text-sm bg-[#F8F8F5] border border-[#2C2421]/15 rounded text-[#2C2421] focus:outline-none focus:border-[#E85D22] transition-colors"
+                      >
+                        <option value="1-3">1 - 3 Bays</option>
+                        <option value="4-8">4 - 8 Bays</option>
+                        <option value="9-16">9 - 16 Bays</option>
+                        <option value="16+">16+ Enterprise Bays</option>
+                      </select>
+                    </div>
                   </div>
 
                   <div className="pt-2">
                     <button
                       type="submit"
-                      className="w-full bg-[#ff4d15] hover:bg-[#e03e0a] text-white text-xs font-semibold uppercase tracking-wider py-3.5 rounded-lg shadow-sm hover:shadow-lg transition-all flex items-center justify-center gap-2 active:scale-95"
+                      disabled={isLoading}
+                      className="w-full bg-[#2C2421] hover:bg-[#1a1513] text-white text-xs uppercase tracking-widest py-3.5 rounded font-bold transition-all shadow-[0_4px_14px_rgba(44,36,33,0.25)] flex items-center justify-center gap-2"
                     >
-                      <span>INITIALIZE DEMO INSTANCE</span>
-                      <ArrowRight className="w-4 h-4" />
+                      {isLoading ? (
+                        <span>Initializing Deck...</span>
+                      ) : (
+                        <>
+                          <span>Deploy Workshop Preview</span>
+                          <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                        </>
+                      )}
                     </button>
-                  </div>
-
-                  <div className="flex items-center justify-center gap-2 text-[11px] font-mono-tech text-gray-500 pt-1">
-                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-                    <span>Instant sandbox access • Zero credit card required</span>
                   </div>
                 </form>
               )}

@@ -3,145 +3,93 @@
 import React from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { CheckCircle2, CircleDot, Clock, ShieldCheck, Wrench, Activity } from "lucide-react";
+import { CheckCircle2, Circle, Clock } from "lucide-react";
 
-const workflowSteps = [
-  {
-    id: 1,
-    title: "STAGE 1: DIAGNOSTIC SCAN",
-    time: "09:12 AM",
-    status: "completed",
-    desc: "Full CAN-bus interrogation & freeze frame capture.",
-  },
-  {
-    id: 2,
-    title: "STAGE 2: PARTS RECEIVED & ASSIGNED",
-    time: "10:45 AM",
-    status: "completed",
-    desc: "OEM carbon ceramic rotors dispatched to Bay 03.",
-  },
-  {
-    id: 3,
-    title: "STAGE 3: ACTIVE INSTALLATION & TEST FIT",
-    time: "EST. 11:30 AM",
-    status: "active",
-    desc: "Torque spec verification and hydraulic bleeding.",
-  },
-  {
-    id: 4,
-    title: "CALIBRATION & DYNO RUN",
-    time: "PENDING",
-    status: "pending",
-    desc: "High-speed road load test bench sign-off.",
-  },
+const steps = [
+  { label: "Vehicle checked in", time: "9:12 AM", done: true },
+  { label: "Inspection complete", time: "9:45 AM", done: true },
+  { label: "Parts ordered & received", time: "11:00 AM", done: true },
+  { label: "Repair in progress", time: "11:30 AM", active: true },
+  { label: "Quality check", time: "Est. 2:00 PM", done: false },
+  { label: "Ready for pickup", time: "Est. 2:30 PM", done: false },
 ];
 
 export default function WorkflowSection() {
   return (
-    <section className="py-16 sm:py-24 bg-white border-y border-gray-200">
+    <section className="bg-[#f5f4f0] py-16 sm:py-24">
       <div className="max-w-7xl mx-auto px-4 sm:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-10 items-center">
-          {/* Left Column: Workshop Bay Inspection Visual Card */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+          {/* Left image */}
           <motion.div
-            initial={{ opacity: 0, x: -30 }}
+            initial={{ opacity: 0, x: -20 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
+            transition={{ duration: 0.5 }}
             className="lg:col-span-6 relative"
           >
-            <div className="relative rounded-xl overflow-hidden border border-gray-300 shadow-xl aspect-[16/10] bg-neutral-900 group">
+            <div className="relative rounded-xl overflow-hidden border border-gray-200 shadow-md aspect-[4/3] bg-gray-900">
               <Image
                 src="/workshop-inspection.jpg"
-                alt="BayFlow Technician Conducting Precision Workshop Inspection"
+                alt="Technician inspecting vehicle in workshop"
                 fill
-                className="object-cover object-center group-hover:scale-105 transition-transform duration-700"
+                className="object-cover"
               />
-
-              {/* Bottom Tag Overlay */}
+              {/* Bottom tag */}
               <div className="absolute bottom-4 left-4 right-4 z-10">
-                <div className="bg-neutral-900/90 backdrop-blur-md border border-white/20 text-white rounded-lg p-3 flex items-center gap-3 shadow-lg">
-                  <div className="w-8 h-8 rounded bg-[#ff4d15] flex items-center justify-center text-white shrink-0">
-                    <Activity className="w-4 h-4 animate-pulse" />
-                  </div>
-                  <div className="overflow-hidden">
-                    <div className="text-[11px] font-mono-tech uppercase text-gray-300 tracking-wider truncate">
-                      ACTIVE REPAIR STREAM // BAY 03
-                    </div>
-                    <div className="text-xs font-mono-tech font-bold text-white tracking-wide truncate">
-                      PORSCHE 911 GT3 RS // TELEMETRY SYNC
-                    </div>
-                  </div>
+                <div className="bg-white/95 border border-gray-200 rounded-lg px-4 py-2.5 flex items-center gap-3 shadow-md">
+                  <span className="w-2 h-2 rounded-full bg-[#e8572a] animate-pulse shrink-0" />
+                  <span className="text-[12px] font-medium text-gray-800">
+                    Repair in progress — Bay 3 · Technician Zain R.
+                  </span>
                 </div>
               </div>
             </div>
           </motion.div>
 
-          {/* Right Column: Workflow Steps */}
+          {/* Right — Timeline */}
           <motion.div
-            initial={{ opacity: 0, x: 30 }}
+            initial={{ opacity: 0, x: 20 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.1 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
             className="lg:col-span-6 space-y-6"
           >
-            <div className="inline-flex items-center gap-1.5 text-xs font-mono-tech uppercase text-emerald-600 font-semibold tracking-wider bg-emerald-50 px-2.5 py-1 rounded border border-emerald-200">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-              ZERO-GAP TRACKING
-            </div>
-
-            <h2 className="font-display text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 tracking-tight leading-none uppercase">
-              FROM ARRIVAL TO READY.
+            <p className="text-xs font-semibold uppercase tracking-widest text-gray-500">
+              Job Timeline
+            </p>
+            <h2 className="font-display text-4xl sm:text-5xl font-bold text-[#1a1a1a] tracking-tight leading-none uppercase">
+              From Arrival to Ready.
             </h2>
-
-            <p className="text-base text-gray-600 font-normal leading-relaxed">
-              Track every action from intake scans to test bench validation. Empower every tech with automated check-sheets on rugged tablets and real-time bay telemetry.
+            <p className="text-[15px] text-gray-600 leading-relaxed">
+              Every step tracked automatically. Technicians update progress from their tablets — customers get notified at each stage without your team lifting a finger.
             </p>
 
-            {/* Checklist items */}
-            <div className="space-y-3 pt-2">
-              {workflowSteps.map((step) => (
+            {/* Timeline steps */}
+            <div className="space-y-1 pt-2">
+              {steps.map((step, i) => (
                 <div
-                  key={step.id}
-                  className={`p-4 rounded-lg border transition-all duration-200 flex items-center justify-between ${
-                    step.status === "active"
-                      ? "border-[#ff4d15] bg-[#fffbf9] shadow-sm"
-                      : "border-gray-200 bg-gray-50/70 hover:bg-gray-50"
+                  key={i}
+                  className={`flex items-center justify-between py-3 px-4 rounded-lg transition-colors ${
+                    step.active
+                      ? "bg-[#fdf0ec] border border-[#f5bfad]"
+                      : "hover:bg-gray-100/60"
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    {step.status === "completed" && (
-                      <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
-                    )}
-                    {step.status === "active" && (
-                      <CircleDot className="w-5 h-5 text-[#ff4d15] animate-pulse shrink-0" />
-                    )}
-                    {step.status === "pending" && (
-                      <Clock className="w-5 h-5 text-gray-400 shrink-0" />
-                    )}
-                    <div>
-                      <span
-                        className={`text-xs sm:text-sm font-bold tracking-tight uppercase ${
-                          step.status === "active"
-                            ? "text-[#ff4d15]"
-                            : step.status === "completed"
-                            ? "text-gray-900"
-                            : "text-gray-600"
-                        }`}
-                      >
-                        {step.title}
+                    {step.done ? (
+                      <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                    ) : step.active ? (
+                      <span className="w-4 h-4 rounded-full border-2 border-[#e8572a] flex items-center justify-center shrink-0">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#e8572a]" />
                       </span>
-                    </div>
+                    ) : (
+                      <Circle className="w-4 h-4 text-gray-300 shrink-0" />
+                    )}
+                    <span className={`text-[13px] font-medium ${step.done ? "text-gray-700" : step.active ? "text-[#e8572a] font-semibold" : "text-gray-400"}`}>
+                      {step.label}
+                    </span>
                   </div>
-
-                  <span
-                    className={`text-[11px] font-mono-tech uppercase font-semibold ${
-                      step.status === "active"
-                        ? "text-[#ff4d15] bg-[#fff0eb] px-2 py-0.5 rounded border border-[#ff4d15]/30"
-                        : step.status === "completed"
-                        ? "text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200"
-                        : "text-gray-400"
-                    }`}
-                  >
+                  <span className={`text-[12px] font-medium ${step.active ? "text-[#e8572a]" : step.done ? "text-gray-500" : "text-gray-300"}`}>
                     {step.time}
                   </span>
                 </div>

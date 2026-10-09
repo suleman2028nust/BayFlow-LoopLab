@@ -2,7 +2,6 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { ArrowRight, ChevronRight, Sparkles } from "lucide-react";
 
 interface CtaSectionProps {
   onOpenDemo?: () => void;
@@ -10,47 +9,65 @@ interface CtaSectionProps {
 
 export default function CtaSection({ onOpenDemo }: CtaSectionProps) {
   return (
-    <section className="py-20 sm:py-28 bg-white border-t border-gray-200">
-      <div className="max-w-5xl mx-auto px-4 sm:px-8 text-center flex flex-col items-center">
+    <section className="relative w-full px-4 sm:px-6 lg:px-8 py-20 sm:py-28 overflow-hidden border-t border-[#2C2421]/10 bg-[#F8F8F5]">
+      {/* Radial gradient glow */}
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(232,93,34,0.06)_0%,_transparent_70%)]" />
+
+      <div className="max-w-4xl mx-auto text-center relative z-10 flex flex-col items-center gap-6 sm:gap-8">
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="flex items-center gap-2 px-3.5 py-1 bg-white rounded-full border border-[#1F5C45]/30 text-[#1F5C45] text-xs uppercase font-bold shadow-[0_2px_8px_rgba(44,36,33,0.04)]"
+        >
+          <span className="w-2 h-2 rounded-full bg-[#1F5C45] animate-ping" />
+          <span>DEPLOY PRESTIGE TELEMETRY TODAY</span>
+        </motion.div>
+
+        <motion.h2
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.1 }}
+          className="font-headline text-[clamp(2.75rem,7vw,5.5rem)] uppercase text-[#2C2421] font-black leading-tight tracking-tight"
+        >
+          YOUR WORKSHOP.
+          <br />
+          A BETTER WAY.
+        </motion.h2>
+
+        <motion.p
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="text-base sm:text-lg text-[#6B5E59] max-w-xl font-light leading-relaxed"
+        >
+          Bring bookings, repair stages, OEM parts catalogs, and autonomous customer concierge together under one flawless platform.
+        </motion.p>
+
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
-          className="space-y-4"
+          transition={{ duration: 0.6, delay: 0.3 }}
+          className="flex flex-wrap items-center justify-center gap-4 pt-2"
         >
-          <div className="inline-flex items-center gap-1.5 text-xs font-mono-tech uppercase text-gray-500 font-semibold tracking-wider bg-gray-100 px-3 py-1 rounded-full border border-gray-200">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#ff4d15]" />
-            BUILT FOR HIGH-VELOCITY WORKSHOPS
-          </div>
-
-          <h2 className="font-display text-4xl sm:text-6xl lg:text-7xl font-bold text-gray-900 tracking-tight leading-none uppercase">
-            YOUR WORKSHOP.
-            <br />
-            A BETTER WAY.
-          </h2>
-
-          <p className="max-w-2xl mx-auto text-base sm:text-lg text-gray-600 font-normal leading-relaxed pt-2 pb-6">
-            Bring bookings, repair stages, OEM parts catalogs, and automated customer concierge together under one flawless platform.
-          </p>
-
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 w-full sm:w-auto">
-            <button
-              onClick={onOpenDemo}
-              className="w-full sm:w-auto bg-[#ff4d15] hover:bg-[#e03e0a] text-white text-xs sm:text-sm font-semibold uppercase tracking-wider px-8 py-3.5 rounded shadow-sm hover:shadow-lg transition-all flex items-center justify-center gap-2 active:scale-95 group"
-            >
-              <span>GET STARTED NOW</span>
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </button>
-
-            <button
-              onClick={onOpenDemo}
-              className="w-full sm:w-auto bg-white hover:bg-gray-50 text-gray-800 border border-gray-300 text-xs sm:text-sm font-semibold uppercase tracking-wider px-8 py-3.5 rounded shadow-sm hover:border-gray-400 transition-all flex items-center justify-center gap-2 active:scale-95"
-            >
-              <span>SCHEDULE DEMO</span>
-              <ChevronRight className="w-4 h-4 text-gray-400" />
-            </button>
-          </div>
+          <button
+            onClick={onOpenDemo}
+            className="bg-[#2C2421] hover:bg-[#1a1513] text-white text-xs uppercase tracking-widest px-8 py-4 rounded font-bold shadow-[0_8px_24px_rgba(44,36,33,0.3)] hover:shadow-[0_10px_30px_rgba(44,36,33,0.4)] transition-all flex items-center gap-2 group"
+          >
+            <span>Get Started Now</span>
+            <span className="material-symbols-outlined text-[18px] group-hover:scale-110 transition-transform">
+              speed
+            </span>
+          </button>
+          <button
+            onClick={onOpenDemo}
+            className="bg-white hover:bg-[#F4F4F1] text-[#2C2421] text-xs uppercase tracking-widest px-6 py-4 rounded font-bold border border-[#2C2421]/20 shadow-[0_2px_8px_rgba(44,36,33,0.06)] hover:border-[#2C2421]/40 transition-all"
+          >
+            Schedule Workshop Demo
+          </button>
         </motion.div>
       </div>
     </section>

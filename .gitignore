@@ -60,3 +60,10 @@ venv/
 .venv/
 env/
 ENV/
+
+# Architecture & Confidential Internal Plans
+bayflow_enterprise_plan.md
+*_plan*.md
+*architecture*.md
+docs/private/
+

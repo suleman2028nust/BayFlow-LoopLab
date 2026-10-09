@@ -5,71 +5,77 @@ import Link from "next/link";
 
 export default function Footer() {
   return (
-    <footer className="bg-[#fbfbfb] border-t border-gray-200 text-gray-700">
-      <div className="max-w-7xl mx-auto px-4 sm:px-8 py-8 sm:py-10">
-        {/* Main Footer Row */}
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 pb-6 border-b border-gray-200">
+    <footer className="w-full py-10 sm:py-12 border-t border-[#2C2421]/10 bg-[#F4F4F1]">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 pb-6">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 group">
-            <div className="w-6 h-6 bg-[#ff4d15] text-white flex items-center justify-center font-black text-xs rounded-sm">
-              <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-current">
-                <path d="M12 2L2 22h20L12 2zm0 4.8l6.3 12.6H5.7L12 6.8z" />
+          <Link href="/" className="flex items-center gap-2">
+            <div className="text-[#E85D22]">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path
+                  d="M2 17C6 17 8 7 12 7C16 7 18 17 22 17"
+                  stroke="currentColor"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                />
               </svg>
             </div>
-            <span className="font-display text-xl font-bold tracking-tight text-gray-900">
+            <span className="font-headline text-lg uppercase tracking-wider text-[#2C2421] font-bold">
               BAYFLOW
             </span>
           </Link>
 
-          {/* Nav Links */}
-          <div className="flex flex-wrap items-center gap-6 text-xs font-mono-tech uppercase">
-            <Link
+          {/* Navigation Links */}
+          <nav className="flex flex-wrap items-center gap-6 sm:gap-8">
+            <a
               href="#platform"
-              className="text-[#ff4d15] font-bold hover:text-[#e03e0a] transition-colors"
+              aria-current="page"
+              className="text-xs uppercase tracking-widest text-[#E85D22] font-bold hover:text-[#d04e17] transition-colors"
             >
-              PLATFORM
-            </Link>
-            <Link
+              Platform
+            </a>
+            <a
               href="#features"
-              className="text-gray-600 hover:text-gray-900 transition-colors"
+              className="text-xs uppercase tracking-widest text-[#6B5E59] hover:text-[#2C2421] transition-colors font-semibold"
             >
-              SOLUTIONS
-            </Link>
-            <Link
-              href="#contact"
-              className="text-gray-600 hover:text-gray-900 transition-colors"
+              Solutions
+            </a>
+            <a
+              href="#how-it-works"
+              className="text-xs uppercase tracking-widest text-[#6B5E59] hover:text-[#2C2421] transition-colors font-semibold"
             >
-              CONTACT
-            </Link>
-            <Link
-              href="#privacy"
-              className="text-gray-600 hover:text-gray-900 transition-colors"
+              Company
+            </a>
+            <a
+              href="#"
+              className="text-xs uppercase tracking-widest text-[#6B5E59] hover:text-[#2C2421] transition-colors font-semibold"
             >
-              PRIVACY
-            </Link>
-            <Link
-              href="#terms"
-              className="text-gray-600 hover:text-gray-900 transition-colors"
+              Privacy
+            </a>
+            <a
+              href="#"
+              className="text-xs uppercase tracking-widest text-[#6B5E59] hover:text-[#2C2421] transition-colors font-semibold"
             >
-              TERMS
-            </Link>
-          </div>
+              Terms
+            </a>
+          </nav>
 
-          {/* Status Operational */}
-          <div className="inline-flex items-center gap-2 text-xs font-mono-tech uppercase text-gray-800 bg-gray-100 px-3 py-1.5 rounded border border-gray-200">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="font-semibold">STATUS: OPERATIONAL (99.98%)</span>
+          {/* System Operational Badge */}
+          <div className="flex items-center gap-2 bg-white border border-[#1F5C45]/20 px-3 py-1.5 rounded shadow-[0_2px_6px_rgba(44,36,33,0.04)]">
+            <span className="w-2 h-2 rounded-full bg-[#1F5C45] animate-pulse" />
+            <span className="font-mono text-xs text-[#1F5C45] font-bold">
+              SYSTEM OPERATIONAL (99.98%)
+            </span>
           </div>
         </div>
 
-        {/* Bottom copyright line */}
-        <div className="pt-6 flex flex-col sm:flex-row items-center justify-between text-xs font-mono-tech text-gray-500 gap-3 text-center sm:text-left">
-          <div>
-            © 2026 BayFlow Technologies. Precision Workshop Intelligence.
-          </div>
-          <div className="tracking-wider">
-            FOLLOW US // <span className="hover:text-gray-900 cursor-pointer">X</span> / <span className="hover:text-gray-900 cursor-pointer">IG</span> / <span className="hover:text-gray-900 cursor-pointer">DISCORD</span>
-          </div>
+        {/* Sub-Footer */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-2 pt-4 text-[#6B5E59] font-mono text-xs border-t border-[#2C2421]/5">
+          <p>© 2025 BayFlow Technologies. Precision Workshop Intelligence.</p>
+          <p className="text-[#8C7E78] font-semibold tracking-wider uppercase">
+            TELEMETRY DECK ENGAGED
+          </p>
         </div>
       </div>
     </footer>
