@@ -79,9 +79,10 @@ export default function VoiceCallModal({
               body: JSON.stringify({ bookingId }),
             });
             const data = await res.json();
-            if (res.ok && data.success && data.data?.callId) {
-              currentCallId = data.data.callId;
-              setActiveCallId(currentCallId);
+            const cid = data.data?.id || data.data?.callId;
+            if (res.ok && data.success && cid) {
+              currentCallId = cid;
+              setActiveCallId(cid);
             }
           } catch (err) {
             console.warn("Failed to initiate call on backend:", err);
@@ -522,7 +523,15 @@ export default function VoiceCallModal({
         ref={remoteAudioRef}
         autoPlay
         playsInline
-        className="hidden"
+        style={{
+          position: "fixed",
+          bottom: 0,
+          left: 0,
+          width: "1px",
+          height: "1px",
+          opacity: 0.01,
+          pointerEvents: "none",
+        }}
         aria-hidden="true"
       />
 

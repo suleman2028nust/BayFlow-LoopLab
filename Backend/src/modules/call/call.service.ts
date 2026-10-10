@@ -106,6 +106,7 @@ export const CallService = {
 
     const callPayload = {
       id: callLog.id,
+      callId: callLog.id,
       bookingId,
       callerId: caller.userId,
       receiverId,
@@ -352,8 +353,20 @@ export const CallService = {
   },
 
   // 6. WebRTC Signaling: Add Signal (offer, answer, ice-candidate)
+  getSignalKey(callId: string): string {
+    const inMem = activeCallsMap.get(callId);
+    if (inMem && inMem.bookingId) return `call_room:${inMem.bookingId}`;
+    return `call_room:${callId}`;
+  },
+
   addSignal(callId: string, sender: 'caller' | 'receiver', type: string, payload: any) {
-    const current = callSignals.get(callId) || [];
+    const key = this.getSignalKey(callId);
+    let list = callSignals.get(key);
+    if (!list) {
+      list = [];
+      callSignals.set(key, list);
+    }
+
     const newSignal: CallSignal = {
       id: Math.random().toString(36).slice(2),
       sender,
@@ -361,15 +374,16 @@ export const CallService = {
       payload,
       timestamp: Date.now(),
     };
-    current.push(newSignal);
-    if (current.length > 80) current.shift();
-    callSignals.set(callId, current);
 
-    // Also mirror to activeCall's bookingId or id key if available
+    list.push(newSignal);
+    if (list.length > 100) list.shift();
+
+    // Mirror directly to callId and bookingId keys as well
+    callSignals.set(callId, list);
     const inMem = activeCallsMap.get(callId);
     if (inMem) {
-      if (inMem.id !== callId) callSignals.set(inMem.id, current);
-      if (inMem.bookingId !== callId) callSignals.set(inMem.bookingId, current);
+      if (inMem.id) callSignals.set(inMem.id, list);
+      if (inMem.bookingId) callSignals.set(inMem.bookingId, list);
     }
 
     return newSignal;
@@ -377,14 +391,8 @@ export const CallService = {
 
   // 7. WebRTC Signaling: Get Signals from opposing party
   getSignals(callId: string, sender: 'caller' | 'receiver', afterTimestamp = 0) {
-    let signals = callSignals.get(callId);
-    if (!signals || signals.length === 0) {
-      const inMem = activeCallsMap.get(callId);
-      if (inMem) {
-        signals = callSignals.get(inMem.id) || callSignals.get(inMem.bookingId);
-      }
-    }
-    const list = signals || [];
+    const key = this.getSignalKey(callId);
+    const list = callSignals.get(key) || callSignals.get(callId) || [];
     return list.filter((s) => s.sender !== sender && s.timestamp > afterTimestamp);
   },
 };
