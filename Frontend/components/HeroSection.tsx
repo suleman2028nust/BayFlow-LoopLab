@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 
@@ -84,13 +85,13 @@ export default function HeroSection({ onOpenDemo }: HeroSectionProps) {
                   arrow_forward
                 </span>
               </button>
-              <button
-                onClick={() => router.push("/book")}
-                className="px-6 py-3.5 rounded-xl bg-[#1F5C45] hover:bg-[#164433] text-white font-bold text-sm shadow-lg shadow-[#1F5C45]/15 transition-all flex items-center gap-2 group hover:scale-[1.02] cursor-pointer"
+              <Link
+                href="/shops"
+                className="px-6 py-3.5 rounded-xl bg-white hover:bg-[#F4F4F1] border border-[#2C2421]/15 text-[#2C2421] font-semibold text-sm transition-all flex items-center gap-2 shadow-sm hover:scale-[1.02]"
               >
-                <span className="material-symbols-outlined text-lg">auto_fix_high</span>
-                <span>Guided Booking Wizard</span>
-              </button>
+                <span className="material-symbols-outlined text-[#111827] text-lg">storefront</span>
+                <span>Find Workshops</span>
+              </Link>
               <a
                 href="#roles-pos"
                 className="px-6 py-3.5 rounded-xl bg-white hover:bg-[#F4F4F1] border border-[#2C2421]/15 text-[#2C2421] font-semibold text-sm transition-all flex items-center gap-2 shadow-sm hover:scale-[1.02]"
