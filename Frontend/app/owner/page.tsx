@@ -73,8 +73,8 @@ export default function OwnerPage() {
 
             <span className="text-[#2C2421]/30 text-xs">|</span>
 
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#111827] text-white text-[11px] font-mono font-bold shadow-xs">
-              <span className="material-symbols-outlined text-xs text-amber-400">admin_panel_settings</span>
+            <div className="inline-flex items-center gap-1.5 text-[11px] font-mono font-semibold tracking-wider text-[#2C2421]/80">
+              <span className="material-symbols-outlined text-xs text-amber-500">admin_panel_settings</span>
               <span>OWNER CONSOLE</span>
             </div>
           </div>
