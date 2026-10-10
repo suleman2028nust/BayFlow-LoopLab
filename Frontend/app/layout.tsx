@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
 
+import IncomingCallOverlay from "@/components/IncomingCallOverlay";
+
 export const metadata: Metadata = {
   title: "BayFlow | Multi-Tenant Auto Repair Shop Management Platform",
   description:
@@ -27,6 +29,7 @@ export default function RootLayout({
       </head>
       <body className="bg-[#F4F4F1] text-[#2C2421] font-sans antialiased selection:bg-[#1F5C45] selection:text-white min-h-screen">
         {children}
+        <IncomingCallOverlay />
       </body>
 
 
