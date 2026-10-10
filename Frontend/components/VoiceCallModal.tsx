@@ -1,7 +1,6 @@
 "use client";
 
 import { API_BASE_URL } from "@/lib/api";
-
 import React, { useState, useEffect, useRef } from "react";
 import { startOutgoingRingtone, stopOutgoingRingtone } from "@/lib/utils";
 
@@ -38,6 +37,7 @@ export default function VoiceCallModal({
   const localStreamRef = useRef<MediaStream | null>(null);
   const remoteAudioRef = useRef<HTMLAudioElement | null>(null);
   const isCallerRef = useRef<boolean>(!existingCallId);
+  const pendingCandidatesRef = useRef<RTCIceCandidateInit[]>([]);
 
   // Sync isCallerRef
   useEffect(() => {
@@ -182,13 +182,27 @@ export default function VoiceCallModal({
         setDuration((prev) => prev + 1);
       }, 1000);
 
-      const targetId = activeCallId || existingCallId;
+      const targetId = activeCallId || existingCallId || bookingId;
       const activeToken =
         token || (typeof window !== "undefined" ? localStorage.getItem("bayflow_token") : null);
 
       const role: "caller" | "receiver" = isCallerRef.current ? "caller" : "receiver";
       let lastSignalTime = 0;
       const handledSignalIds = new Set<string>();
+
+      // Flush queued candidates once remote description is set
+      const flushPendingCandidates = async (peer: RTCPeerConnection) => {
+        if (!peer.remoteDescription) return;
+        const queued = [...pendingCandidatesRef.current];
+        pendingCandidatesRef.current = [];
+        for (const cand of queued) {
+          try {
+            await peer.addIceCandidate(new RTCIceCandidate(cand));
+          } catch (e) {
+            console.warn("Could not add queued ICE candidate:", e);
+          }
+        }
+      };
 
       // 2. Initialize Real WebRTC Audio Peer Connection
       const setupWebRTC = async () => {
@@ -198,25 +212,57 @@ export default function VoiceCallModal({
         }
 
         try {
-          // Request real microphone audio
-          const stream = await navigator.mediaDevices.getUserMedia({
-            audio: {
-              echoCancellation: true,
-              noiseSuppression: true,
-              autoGainControl: true,
-            },
-            video: false,
+          // Request microphone audio with fallback for strict mobile devices
+          let stream: MediaStream;
+          try {
+            stream = await navigator.mediaDevices.getUserMedia({
+              audio: {
+                echoCancellation: true,
+                noiseSuppression: true,
+                autoGainControl: true,
+              },
+              video: false,
+            });
+          } catch (err) {
+            stream = await navigator.mediaDevices.getUserMedia({
+              audio: true,
+              video: false,
+            });
+          }
+
+          // Ensure audio tracks are unmuted
+          stream.getAudioTracks().forEach((track) => {
+            track.enabled = true;
           });
 
           localStreamRef.current = stream;
           setMicActive(true);
           setMicNotice("Live Voice Audio Active");
 
+          // Comprehensive ICE Servers (STUN + free global TURN relay for symmetric NAT/mobile 4G)
           const pc = new RTCPeerConnection({
             iceServers: [
               { urls: "stun:stun.l.google.com:19302" },
               { urls: "stun:stun1.l.google.com:19302" },
+              { urls: "stun:stun2.l.google.com:19302" },
+              { urls: "stun:stun.cloudflare.com:3478" },
+              {
+                urls: "turn:openrelay.metered.ca:80",
+                username: "openrelay",
+                credential: "openrelay",
+              },
+              {
+                urls: "turn:openrelay.metered.ca:443",
+                username: "openrelay",
+                credential: "openrelay",
+              },
+              {
+                urls: "turn:openrelay.metered.ca:443?transport=tcp",
+                username: "openrelay",
+                credential: "openrelay",
+              },
             ],
+            iceCandidatePoolSize: 10,
           });
           peerConnRef.current = pc;
 
@@ -225,16 +271,20 @@ export default function VoiceCallModal({
 
           // Receive remote audio track from other person
           pc.ontrack = (event) => {
-            if (event.streams && event.streams[0]) {
-              if (!remoteAudioRef.current) {
-                const audio = new Audio();
-                audio.srcObject = event.streams[0];
-                audio.autoplay = true;
-                remoteAudioRef.current = audio;
-              } else {
-                remoteAudioRef.current.srcObject = event.streams[0];
-              }
-              remoteAudioRef.current.play().catch(() => {});
+            const incomingStream =
+              event.streams && event.streams[0]
+                ? event.streams[0]
+                : new MediaStream([event.track]);
+
+            if (remoteAudioRef.current) {
+              remoteAudioRef.current.srcObject = incomingStream;
+              remoteAudioRef.current.volume = 1.0;
+              remoteAudioRef.current.muted = false;
+              remoteAudioRef.current
+                .play()
+                .catch((err) => {
+                  console.warn("Autoplay audio blocked by browser. User interaction will unblock:", err);
+                });
             }
           };
 
@@ -250,7 +300,7 @@ export default function VoiceCallModal({
                 body: JSON.stringify({
                   sender: role,
                   type: "candidate",
-                  payload: event.candidate,
+                  payload: event.candidate.toJSON ? event.candidate.toJSON() : event.candidate,
                 }),
               }).catch(() => {});
             }
@@ -258,7 +308,10 @@ export default function VoiceCallModal({
 
           // If caller, initiate WebRTC Offer
           if (role === "caller") {
-            const offer = await pc.createOffer();
+            const offer = await pc.createOffer({
+              offerToReceiveAudio: true,
+              offerToReceiveVideo: false,
+            });
             await pc.setLocalDescription(offer);
 
             if (targetId && activeToken) {
@@ -301,6 +354,8 @@ export default function VoiceCallModal({
 
                 if (sig.type === "offer" && role === "receiver") {
                   await peer.setRemoteDescription(new RTCSessionDescription(sig.payload));
+                  await flushPendingCandidates(peer);
+
                   const answer = await peer.createAnswer();
                   await peer.setLocalDescription(answer);
 
@@ -319,11 +374,18 @@ export default function VoiceCallModal({
                 } else if (sig.type === "answer" && role === "caller") {
                   if (peer.signalingState !== "stable") {
                     await peer.setRemoteDescription(new RTCSessionDescription(sig.payload));
+                    await flushPendingCandidates(peer);
                   }
                 } else if (sig.type === "candidate") {
-                  try {
-                    await peer.addIceCandidate(new RTCIceCandidate(sig.payload));
-                  } catch (e) {}
+                  if (peer.remoteDescription && peer.remoteDescription.type) {
+                    try {
+                      await peer.addIceCandidate(new RTCIceCandidate(sig.payload));
+                    } catch (e) {
+                      console.warn("Failed to add candidate:", e);
+                    }
+                  } else {
+                    pendingCandidatesRef.current.push(sig.payload);
+                  }
                 }
               }
             } catch (err) {}
@@ -373,13 +435,17 @@ export default function VoiceCallModal({
       }
       if (remoteAudioRef.current) {
         remoteAudioRef.current.srcObject = null;
-        remoteAudioRef.current = null;
       }
     };
-  }, [callStatus, activeCallId, existingCallId, token, onClose]);
+  }, [callStatus, activeCallId, existingCallId, token, onClose, bookingId]);
 
   // Handle Mute/Unmute
   const toggleMute = () => {
+    // Also unlock remote audio if paused
+    if (remoteAudioRef.current && remoteAudioRef.current.paused) {
+      remoteAudioRef.current.play().catch(() => {});
+    }
+
     if (localStreamRef.current) {
       const nextMuted = !isMuted;
       localStreamRef.current.getAudioTracks().forEach((track) => {
@@ -407,13 +473,12 @@ export default function VoiceCallModal({
     }
     if (remoteAudioRef.current) {
       remoteAudioRef.current.srcObject = null;
-      remoteAudioRef.current = null;
     }
 
     setCallStatus("ENDED");
     const activeToken =
       token || (typeof window !== "undefined" ? localStorage.getItem("bayflow_token") : null);
-    const targetCallId = activeCallId || existingCallId;
+    const targetCallId = activeCallId || existingCallId || bookingId;
 
     if (activeToken && targetCallId) {
       try {
@@ -443,7 +508,24 @@ export default function VoiceCallModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#111827]/85 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
+    <div
+      onClick={() => {
+        // Unlock browser audio context on any user click inside the modal
+        if (remoteAudioRef.current && remoteAudioRef.current.paused) {
+          remoteAudioRef.current.play().catch(() => {});
+        }
+      }}
+      className="fixed inset-0 z-50 bg-[#111827]/85 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200"
+    >
+      {/* Real DOM Audio Element for incoming WebRTC stream output */}
+      <audio
+        ref={remoteAudioRef}
+        autoPlay
+        playsInline
+        className="hidden"
+        aria-hidden="true"
+      />
+
       <div className="bg-[#111827] border border-white/20 text-white rounded-3xl max-w-sm w-full p-8 text-center space-y-6 shadow-2xl relative overflow-hidden">
         {/* Animated Background Glow */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-slate-500/15 rounded-full blur-3xl pointer-events-none" />
