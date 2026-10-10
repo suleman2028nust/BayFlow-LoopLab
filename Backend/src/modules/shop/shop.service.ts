@@ -346,6 +346,10 @@ export const ShopService = {
 
     return {
       shopId,
+      revenue: totalRevenue,
+      completedCount,
+      qcFailRate: `${qcFailRate}%`,
+      qcPassRate: `${qcPassRate}%`,
       summary: {
         totalBookings,
         activeJobs,
