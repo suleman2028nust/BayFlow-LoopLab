@@ -5,12 +5,20 @@ import { Role } from '@prisma/client';
 export const ShopService = {
   // 1. Owner creates a new shop
   async createShop(ownerId: string, data: { name: string; address?: string; city?: string; phone?: string; timezone?: string; workingHours?: any }) {
+    let shopPhone = data.phone?.trim();
+    if (!shopPhone) {
+      const owner = await prisma.user.findUnique({ where: { id: ownerId } });
+      if (owner?.phoneNumber) {
+        shopPhone = owner.phoneNumber;
+      }
+    }
+
     const shop = await prisma.shop.create({
       data: {
         name: data.name,
         address: data.address,
         city: data.city,
-        phone: data.phone,
+        phone: shopPhone || null,
         timezone: data.timezone || 'Asia/Karachi',
         ownerId,
         workingHours: data.workingHours || {
@@ -36,6 +44,9 @@ export const ShopService = {
     return prisma.shop.findMany({
       include: {
         services: true,
+        users: {
+          select: { id: true, email: true, phoneNumber: true, role: true }
+        },
         _count: {
           select: { bookings: true, users: true }
         }

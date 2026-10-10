@@ -3,19 +3,23 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import CustomerView from "@/components/dashboard/CustomerView";
+import OwnerView from "@/components/dashboard/OwnerView";
+import StaffPosView from "@/components/dashboard/StaffPosView";
+import NotificationBell from "@/components/NotificationBell";
 
 interface DecodedToken {
-  userId?: string;
-  role?: string;
+  userId: string;
+  role: string;
   shopId?: string | null;
   email?: string;
   exp?: number;
   iat?: number;
 }
 
-export default function DashboardPage() {
+export default function UnifiedDashboardPage() {
   const router = useRouter();
+  const [rawToken, setRawToken] = useState<string | null>(null);
   const [tokenData, setTokenData] = useState<DecodedToken | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -23,12 +27,11 @@ export default function DashboardPage() {
     try {
       const token = localStorage.getItem("bayflow_token");
       if (!token) {
-        setTokenData(null);
-        setLoading(false);
+        router.replace("/login");
         return;
       }
+      setRawToken(token);
 
-      // Safe base64url decoding
       const base64Url = token.split(".")[1];
       if (base64Url) {
         const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
@@ -39,254 +42,122 @@ export default function DashboardPage() {
             .join("")
         );
         const parsed = JSON.parse(jsonPayload);
+        
+        // Check token expiration
+        if (parsed.exp && parsed.exp * 1000 < Date.now()) {
+          localStorage.removeItem("bayflow_token");
+          localStorage.removeItem("bayflow_user_role");
+          router.replace("/login");
+          return;
+        }
+
         setTokenData(parsed);
+      } else {
+        router.replace("/login");
       }
     } catch (err) {
-      console.error("Failed to decode token:", err);
+      console.error("Failed to decode auth session token:", err);
+      router.replace("/login");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [router]);
 
   const handleSignOut = () => {
     localStorage.removeItem("bayflow_token");
     localStorage.removeItem("bayflow_user_role");
-    router.push("/login");
+    router.replace("/login");
   };
 
-  const userRole = tokenData?.role || "GUEST";
-
-  // Role Badge Styling Config
-  const getRoleTheme = (role: string) => {
-    switch (role) {
-      case "OWNER":
-        return {
-          label: "Shop Owner & Administrator",
-          pillBg: "bg-[#111827]",
-          pillText: "text-white",
-          borderColor: "border-[#111827]/20",
-          icon: "admin_panel_settings",
-          desc: "Full administrative access across bays, finances, inventory, and staff rosters.",
-        };
-      case "CUSTOMER":
-        return {
-          label: "Verified Vehicle Owner",
-          pillBg: "bg-[#1F5C45]",
-          pillText: "text-white",
-          borderColor: "border-[#1F5C45]/20",
-          icon: "directions_car",
-          desc: "Vehicle service history, active tracking, and live technician communication.",
-        };
-      case "SERVICE_ADVISOR":
-        return {
-          label: "Service Advisor",
-          pillBg: "bg-[#0284C7]",
-          pillText: "text-white",
-          borderColor: "border-[#0284C7]/20",
-          icon: "support_agent",
-          desc: "Estimates, customer work authorizations, intake scheduling, and billing.",
-        };
-      case "TECHNICIAN":
-        return {
-          label: "Master Service Technician",
-          pillBg: "bg-[#D97706]",
-          pillText: "text-white",
-          borderColor: "border-[#D97706]/20",
-          icon: "precision_manufacturing",
-          desc: "Active bay job assignment, inspection checklists, and parts requests.",
-        };
-      case "PARTS_PERSON":
-        return {
-          label: "Parts Specialist",
-          pillBg: "bg-[#7C3AED]",
-          pillText: "text-white",
-          borderColor: "border-[#7C3AED]/20",
-          icon: "inventory_2",
-          desc: "Purchase orders, inventory allocations, supplier lead times, and dispatch.",
-        };
-      case "QC_INSPECTOR":
-        return {
-          label: "Quality Control Inspector",
-          pillBg: "bg-[#059669]",
-          pillText: "text-white",
-          borderColor: "border-[#059669]/20",
-          icon: "verified",
-          desc: "Final multi-point pass/fail inspections, road test sign-off, and handoff.",
-        };
-      default:
-        return {
-          label: "Authenticated User",
-          pillBg: "bg-[#374151]",
-          pillText: "text-white",
-          borderColor: "border-[#374151]/20",
-          icon: "badge",
-          desc: "Standard authenticated BayFlow workspace session.",
-        };
-    }
-  };
-
-  const theme = getRoleTheme(userRole);
-
-  if (loading) {
+  if (loading || !tokenData) {
     return (
-      <div className="min-h-screen bg-[#F4F4F1] flex items-center justify-center p-6">
-        <div className="flex items-center gap-3 text-sm font-bold text-[#2C2421]">
-          <span className="animate-spin material-symbols-outlined">progress_activity</span>
-          <span>Loading authenticated session...</span>
-        </div>
+      <div className="min-h-screen bg-[#F4F4F1] flex items-center justify-center p-6 text-xs font-bold text-[#2C2421]">
+        <span className="animate-spin material-symbols-outlined text-xl mr-2">progress_activity</span>
+        <span>Verifying authenticated session...</span>
       </div>
     );
   }
 
+  const userRole = tokenData.role;
+
   return (
     <div className="min-h-screen bg-[#F4F4F1] text-[#2C2421] font-sans selection:bg-[#111827] selection:text-white flex flex-col justify-between">
-      {/* Top Navbar */}
-      <header className="w-full bg-white border-b border-[#2C2421]/10 px-6 sm:px-12 py-4 flex items-center justify-between sticky top-0 z-20 shadow-xs">
-        <Link href="/" className="flex items-center gap-3 group">
-          <div className="w-9 h-9 rounded-full bg-[#111827] text-white flex items-center justify-center font-bold shadow-md shadow-[#111827]/20 group-hover:scale-105 transition-transform">
-            <span className="material-symbols-outlined text-lg">build_circle</span>
-          </div>
-          <span className="font-headline text-xl font-extrabold tracking-tight text-[#2C2421]">
-            BAYFLOW
-          </span>
-        </Link>
+      {/* Floating Pill Navbar matching Landing Page */}
+      <header className="fixed top-5 left-0 w-full z-50 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto h-14 bg-white/95 backdrop-blur-md border border-[#2C2421]/15 rounded-full shadow-[0_4px_20px_rgba(44,36,33,0.08)] px-4 sm:px-6 flex items-center justify-between">
+          {/* Logo & Role Badge */}
+          <div className="flex items-center gap-3 sm:gap-4">
+            <Link href="/" className="flex items-center gap-2.5 group">
+              <div className="w-8 h-8 rounded-full bg-[#111827] text-white flex items-center justify-center font-bold shadow-md shadow-[#111827]/20 group-hover:scale-105 transition-transform">
+                <span className="material-symbols-outlined text-lg">build_circle</span>
+              </div>
+              <span className="font-headline text-base font-extrabold tracking-tight text-[#2C2421]">
+                BAYFLOW
+              </span>
+            </Link>
 
-        <div className="flex items-center gap-4">
-          <button
-            onClick={handleSignOut}
-            className="flex items-center gap-2 px-4 py-2 rounded-full border border-[#2C2421]/20 hover:bg-[#F4F4F1] text-xs sm:text-sm font-bold text-[#2C2421] transition-all cursor-pointer"
-          >
-            <span className="material-symbols-outlined text-base">logout</span>
-            <span>Sign Out</span>
-          </button>
+            <span className="text-[#2C2421]/30 text-xs">|</span>
+
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#111827] text-white text-[11px] font-mono font-bold shadow-xs">
+              <span className="material-symbols-outlined text-xs text-amber-400">badge</span>
+              <span>ROLE: {userRole}</span>
+            </div>
+          </div>
+
+          {/* Desktop Navigation Links */}
+          <nav className="hidden md:flex items-center gap-6 lg:gap-8 text-xs font-semibold text-[#2C2421]/80">
+            <Link href="/shops" className="hover:text-[#111827] transition-colors">
+              Find Shops &amp; Book
+            </Link>
+            <Link href="/dashboard" className="text-[#111827] font-extrabold border-b-2 border-[#111827] pb-0.5">
+              Unified Dashboard
+            </Link>
+          </nav>
+
+          {/* User Controls & Notifications */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            <NotificationBell token={rawToken} />
+
+            <button
+              onClick={handleSignOut}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-[#2C2421]/20 hover:bg-[#F4F4F1] hover:border-[#111827] text-xs font-bold text-[#2C2421] transition-all cursor-pointer shadow-2xs"
+            >
+              <span className="material-symbols-outlined text-sm">logout</span>
+              <span className="hidden sm:inline">Sign Out</span>
+            </button>
+          </div>
         </div>
       </header>
 
-      {/* Main Role Display Hero */}
-      <main className="flex-1 flex items-center justify-center p-6 sm:p-10">
-        <motion.div
-          initial={{ opacity: 0, y: 18 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, ease: "easeOut" }}
-          className="w-full max-w-3xl bg-white rounded-[32px] p-8 sm:p-12 shadow-[0_20px_60px_rgba(44,36,33,0.08)] border border-[#2C2421]/15 relative overflow-hidden"
-        >
-          {/* Subtle Top Gradient Accent Bar */}
-          <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-[#111827] via-[#374151] to-[#111827]" />
+      {/* Central Role-Enforced View Area */}
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-12">
+        {userRole === "CUSTOMER" && (
+          <CustomerView
+            token={rawToken}
+            userId={tokenData.userId}
+            email={tokenData.email}
+          />
+        )}
 
-          {/* Role Header Badge */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-[#2C2421]/10">
-            <div>
-              <div className="text-xs font-mono font-bold uppercase tracking-widest text-[#2C2421]/50 mb-1">
-                AUTHENTICATED ROLE
-              </div>
-              <h1 className="font-headline text-3xl sm:text-4xl font-extrabold text-[#2C2421] tracking-tight">
-                {userRole}
-              </h1>
-            </div>
+        {userRole === "OWNER" && (
+          <OwnerView
+            token={rawToken}
+            userId={tokenData.userId}
+            email={tokenData.email}
+          />
+        )}
 
-            <div
-              className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs sm:text-sm font-bold ${theme.pillBg} ${theme.pillText} shadow-md`}
-            >
-              <span className="material-symbols-outlined text-base">{theme.icon}</span>
-              <span>{theme.label}</span>
-            </div>
-          </div>
-
-          {/* Decoded Session Metadata */}
-          <div className="py-6 space-y-4">
-            <p className="text-xs sm:text-sm text-[#2C2421]/70 leading-relaxed">
-              {theme.desc}
-            </p>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-2">
-              <div className="bg-[#F8F8F5] p-4 rounded-2xl border border-[#2C2421]/10">
-                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#2C2421]/50 block mb-1">
-                  User ID
-                </span>
-                <span className="font-mono text-xs sm:text-sm font-bold text-[#2C2421] break-all">
-                  {tokenData?.userId || "Session active"}
-                </span>
-              </div>
-
-              <div className="bg-[#F8F8F5] p-4 rounded-2xl border border-[#2C2421]/10">
-                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#2C2421]/50 block mb-1">
-                  Shop ID
-                </span>
-                <span className="font-mono text-xs sm:text-sm font-bold text-[#2C2421] break-all">
-                  {tokenData?.shopId || "Independent / Customer"}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Quick Portal Switcher Cards */}
-          <div className="pt-6 border-t border-[#2C2421]/10">
-            <div className="text-xs font-bold text-[#2C2421]/60 uppercase tracking-wider mb-3">
-              Available Portals
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <Link
-                href="/owner"
-                className="p-4 rounded-2xl bg-[#F8F8F5] hover:bg-[#111827] text-[#2C2421] hover:text-white border border-[#2C2421]/10 transition-all flex flex-col justify-between group shadow-xs cursor-pointer"
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <span className="material-symbols-outlined text-xl text-[#111827] group-hover:text-white">
-                    admin_panel_settings
-                  </span>
-                  <span className="material-symbols-outlined text-sm text-[#2C2421]/40 group-hover:text-white/70 group-hover:translate-x-0.5 transition-transform">
-                    arrow_forward
-                  </span>
-                </div>
-                <div className="font-bold text-xs sm:text-sm">Owner Portal</div>
-                <div className="text-[10px] text-[#2C2421]/50 group-hover:text-white/70">
-                  Manage bays &amp; metrics
-                </div>
-              </Link>
-
-              <Link
-                href="/pos"
-                className="p-4 rounded-2xl bg-[#F8F8F5] hover:bg-[#111827] text-[#2C2421] hover:text-white border border-[#2C2421]/10 transition-all flex flex-col justify-between group shadow-xs cursor-pointer"
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <span className="material-symbols-outlined text-xl text-[#111827] group-hover:text-white">
-                    point_of_sale
-                  </span>
-                  <span className="material-symbols-outlined text-sm text-[#2C2421]/40 group-hover:text-white/70 group-hover:translate-x-0.5 transition-transform">
-                    arrow_forward
-                  </span>
-                </div>
-                <div className="font-bold text-xs sm:text-sm">Shop POS &amp; Floor</div>
-                <div className="text-[10px] text-[#2C2421]/50 group-hover:text-white/70">
-                  Advisor &amp; Tech console
-                </div>
-              </Link>
-
-              <Link
-                href="/customer"
-                className="p-4 rounded-2xl bg-[#F8F8F5] hover:bg-[#111827] text-[#2C2421] hover:text-white border border-[#2C2421]/10 transition-all flex flex-col justify-between group shadow-xs cursor-pointer"
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <span className="material-symbols-outlined text-xl text-[#111827] group-hover:text-white">
-                    directions_car
-                  </span>
-                  <span className="material-symbols-outlined text-sm text-[#2C2421]/40 group-hover:text-white/70 group-hover:translate-x-0.5 transition-transform">
-                    arrow_forward
-                  </span>
-                </div>
-                <div className="font-bold text-xs sm:text-sm">Customer Portal</div>
-                <div className="text-[10px] text-[#2C2421]/50 group-hover:text-white/70">
-                  Track vehicle &amp; bookings
-                </div>
-              </Link>
-            </div>
-          </div>
-        </motion.div>
+        {["SERVICE_ADVISOR", "TECHNICIAN", "PARTS_PERSON", "QC_INSPECTOR"].includes(userRole) && (
+          <StaffPosView
+            token={rawToken}
+            role={userRole}
+            shopId={tokenData.shopId}
+          />
+        )}
       </main>
 
-      {/* Footer */}
-      <footer className="w-full py-4 text-center text-xs text-[#2C2421]/50 border-t border-[#2C2421]/10">
-        © 2026 BayFlow Auto Repair Inc. • Secure Session
+      <footer className="w-full py-4 text-center text-xs text-[#2C2421]/50 border-t border-[#2C2421]/10 bg-white">
+        © 2026 BayFlow Auto Repair Inc. • Strict RBAC Session ({userRole})
       </footer>
     </div>
   );

@@ -16,12 +16,26 @@ export const AuthService = {
     
     const result = await prisma.$transaction(async (tx) => {
       let shopId = null;
+      let createdShop = null;
       if (data.role === 'OWNER' && data.shopName) {
-        const shop = await tx.shop.create({ data: { name: data.shopName } });
-        shopId = shop.id;
+        createdShop = await tx.shop.create({
+          data: {
+            name: data.shopName,
+            phone: data.phoneNumber || null,
+            city: data.city || 'Lahore',
+            address: data.address || 'Main Workshop Area',
+            workingHours: {
+              open: '09:00',
+              close: '18:00',
+              slotDurationMinutes: 60,
+              daysOpen: [1, 2, 3, 4, 5, 6]
+            }
+          }
+        });
+        shopId = createdShop.id;
       }
       
-      return tx.user.create({
+      const user = await tx.user.create({
         data: {
           email: data.email,
           passwordHash,
@@ -30,6 +44,37 @@ export const AuthService = {
           shopId
         }
       });
+
+      if (createdShop) {
+        await tx.shop.update({
+          where: { id: createdShop.id },
+          data: { ownerId: user.id }
+        });
+
+        // Auto-seed default services for immediate booking availability
+        await tx.service.createMany({
+          data: [
+            { shopId: createdShop.id, name: 'Oil Change & Filter', durationMinutes: 30, basePrice: 5200 },
+            { shopId: createdShop.id, name: 'Check Engine Light OBD-II Scan', durationMinutes: 45, basePrice: 2500 },
+            { shopId: createdShop.id, name: 'Brake Pad & Rotor Overhaul', durationMinutes: 60, basePrice: 8500 },
+            { shopId: createdShop.id, name: 'AC Gas Refill & Leak Inspection', durationMinutes: 40, basePrice: 4000 },
+            { shopId: createdShop.id, name: 'Suspension & Wheel Alignment', durationMinutes: 60, basePrice: 3500 },
+          ]
+        });
+
+        // Auto-seed initial inventory catalog (with Ignition Coil at 0 stock for PO demonstration)
+        await tx.inventory.createMany({
+          data: [
+            { shopId: createdShop.id, sku: 'PART-001', name: 'Ignition Coil OEM', quantity: 0, unitPrice: 6500, reorderLevel: 2 },
+            { shopId: createdShop.id, sku: 'PART-002', name: 'Oil Filter (Honda OEM)', quantity: 12, unitPrice: 900, reorderLevel: 5 },
+            { shopId: createdShop.id, sku: 'PART-003', name: 'Engine Oil 4L Full Synthetic', quantity: 20, unitPrice: 5200, reorderLevel: 5 },
+            { shopId: createdShop.id, sku: 'PART-004', name: 'Ceramic Brake Pads Set', quantity: 8, unitPrice: 4500, reorderLevel: 3 },
+            { shopId: createdShop.id, sku: 'PART-005', name: 'Iridium Spark Plugs Set', quantity: 15, unitPrice: 3800, reorderLevel: 4 },
+          ]
+        });
+      }
+
+      return user;
     });
 
     const otp = generateOTP();
@@ -103,7 +148,7 @@ export const AuthService = {
     const refreshExpiresIn = (process.env.JWT_REFRESH_EXPIRES_IN || '7d') as any;
 
     const accessToken = jwt.sign(
-      { userId: user.id, role: user.role, shopId: user.shopId },
+      { userId: user.id, email: user.email, role: user.role, shopId: user.shopId },
       process.env.JWT_SECRET || 'secret',
       { expiresIn: accessExpiresIn }
     );

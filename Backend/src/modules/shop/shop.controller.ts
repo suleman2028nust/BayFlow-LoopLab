@@ -7,9 +7,10 @@ export const ShopController = {
   async createShop(req: Request, res: Response, next: NextFunction) {
     try {
       const user = (req as any).user;
-      const { name, address, city, phone, timezone, workingHours } = req.body;
-      const shop = await ShopService.createShop(user.userId, { name, address, city, phone, timezone, workingHours });
-      res.status(201).json({ success: true, data: shop, message: 'Shop created successfully' });
+      const { name, address, city, phone, phoneNumber, timezone, workingHours } = req.body;
+      const shopPhone = phone || phoneNumber;
+      const shop = await ShopService.createShop(user.userId, { name, address, city, phone: shopPhone, timezone, workingHours });
+      res.status(201).json({ success: true, data: shop, shop, message: 'Shop created successfully' });
     } catch (error) {
       next(error);
     }
@@ -19,7 +20,7 @@ export const ShopController = {
   async listAllShops(req: Request, res: Response, next: NextFunction) {
     try {
       const shops = await ShopService.listAllShops();
-      res.status(200).json({ success: true, data: shops });
+      res.status(200).json({ success: true, data: shops, shops });
     } catch (error) {
       next(error);
     }
@@ -30,7 +31,7 @@ export const ShopController = {
     try {
       const shopId = req.params.shopId || req.params.id;
       const shop = await ShopService.getShopById(shopId as string);
-      res.status(200).json({ success: true, data: shop });
+      res.status(200).json({ success: true, data: shop, shop });
     } catch (error) {
       next(error);
     }
@@ -75,7 +76,7 @@ export const ShopController = {
     try {
       const shopId = req.params.shopId || req.params.id || (req as any).user?.shopId;
       const team = await ShopService.getShopTeam(shopId as string);
-      res.status(200).json({ success: true, data: team });
+      res.status(200).json({ success: true, data: team, team });
     } catch (error) {
       next(error);
     }
@@ -103,7 +104,7 @@ export const ShopController = {
         return res.status(400).json({ success: false, message: 'Query parameter "date" (YYYY-MM-DD) is required' });
       }
       const slots = await ShopService.getAvailableSlots(shopId as string, String(date));
-      res.status(200).json({ success: true, data: slots });
+      res.status(200).json({ success: true, data: slots, slots });
     } catch (error) {
       next(error);
     }
@@ -114,7 +115,7 @@ export const ShopController = {
     try {
       const shopId = req.params.shopId || req.params.id;
       const services = await ShopService.listServices(shopId as string);
-      res.status(200).json({ success: true, data: services });
+      res.status(200).json({ success: true, data: services, services });
     } catch (error) {
       next(error);
     }
@@ -130,7 +131,7 @@ export const ShopController = {
         durationMinutes: durationMinutes ? Number(durationMinutes) : undefined,
         basePrice: basePrice ? Number(basePrice) : undefined
       });
-      res.status(201).json({ success: true, data: service, message: 'Service added successfully' });
+      res.status(201).json({ success: true, data: service, service, message: 'Service added successfully' });
     } catch (error) {
       next(error);
     }
@@ -141,7 +142,7 @@ export const ShopController = {
       const shopId = req.params.shopId || req.params.id;
       const serviceId = req.params.serviceId;
       const updated = await ShopService.updateService(shopId as string, serviceId as string, req.body);
-      res.status(200).json({ success: true, data: updated, message: 'Service updated successfully' });
+      res.status(200).json({ success: true, data: updated, service: updated, message: 'Service updated successfully' });
     } catch (error) {
       next(error);
     }
@@ -162,7 +163,7 @@ export const ShopController = {
     try {
       const shopId = req.params.shopId || req.params.id;
       const analytics = await ShopService.getShopAnalytics(shopId as string);
-      res.status(200).json({ success: true, data: analytics });
+      res.status(200).json({ success: true, data: analytics, analytics });
     } catch (error) {
       next(error);
     }

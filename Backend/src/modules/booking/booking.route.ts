@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { BookingController } from './booking.controller';
-import { AuthGuard } from '../../common/middlewares/authGuard';
+import { AuthGuard, OptionalAuthGuard } from '../../common/middlewares/authGuard';
 import { TenantGuard } from '../../common/middlewares/tenantGuard';
 import { RBACGuard } from '../../common/middlewares/rbacGuard';
 import { validateRequest } from '../../common/middlewares/validateRequest';
@@ -20,20 +20,20 @@ router.get('/:id', AuthGuard, TenantGuard, BookingController.getById);
 // 3. Get booking audit trail / history
 router.get('/:id/history', AuthGuard, TenantGuard, BookingController.getHistory);
 
-// 4. Create booking (Customer)
+// 4. Create booking (Customer or Guest checkout with credentials)
 router.post(
   '/',
-  AuthGuard,
+  OptionalAuthGuard,
   validateRequest(createBookingSchema),
   BookingController.create
 );
 
-// 5. Assign technician (Owner / Service Advisor)
+// 5. Assign technician (Service Advisor)
 router.post(
   '/:id/assign',
   AuthGuard,
   TenantGuard,
-  RBACGuard(['OWNER', 'SERVICE_ADVISOR']),
+  RBACGuard(['SERVICE_ADVISOR']),
   BookingController.assignTechnician
 );
 
@@ -64,6 +64,12 @@ router.post(
 // 9. Allocate parts to booking
 router.post(
   '/:id/parts',
+  AuthGuard,
+  TenantGuard,
+  BookingController.allocateParts
+);
+router.post(
+  '/:id/parts/allocate',
   AuthGuard,
   TenantGuard,
   BookingController.allocateParts

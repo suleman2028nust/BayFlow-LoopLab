@@ -1,7 +1,8 @@
 import { Response, NextFunction } from 'express';
 import { AuthRequest } from './authGuard';
+import { prisma } from '../../config/prisma';
 
-export const TenantGuard = (req: AuthRequest, res: Response, next: NextFunction) => {
+export const TenantGuard = async (req: AuthRequest, res: Response, next: NextFunction) => {
   if (!req.user) {
     return res.status(401).json({ success: false, message: 'Not authenticated' });
   }
@@ -14,7 +15,25 @@ export const TenantGuard = (req: AuthRequest, res: Response, next: NextFunction)
   // For STAFF and OWNERS, check targetShopId if explicitly provided
   const targetShopId = req.params.shopId || req.query.shopId || (req.body ? req.body.shopId : undefined);
 
-  // If a specific shop ID is being targeted, verify it matches the user's shop ID (or owner's shop)
+  // If the user is an OWNER, they can access any shop they own
+  if (req.user.role === 'OWNER') {
+    if (targetShopId) {
+      if (req.user.shopId !== targetShopId) {
+        const owned = await prisma.shop.findFirst({
+          where: { id: targetShopId as string, ownerId: req.user.userId }
+        });
+        if (!owned) {
+          return res.status(403).json({
+            success: false,
+            message: 'Tenant Isolation Violation: You do not own this shop branch.'
+          });
+        }
+      }
+    }
+    return next();
+  }
+
+  // For STAFF members, verify targetShopId matches their assigned shop
   if (targetShopId && req.user.shopId && req.user.shopId !== targetShopId) {
     return res.status(403).json({ 
       success: false, 
@@ -31,3 +50,4 @@ export const TenantGuard = (req: AuthRequest, res: Response, next: NextFunction)
 
   next();
 };
+
