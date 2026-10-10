@@ -4,135 +4,240 @@ import bcrypt from 'bcrypt';
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('🌱 Starting database seed...');
+  console.log('🧹 [1/4] Cleaning existing database shops, bookings, and demo users...');
 
-  // Password for all demo accounts
-  const passwordHash = await bcrypt.hash('demo1234', 12);
+  // 1. Delete dependent child records first to respect foreign keys
+  await prisma.callLog.deleteMany({});
+  await prisma.qCIssue.deleteMany({});
+  await prisma.bookingPart.deleteMany({});
+  await prisma.estimate.deleteMany({});
+  await prisma.bookingHistory.deleteMany({});
+  await prisma.purchaseOrderItem.deleteMany({});
+  await prisma.purchaseOrder.deleteMany({});
+  await prisma.booking.deleteMany({});
+  await prisma.inventory.deleteMany({});
+  await prisma.service.deleteMany({});
+  await prisma.notification.deleteMany({});
 
-  // 1. Create Shops
-  const shop1 = await prisma.shop.create({
-    data: { name: 'Lahore Auto Care', city: 'Lahore', address: 'Main Boulevard, Gulberg', phone: '03001234567' }
+  // 2. Disconnect users from shops to prevent circular foreign key locks
+  await prisma.user.updateMany({ data: { shopId: null } });
+  await prisma.shop.updateMany({ data: { ownerId: null } });
+
+  // 3. Delete non-personal users and all existing shops
+  // Preserve any personal admin email like pyrohassan if needed
+  await prisma.user.deleteMany({
+    where: {
+      email: {
+        notIn: ['pyrohassan786@gmail.com', 'pyrohassan788786@gmail.com', 'pyrohassan77886@gmail.com'],
+      },
+    },
   });
-  const shop2 = await prisma.shop.create({
-    data: { name: 'Karachi Motors', city: 'Karachi', address: 'Clifton Block 5', phone: '03009876543' }
-  });
-  const shop3 = await prisma.shop.create({
-    data: { name: 'Islamabad Mechanics', city: 'Islamabad', address: 'F-8 Markaz', phone: '03001122334' }
-  });
+  await prisma.shop.deleteMany({});
 
-  console.log(`✅ Shops created: ${shop1.name}, ${shop2.name}, ${shop3.name}`);
+  console.log('✨ [2/4] Database cleaned successfully!');
+  console.log('🏛️ [3/4] Creating 4 Premium Automotive Centers with full professional teams...');
 
-  // 2. Create Staff Accounts
-  const owner = await prisma.user.upsert({
-    where: { email: 'fatima@bayflow.demo' },
-    update: {},
-    create: {
-      email: 'fatima@bayflow.demo',
-      passwordHash,
-      role: Role.OWNER,
-      shopId: shop1.id,
-      isVerified: true
-    }
-  });
+  const DEFAULT_PASSWORD = 'BayFlow@2026';
+  const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 12);
 
-  // Assign shop ownerId
-  await prisma.shop.update({
-    where: { id: shop1.id },
-    data: { ownerId: owner.id }
-  });
+  // ─── 4 Premium Shops Definition ───────────────────────────────────────────
+  const shopsData = [
+    {
+      name: 'Apex Performance & AutoLab',
+      city: 'Lahore',
+      address: 'Main Boulevard, Gulberg III, Lahore',
+      phone: '+92 300 8472911',
+      timezone: 'Asia/Karachi',
+      prefix: 'apex',
+      ownerName: 'Hamza Malik',
+      team: {
+        owner: 'owner@apex.bayflow.io',
+        advisor: 'advisor@apex.bayflow.io',
+        tech: 'tech@apex.bayflow.io',
+        parts: 'parts@apex.bayflow.io',
+        qc: 'qc@apex.bayflow.io',
+      },
+    },
+    {
+      name: 'Velocity Motorsports & Precision Care',
+      city: 'Karachi',
+      address: 'Marine Promenade, Clifton Block 4, Karachi',
+      phone: '+92 321 9924810',
+      timezone: 'Asia/Karachi',
+      prefix: 'velocity',
+      ownerName: 'Tariq Al-Mansoor',
+      team: {
+        owner: 'owner@velocity.bayflow.io',
+        advisor: 'advisor@velocity.bayflow.io',
+        tech: 'tech@velocity.bayflow.io',
+        parts: 'parts@velocity.bayflow.io',
+        qc: 'qc@velocity.bayflow.io',
+      },
+    },
+    {
+      name: 'Prestige AutoCraft & Works',
+      city: 'Islamabad',
+      address: 'Executive Sector, Blue Area, Islamabad',
+      phone: '+92 333 5183920',
+      timezone: 'Asia/Karachi',
+      prefix: 'prestige',
+      ownerName: 'Zainab Qureshi',
+      team: {
+        owner: 'owner@prestige.bayflow.io',
+        advisor: 'advisor@prestige.bayflow.io',
+        tech: 'tech@prestige.bayflow.io',
+        parts: 'parts@prestige.bayflow.io',
+        qc: 'qc@prestige.bayflow.io',
+      },
+    },
+    {
+      name: 'Bavarian Auto Haus & Garage',
+      city: 'Lahore',
+      address: 'Commercial Avenue, DHA Phase 6, Lahore',
+      phone: '+92 301 4455667',
+      timezone: 'Asia/Karachi',
+      prefix: 'bavarian',
+      ownerName: 'Khurram Shehzad',
+      team: {
+        owner: 'owner@bavarian.bayflow.io',
+        advisor: 'advisor@bavarian.bayflow.io',
+        tech: 'tech@bavarian.bayflow.io',
+        parts: 'parts@bavarian.bayflow.io',
+        qc: 'qc@bavarian.bayflow.io',
+      },
+    },
+  ];
 
-  const sa = await prisma.user.upsert({
-    where: { email: 'bilal.sa@bayflow.demo' },
-    update: {},
-    create: {
-      email: 'bilal.sa@bayflow.demo',
-      passwordHash,
-      role: Role.SERVICE_ADVISOR,
-      shopId: shop1.id,
-      isVerified: true
-    }
-  });
+  for (const shopItem of shopsData) {
+    // 1. Create the Shop
+    const shop = await prisma.shop.create({
+      data: {
+        name: shopItem.name,
+        city: shopItem.city,
+        address: shopItem.address,
+        phone: shopItem.phone,
+        timezone: shopItem.timezone,
+        workingHours: {
+          open: '08:30',
+          close: '19:00',
+          slotDurationMinutes: 60,
+          daysOpen: [1, 2, 3, 4, 5, 6],
+        },
+      },
+    });
 
-  const tech = await prisma.user.upsert({
-    where: { email: 'imran.tech@bayflow.demo' },
-    update: {},
-    create: {
-      email: 'imran.tech@bayflow.demo',
-      passwordHash,
-      role: Role.TECHNICIAN,
-      shopId: shop1.id,
-      isVerified: true
-    }
-  });
+    // 2. Create the Owner User
+    const ownerUser = await prisma.user.create({
+      data: {
+        email: shopItem.team.owner,
+        passwordHash,
+        role: Role.OWNER,
+        phoneNumber: shopItem.phone,
+        isVerified: true,
+        shopId: shop.id,
+      },
+    });
 
-  const qc = await prisma.user.upsert({
-    where: { email: 'sara.qc@bayflow.demo' },
-    update: {},
-    create: {
-      email: 'sara.qc@bayflow.demo',
-      passwordHash,
-      role: Role.QC_INSPECTOR,
-      shopId: shop1.id,
-      isVerified: true
-    }
-  });
+    // Link Owner to Shop
+    await prisma.shop.update({
+      where: { id: shop.id },
+      data: { ownerId: ownerUser.id },
+    });
 
-  const parts = await prisma.user.upsert({
-    where: { email: 'usman.parts@bayflow.demo' },
-    update: {},
-    create: {
-      email: 'usman.parts@bayflow.demo',
-      passwordHash,
-      role: Role.PARTS_PERSON,
-      shopId: shop1.id,
-      isVerified: true
-    }
-  });
+    // 3. Create Service Advisor
+    await prisma.user.create({
+      data: {
+        email: shopItem.team.advisor,
+        passwordHash,
+        role: Role.SERVICE_ADVISOR,
+        phoneNumber: shopItem.phone,
+        isVerified: true,
+        shopId: shop.id,
+      },
+    });
 
-  console.log('✅ Staff accounts created.');
+    // 4. Create Master Technician
+    await prisma.user.create({
+      data: {
+        email: shopItem.team.tech,
+        passwordHash,
+        role: Role.TECHNICIAN,
+        phoneNumber: shopItem.phone,
+        isVerified: true,
+        shopId: shop.id,
+      },
+    });
 
-  // 3. Create Customer Account (Ahmed)
-  const customer = await prisma.user.upsert({
-    where: { email: 'ahmed@mail.com' },
-    update: {},
-    create: {
-      email: 'ahmed@mail.com',
+    // 5. Create Parts Specialist
+    await prisma.user.create({
+      data: {
+        email: shopItem.team.parts,
+        passwordHash,
+        role: Role.PARTS_PERSON,
+        phoneNumber: shopItem.phone,
+        isVerified: true,
+        shopId: shop.id,
+      },
+    });
+
+    // 6. Create QC Inspector
+    await prisma.user.create({
+      data: {
+        email: shopItem.team.qc,
+        passwordHash,
+        role: Role.QC_INSPECTOR,
+        phoneNumber: shopItem.phone,
+        isVerified: true,
+        shopId: shop.id,
+      },
+    });
+
+    // 7. Seed Premium Catalog Services for this shop
+    await prisma.service.createMany({
+      data: [
+        { shopId: shop.id, name: 'Computerized OBD-II Diagnostics & Health Scan', durationMinutes: 45, basePrice: 3500 },
+        { shopId: shop.id, name: 'Full Synthetic Engine Oil & OEM Filter Service', durationMinutes: 30, basePrice: 6500 },
+        { shopId: shop.id, name: 'Ceramic Brake Pad & Rotor Precision Overhaul', durationMinutes: 60, basePrice: 9500 },
+        { shopId: shop.id, name: 'Climate Control AC Gas Flush & Leak Detection', durationMinutes: 45, basePrice: 5000 },
+        { shopId: shop.id, name: 'Laser Wheel Alignment & Multi-Link Suspension Tune', durationMinutes: 60, basePrice: 4500 },
+      ],
+    });
+
+    // 8. Seed Real Inventory Catalog (with 1 item at 0 quantity to test Purchase Orders!)
+    await prisma.inventory.createMany({
+      data: [
+        { shopId: shop.id, sku: `${shopItem.prefix.toUpperCase()}-OIL-5W40`, name: 'Castrol Edge 5W-40 Full Synthetic 4L', quantity: 18, reorderLevel: 5, unitPrice: 5800 },
+        { shopId: shop.id, sku: `${shopItem.prefix.toUpperCase()}-FLTR-OEM`, name: 'OEM Micro-Pore Oil Filter', quantity: 24, reorderLevel: 6, unitPrice: 1200 },
+        { shopId: shop.id, sku: `${shopItem.prefix.toUpperCase()}-BRK-FRNT`, name: 'Brembo Ceramic Front Brake Pads Set', quantity: 10, reorderLevel: 3, unitPrice: 7500 },
+        { shopId: shop.id, sku: `${shopItem.prefix.toUpperCase()}-SPRK-IRID`, name: 'NGK Laser Iridium Spark Plugs (Pack of 4)', quantity: 14, reorderLevel: 4, unitPrice: 4200 },
+        { shopId: shop.id, sku: `${shopItem.prefix.toUpperCase()}-IGN-COIL`, name: 'Bosch High-Energy Ignition Coil', quantity: 0, reorderLevel: 2, unitPrice: 6800 }, // 0 stock for PO flow!
+      ],
+    });
+
+    console.log(`✅ [${shopItem.name}] seeded with 5-member staff, 5 services, and 5 inventory parts!`);
+  }
+
+  // ─── Create Demo Customer Account ─────────────────────────────────────────
+  const customer = await prisma.user.create({
+    data: {
+      email: 'customer@bayflow.demo',
       passwordHash,
       role: Role.CUSTOMER,
-      phoneNumber: '+923001234567',
-      isVerified: true
-    }
+      phoneNumber: '+92 300 1234567',
+      isVerified: true,
+    },
   });
 
-  console.log('✅ Customer account created (ahmed@mail.com).');
-
-  // 4. Create Services for Lahore Auto Care
-  await prisma.service.createMany({
-    data: [
-      { shopId: shop1.id, name: 'Check Engine Light Diagnostic', durationMinutes: 60, basePrice: 4000 },
-      { shopId: shop1.id, name: 'Oil change', durationMinutes: 30, basePrice: 1500 },
-      { shopId: shop1.id, name: 'Full Brake Pad Replacement', durationMinutes: 45, basePrice: 5000 },
-    ],
-    skipDuplicates: true
-  });
-
-  // 5. Create Inventory items for Shop 1 (Ignition Coil is 0 to trigger Step 9 PO creation)
-  await prisma.inventory.createMany({
-    data: [
-      { shopId: shop1.id, sku: 'PART-001', name: 'Ignition Coil', quantity: 0, reorderLevel: 2, unitPrice: 6500 },
-      { shopId: shop1.id, sku: 'PART-002', name: 'Oil filter (Honda)', quantity: 12, reorderLevel: 5, unitPrice: 900 },
-      { shopId: shop1.id, sku: 'PART-003', name: 'Engine oil 4L', quantity: 20, reorderLevel: 5, unitPrice: 5200 },
-    ],
-    skipDuplicates: true
-  });
-
-  console.log('✅ Inventory items seeded (Ignition Coil: 0 stock, Oil & Filter available).');
-  console.log('🎉 Seeding complete. All demo accounts use password: "demo1234"');
+  console.log(`✅ Demo Customer created: ${customer.email}`);
+  console.log('\n======================================================');
+  console.log('🎉 DATABASE SEEDING COMPLETED SUCCESSFULLY!');
+  console.log(`🔑 All Accounts Password: "${DEFAULT_PASSWORD}"`);
+  console.log('======================================================\n');
 }
 
 main()
   .catch((e) => {
-    console.error(e);
+    console.error('❌ Seeding error:', e);
     process.exit(1);
   })
   .finally(async () => {
