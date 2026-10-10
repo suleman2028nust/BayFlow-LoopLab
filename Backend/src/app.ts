@@ -34,6 +34,17 @@ app.use(cors({
   credentials: true,
 }));
 app.use(express.json());
+
+// Health Check Endpoint (placed before rate limiting for external pingers / monitors)
+app.get(['/health', '/api/health'], (req, res) => {
+  res.status(200).json({
+    status: 'healthy',
+    uptime: Math.floor(process.uptime()),
+    timestamp: new Date().toISOString(),
+    service: 'BayFlow API Engine',
+  });
+});
+
 app.use(rateLimiter); // Global rate limiter
 
 // Setup Swagger Documentation
@@ -54,4 +65,23 @@ const PORT = process.env.PORT || 4000;
 
 app.listen(PORT, () => {
   console.log(`🚀 Server is running on port ${PORT}`);
+
+  // Self-ping to prevent Render free-tier from sleeping (Render spins down after 15m inactivity)
+  const externalUrl = process.env.RENDER_EXTERNAL_URL || process.env.BACKEND_URL;
+  if (externalUrl) {
+    const PING_INTERVAL_MS = 10 * 60 * 1000; // 10 minutes
+    setInterval(async () => {
+      try {
+        const pingUrl = `${externalUrl}/health`;
+        const resp = await fetch(pingUrl);
+        if (resp.ok) {
+          console.log(`💓 [Keep-Alive] Pinged ${pingUrl} - Status 200 OK`);
+        }
+      } catch (err: any) {
+        console.warn(`⚠️ [Keep-Alive] Ping failed:`, err?.message || err);
+      }
+    }, PING_INTERVAL_MS);
+    console.log(`💓 [Keep-Alive] Auto-ping active for ${externalUrl} every 10 minutes`);
+  }
 });
+
