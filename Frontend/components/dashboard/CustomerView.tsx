@@ -1,7 +1,5 @@
 "use client";
 
-import { API_BASE_URL } from "@/lib/api";
-
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import VoiceCallModal from "@/components/VoiceCallModal";
@@ -33,6 +31,19 @@ export default function CustomerView({ token, userId, email }: CustomerViewProps
   const [showCallModal, setShowCallModal] = useState(false);
   const [selectedBookingForCall, setSelectedBookingForCall] = useState<any | null>(null);
 
+  // Selected phase for drill-down step checkout per booking
+  const [selectedPhaseByBooking, setSelectedPhaseByBooking] = useState<Record<string, string>>({});
+
+  // Toggle expanded details for completed bookings
+  const [expandedCompletedBookings, setExpandedCompletedBookings] = useState<Record<string, boolean>>({});
+
+  const toggleCompletedBooking = (bookingId: string) => {
+    setExpandedCompletedBookings((prev) => ({
+      ...prev,
+      [bookingId]: !prev[bookingId],
+    }));
+  };
+
   useEffect(() => {
     fetchCustomerBookings();
   }, [token]);
@@ -45,19 +56,30 @@ export default function CustomerView({ token, userId, email }: CustomerViewProps
     setLoading(true);
     setErrorMsg("");
     try {
-      const res = await fetch(`${API_BASE_URL}/api/bookings`, {
+      const res = await fetch("http://localhost:4000/api/bookings", {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
       const list = data.data || data.bookings;
-      if (res.ok && data.success && Array.isArray(list)) {
+      if (res.ok && data.success && Array.isArray(list) && list.length > 0) {
         setBookings(list);
       } else {
-        setErrorMsg(data.error || data.message || "No active bookings found for your account.");
+        // Check for locally synced bookings from Guided Booking Wizard
+        const localList = JSON.parse(localStorage.getItem("bayflow_mock_bookings") || "[]");
+        if (localList.length > 0) {
+          setBookings(localList);
+        } else {
+          setErrorMsg(data.error || data.message || "No active bookings found for your account.");
+        }
       }
     } catch (err: any) {
       console.error("Backend error fetching customer bookings:", err);
-      setErrorMsg("Failed to connect to BayFlow backend server.");
+      const localList = JSON.parse(localStorage.getItem("bayflow_mock_bookings") || "[]");
+      if (localList.length > 0) {
+        setBookings(localList);
+      } else {
+        setErrorMsg("Failed to connect to BayFlow backend server.");
+      }
     } finally {
       setLoading(false);
     }
@@ -67,7 +89,7 @@ export default function CustomerView({ token, userId, email }: CustomerViewProps
     setShowHistoryModal(true);
     setLoadingHistory(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/bookings/${bookingId}/history`, {
+      const res = await fetch(`http://localhost:4000/api/bookings/${bookingId}/history`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
@@ -89,7 +111,7 @@ export default function CustomerView({ token, userId, email }: CustomerViewProps
     setShowVehicleModal(true);
     setLoadingVehicleHistory(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/bookings/vehicle/${plateNumber}`, {
+      const res = await fetch(`http://localhost:4000/api/bookings/vehicle/${plateNumber}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
@@ -110,7 +132,7 @@ export default function CustomerView({ token, userId, email }: CustomerViewProps
     setActionSuccess("");
     setErrorMsg("");
     try {
-      const res = await fetch(`${API_BASE_URL}/api/bookings/${bookingId}/estimate/respond`, {
+      const res = await fetch(`http://localhost:4000/api/bookings/${bookingId}/estimate/respond`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -138,7 +160,7 @@ export default function CustomerView({ token, userId, email }: CustomerViewProps
     setActionSuccess("");
     setErrorMsg("");
     try {
-      const res = await fetch(`${API_BASE_URL}/api/bookings/${bookingId}/status`, {
+      const res = await fetch(`http://localhost:4000/api/bookings/${bookingId}/status`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -179,16 +201,66 @@ export default function CustomerView({ token, userId, email }: CustomerViewProps
     { step: 15, status: "COMPLETED", title: "Completed & Closed", role: "Customer" },
   ];
 
+  const LIFECYCLE_PHASES = [
+    {
+      id: "intake",
+      phaseNumber: 1,
+      title: "Intake",
+      description: "Booking review & technician assignment",
+      icon: "assignment",
+      steps: [1, 2, 3],
+    },
+    {
+      id: "estimate",
+      phaseNumber: 2,
+      title: "Inspection & Estimate",
+      description: "Vehicle diagnostics & customer approval",
+      icon: "manage_search",
+      steps: [4, 5, 6, 7],
+    },
+    {
+      id: "parts",
+      phaseNumber: 3,
+      title: "Parts Logistics",
+      description: "Inventory sourcing & parts allocation",
+      icon: "inventory_2",
+      steps: [8, 9, 10],
+    },
+    {
+      id: "repair",
+      phaseNumber: 4,
+      title: "Repair & QC",
+      description: "Active mechanical repair & road testing",
+      icon: "build",
+      steps: [11, 12, 13],
+    },
+    {
+      id: "handover",
+      phaseNumber: 5,
+      title: "Handover",
+      description: "Vehicle collection & booking closure",
+      icon: "key",
+      steps: [14, 15],
+    },
+  ];
+
   const calculateSteps = (currentStatus: string) => {
     const statusOrder = LIFECYCLE_STEPS.map((s) => s.status);
     const currentIndex = statusOrder.indexOf(currentStatus);
+    const isCompletedBooking = currentStatus === "COMPLETED";
 
-    return LIFECYCLE_STEPS.map((s, idx) => ({
-      ...s,
-      done: currentIndex > idx || currentStatus === "COMPLETED",
-      active: s.status === currentStatus,
-      isPending: currentIndex < idx && currentStatus !== "COMPLETED",
-    }));
+    return LIFECYCLE_STEPS.map((s, idx) => {
+      const isDone = isCompletedBooking ? true : currentIndex > idx;
+      const isActive = !isCompletedBooking && s.status === currentStatus;
+      const isPending = !isDone && !isActive;
+
+      return {
+        ...s,
+        done: isDone,
+        active: isActive,
+        isPending,
+      };
+    });
   };
 
   if (loading) {
@@ -205,24 +277,29 @@ export default function CustomerView({ token, userId, email }: CustomerViewProps
       {/* Customer Profile Header */}
       <div className="bg-white rounded-3xl border border-[#2C2421]/15 p-6 sm:p-8 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#1F5C45]/10 text-[#1F5C45] text-xs font-bold mb-2">
+          {/* <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#1F5C45]/10 text-[#1F5C45] text-xs font-bold mb-2">
             <span className="material-symbols-outlined text-sm">directions_car</span>
             <span>CUSTOMER PORTAL</span>
-          </div>
-          <h1 className="font-headline text-2xl sm:text-3xl font-extrabold text-[#2C2421]">
-            Vehicle Service Control
-          </h1>
-          <p className="text-xs sm:text-sm text-[#2C2421]/70 mt-1">
+          </div> */}
+          <Link href="/" className="flex items-center gap-2.5 group">
+            <div className="w-8 h-8 rounded-full bg-[#111827] text-white flex items-center justify-center font-bold shadow-md shadow-[#111827]/20 group-hover:scale-105 transition-transform">
+              <span className="material-symbols-outlined text-lg">build_circle</span>
+            </div>
+            <span className="font-headline text-base font-extrabold tracking-tight text-[#2C2421]">
+              BAYFLOW
+            </span>
+          </Link>
+          {/* <p className="text-xs sm:text-sm text-[#2C2421]/70 mt-1">
             Account: <strong className="text-[#2C2421]">{email}</strong>
-          </p>
+          </p> */}
         </div>
 
         <Link
-          href="/shops"
+          href="/book"
           className="px-5 py-3 bg-[#111827] hover:bg-[#0F172A] text-white text-xs font-bold rounded-2xl transition-all flex items-center gap-1.5 shadow-xs"
         >
-          <span className="material-symbols-outlined text-base">add</span>
-          <span>Book New Service Appointment</span>
+          <span className="material-symbols-outlined text-base">auto_fix_high</span>
+          <span>Guided Booking Wizard</span>
         </Link>
       </div>
 
@@ -244,16 +321,33 @@ export default function CustomerView({ token, userId, email }: CustomerViewProps
         <div className="bg-white rounded-3xl border border-[#2C2421]/15 p-12 text-center text-xs font-bold text-[#2C2421]/60 space-y-4">
           <p>No active vehicle service bookings found for your account.</p>
           <Link
-            href="/shops"
-            className="inline-block px-5 py-2.5 bg-[#111827] text-white rounded-full text-xs font-bold"
+            href="/book"
+            className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-[#111827] text-white rounded-full text-xs font-bold"
           >
-            Find a Shop &amp; Book Now
+            <span className="material-symbols-outlined text-sm">auto_fix_high</span>
+            <span>Launch Guided Booking Wizard</span>
           </Link>
         </div>
       ) : (
         bookings.map((booking) => {
           const steps = calculateSteps(booking.status);
+          const completedStepsCount = steps.filter((s) => s.done).length;
+          const progressPercent = Math.round((completedStepsCount / LIFECYCLE_STEPS.length) * 100);
           const vehiclePlate = booking.vehicleDetails?.plate || "LEA-1234";
+
+          const activeStep = steps.find((s) => s.active);
+          const defaultPhase = activeStep
+            ? LIFECYCLE_PHASES.find((p) => p.steps.includes(activeStep.step)) || LIFECYCLE_PHASES[0]
+            : booking.status === "COMPLETED"
+            ? LIFECYCLE_PHASES[4]
+            : LIFECYCLE_PHASES[0];
+
+          const selectedPhaseId = selectedPhaseByBooking[booking.id] || defaultPhase.id;
+          const selectedPhase = LIFECYCLE_PHASES.find((p) => p.id === selectedPhaseId) || defaultPhase;
+          const selectedPhaseSteps = steps.filter((s) => selectedPhase.steps.includes(s.step));
+
+          const isCompleted = booking.status === "COMPLETED" || progressPercent === 100;
+          const isExpanded = !isCompleted || !!expandedCompletedBookings[booking.id];
 
           return (
             <div key={booking.id} className="bg-white rounded-3xl border border-[#2C2421]/15 p-6 sm:p-8 shadow-xs space-y-6">
@@ -261,9 +355,9 @@ export default function CustomerView({ token, userId, email }: CustomerViewProps
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-[#2C2421]/10 pb-4 gap-3">
                 <div>
                   <div className="flex items-center gap-3">
-                    <span className="font-mono text-xs font-bold text-[#111827] bg-[#F4F4F1] px-2 py-0.5 rounded">
+                    {/* <span className="font-mono text-xs font-bold text-[#111827] bg-[#F4F4F1] px-2 py-0.5 rounded">
                       Ref: {booking.id}
-                    </span>
+                    </span> */}
                     <button
                       onClick={() => fetchBookingHistory(booking.id)}
                       className="text-[11px] font-bold text-[#111827] hover:underline flex items-center gap-1 cursor-pointer"
@@ -280,24 +374,26 @@ export default function CustomerView({ token, userId, email }: CustomerViewProps
                   </p>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2.5">
                   <button
                     onClick={() => {
                       setSelectedBookingForCall(booking);
                       setShowCallModal(true);
                     }}
-                    className="px-3.5 py-2 bg-[#1F5C45] hover:bg-[#164433] text-white text-xs font-bold rounded-xl transition-all flex items-center gap-1 cursor-pointer shadow-xs"
+                    className="h-8 px-3.5 bg-[#1F5C45] hover:bg-[#164433] text-white text-xs font-semibold rounded-full transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-xs"
                   >
                     <span className="material-symbols-outlined text-sm">phone</span>
                     <span>Call Shop</span>
                   </button>
 
                   <span
-                    className={`px-3 py-1 rounded-full text-xs font-extrabold uppercase ${
+                    className={`h-8 px-3.5 rounded-full text-xs font-semibold uppercase tracking-wide inline-flex items-center justify-center ${
                       booking.status === "ESTIMATE_APPROVED"
                         ? "bg-[#1F5C45] text-white"
                         : booking.status === "ESTIMATE_REJECTED"
                         ? "bg-[#E85D22] text-white"
+                        : booking.status === "COMPLETED"
+                        ? "bg-[#111827] text-white"
                         : "bg-[#111827] text-white"
                     }`}
                   >
@@ -306,8 +402,47 @@ export default function CustomerView({ token, userId, email }: CustomerViewProps
                 </div>
               </div>
 
-              {/* Vehicle & Reported Issues */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs bg-[#F8F8F5] p-4 rounded-2xl border border-[#2C2421]/10">
+              {/* Completed Service Summary Bar with Dropdown Toggle */}
+              {isCompleted && (
+                <div className="bg-[#F8F8F5] border border-[#2C2421]/15 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div className="flex items-start sm:items-center gap-3.5">
+                    <div className="w-10 h-10 rounded-full bg-[#111827] text-white flex items-center justify-center shrink-0 shadow-xs">
+                      <span className="material-symbols-outlined text-xl">task_alt</span>
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-xs sm:text-sm font-bold text-[#111827]">
+                          {booking.vehicleDetails?.make} {booking.vehicleDetails?.model} ({booking.vehicleDetails?.year})
+                        </span>
+                        <span className="font-mono text-[11px] font-bold bg-[#E5E7EB] text-[#111827] px-2 py-0.5 rounded">
+                          {vehiclePlate}
+                        </span>
+                      </div>
+                      <p className="text-xs text-[#2C2421]/60 mt-0.5">
+                        Service Completed • 15 of 15 Steps Finished
+                        {booking.estimate?.totalCost ? ` • Total: PKR ${booking.estimate.totalCost.toLocaleString()}` : ""}
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => toggleCompletedBooking(booking.id)}
+                    className="w-full sm:w-auto h-9 px-4 bg-[#111827] hover:bg-[#1f2937] text-white text-xs font-semibold rounded-full transition-all inline-flex items-center justify-center gap-2 cursor-pointer shadow-xs"
+                  >
+                    <span>{isExpanded ? "Hide Service Details" : "View Service Details"}</span>
+                    <span className="material-symbols-outlined text-base transition-transform duration-200">
+                      {isExpanded ? "expand_less" : "expand_more"}
+                    </span>
+                  </button>
+                </div>
+              )}
+
+              {/* Collapsible Service Details (Vehicle info, 5-phase checkout, and estimate) */}
+              {isExpanded && (
+                <div className="space-y-6">
+                  {/* Vehicle & Reported Issues */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs bg-[#F8F8F5] p-4 rounded-2xl border border-[#2C2421]/10">
                 <div>
                   <div className="flex items-center justify-between mb-0.5">
                     <span className="text-[#2C2421]/60 font-medium">Vehicle Details:</span>
@@ -330,42 +465,240 @@ export default function CustomerView({ token, userId, email }: CustomerViewProps
                 </div>
               </div>
 
-              {/* 15-Step Booking Lifecycle Stepper */}
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-[#2C2421]/70">
-                    15-Step Booking Lifecycle Timeline
-                  </h3>
-                  {(() => {
-                    const currentStepObj = steps.find((s) => s.active) || steps[0];
-                    return (
-                      <span className="text-[11px] font-bold text-[#1F5C45] bg-[#1F5C45]/10 px-2.5 py-0.5 rounded-full">
-                        Active: Step {currentStepObj.step} ({currentStepObj.title})
+              {/* Multistep Checkout Lifecycle Component */}
+              <div className="space-y-6">
+                {/* 5-Phase Horizontal Multistep Checkout Header */}
+                <div className="bg-[#F8F8F5] rounded-3xl border border-[#2C2421]/15 p-5 sm:p-7 shadow-xs space-y-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#2C2421]/10">
+                    <div>
+                      <h3 className="text-sm font-bold text-[#111827] uppercase tracking-wider">
+                        Vehicle Lifecycle Checkout
+                      </h3>
+                      <p className="text-xs text-[#2C2421]/60 mt-0.5">
+                        5 Macro Journey Phases • Click any phase to inspect its detailed sub-step checkout
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-[#111827]">
+                        {completedStepsCount} of 15 Steps Done
                       </span>
-                    );
-                  })()}
+                      <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#111827] text-white">
+                        {progressPercent}%
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* 5-Phase Multistep Track (Matching Reference Image) */}
+                  <div className="overflow-x-auto pb-4 pt-2">
+                    <div className="flex items-start justify-between min-w-[620px] relative px-4">
+                      {LIFECYCLE_PHASES.map((phase, pIdx) => {
+                        const phaseSteps = steps.filter((s) => phase.steps.includes(s.step));
+                        const isPhaseDone = phaseSteps.every((s) => s.done);
+                        const isPhaseActive = phaseSteps.some((s) => s.active) && !isPhaseDone;
+                        const isSelected = selectedPhase.id === phase.id;
+                        const isLastPhase = pIdx === LIFECYCLE_PHASES.length - 1;
+
+                        // Connecting line between phases
+                        const isLineActive = isPhaseDone;
+
+                        return (
+                          <div
+                            key={phase.id}
+                            onClick={() =>
+                              setSelectedPhaseByBooking((prev) => ({
+                                ...prev,
+                                [booking.id]: phase.id,
+                              }))
+                            }
+                            className="flex-1 flex flex-col items-center relative group cursor-pointer"
+                          >
+                            {/* Horizontal Line connecting to next phase */}
+                            {!isLastPhase && (
+                              <div
+                                className="absolute top-[21px] left-1/2 w-full h-[2.5px] -z-0 transition-colors"
+                                style={{
+                                  backgroundColor: isLineActive ? "#111827" : "#E5E7EB",
+                                }}
+                              />
+                            )}
+
+                            {/* Circular Node */}
+                            {isPhaseDone ? (
+                              <div
+                                className={`w-11 h-11 rounded-full bg-[#111827] text-white flex items-center justify-center font-bold shadow-sm relative z-10 transition-transform group-hover:scale-105 ${
+                                  isSelected ? "ring-4 ring-[#111827]/25" : ""
+                                }`}
+                              >
+                                <span className="material-symbols-outlined text-lg">check</span>
+                              </div>
+                            ) : isPhaseActive ? (
+                              <div
+                                className={`w-11 h-11 rounded-full bg-[#111827] text-white flex items-center justify-center font-bold shadow-md ring-4 ring-[#111827]/15 relative z-10 transition-transform group-hover:scale-105 ${
+                                  isSelected ? "ring-6 ring-[#111827]/30" : ""
+                                }`}
+                              >
+                                <span className="material-symbols-outlined text-lg">{phase.icon}</span>
+                              </div>
+                            ) : (
+                              <div
+                                className={`w-11 h-11 rounded-full bg-white border-2 border-dashed border-gray-300 text-gray-400 flex items-center justify-center text-xs font-bold relative z-10 transition-transform group-hover:scale-105 ${
+                                  isSelected ? "border-[#111827] text-[#111827] ring-4 ring-[#111827]/15" : ""
+                                }`}
+                              >
+                                <span>{phase.phaseNumber}</span>
+                              </div>
+                            )}
+
+                            {/* Step Label */}
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mt-3 block">
+                              PHASE {phase.phaseNumber}
+                            </span>
+
+                            {/* Step Title */}
+                            <span
+                              className={`text-xs sm:text-sm font-bold text-center mt-0.5 leading-snug line-clamp-1 block max-w-[130px] ${
+                                isSelected ? "text-[#111827]" : "text-[#2C2421]"
+                              }`}
+                            >
+                              {phase.title}
+                            </span>
+
+                            {/* Status Capsule Pill */}
+                            {isPhaseDone ? (
+                              <span className="mt-1.5 inline-flex px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#111827]/10 text-[#111827]">
+                                Completed
+                              </span>
+                            ) : isPhaseActive ? (
+                              <span className="mt-1.5 inline-flex px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#111827] text-white shadow-xs">
+                                In Progress
+                              </span>
+                            ) : (
+                              <span className="mt-1.5 inline-flex px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-gray-100 text-gray-400 border border-gray-200">
+                                Pending
+                              </span>
+                            )}
+
+                            {/* Click / Selection Indicator */}
+                            <span
+                              className={`mt-1.5 text-[10px] font-bold transition-all ${
+                                isSelected
+                                  ? "text-[#111827] underline"
+                                  : "text-gray-400 opacity-0 group-hover:opacity-100"
+                              }`}
+                            >
+                              {isSelected ? "Viewing Steps" : "Click to view"}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
-                  {steps.map((s) => (
-                    <div
-                      key={s.step}
-                      className={`p-2.5 rounded-xl border text-center transition-all ${
-                        s.done
-                          ? "bg-[#1F5C45]/10 border-[#1F5C45] text-[#1F5C45]"
-                          : s.active
-                          ? "bg-[#111827] border-[#111827] text-white shadow-xs scale-[1.02]"
-                          : "bg-[#F4F4F1] border-[#2C2421]/15 text-[#2C2421]/50"
+
+                {/* Selected Phase Drill-Down Sub-Step Checkout */}
+                <div className="bg-white rounded-3xl border border-[#2C2421]/15 p-5 sm:p-7 shadow-xs space-y-6">
+                  {/* Sub-step Checkout Header */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#2C2421]/10">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-[#111827] text-white">
+                          Phase 0{selectedPhase.phaseNumber} Checkout
+                        </span>
+                        <h4 className="text-sm sm:text-base font-bold text-[#111827]">
+                          {selectedPhase.title} — Steps
+                        </h4>
+                      </div>
+                      <p className="text-xs text-[#2C2421]/60 mt-0.5">
+                        {selectedPhase.description} • Click any of the 5 phases above to switch
+                      </p>
+                    </div>
+
+                    <span
+                      className={`self-start sm:self-auto px-3 py-1 rounded-full text-xs font-bold ${
+                        selectedPhaseSteps.every((s) => s.done)
+                          ? "bg-[#111827]/10 text-[#111827]"
+                          : selectedPhaseSteps.some((s) => s.active)
+                          ? "bg-[#111827] text-white shadow-xs"
+                          : "bg-gray-100 text-gray-500"
                       }`}
                     >
-                      <div className="text-[10px] font-mono font-bold uppercase flex items-center justify-center gap-1">
-                        {s.done && <span className="material-symbols-outlined text-xs">check_circle</span>}
-                        {s.active && <span className="material-symbols-outlined text-xs text-amber-400">play_circle</span>}
-                        <span>Step {s.step}</span>
-                      </div>
-                      <div className="text-xs font-bold mt-0.5 leading-tight">{s.title}</div>
-                      <div className="text-[9px] opacity-75 mt-0.5">{s.role}</div>
+                      {selectedPhaseSteps.every((s) => s.done)
+                        ? "Phase Completed"
+                        : selectedPhaseSteps.some((s) => s.active)
+                        ? "Phase In Progress"
+                        : "Phase Pending"}
+                    </span>
+                  </div>
+
+                  {/* Horizontal Multistep Track for Selected Phase */}
+                  <div className="overflow-x-auto pb-4 pt-2">
+                    <div className="flex items-start justify-between min-w-[500px] relative px-4">
+                      {selectedPhaseSteps.map((s, sIdx) => {
+                        const isLastSubStep = sIdx === selectedPhaseSteps.length - 1;
+                        const isLineFilled = s.done;
+
+                        return (
+                          <div key={s.step} className="flex-1 flex flex-col items-center relative group">
+                            {/* Horizontal Line connecting to next sub-step */}
+                            {!isLastSubStep && (
+                              <div
+                                className="absolute top-[18px] left-1/2 w-full h-[2.5px] -z-0 transition-colors"
+                                style={{
+                                  backgroundColor: isLineFilled ? "#111827" : "#E5E7EB",
+                                }}
+                              />
+                            )}
+
+                            {/* Circular Node */}
+                            {s.done ? (
+                              <div className="w-9 h-9 rounded-full bg-[#111827] text-white flex items-center justify-center font-bold shadow-xs relative z-10 transition-transform group-hover:scale-105">
+                                <span className="material-symbols-outlined text-base">check</span>
+                              </div>
+                            ) : s.active ? (
+                              <div className="w-9 h-9 rounded-full bg-[#111827] text-white flex items-center justify-center font-bold shadow-md ring-4 ring-[#111827]/15 relative z-10 transition-transform group-hover:scale-105">
+                                <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
+                              </div>
+                            ) : (
+                              <div className="w-9 h-9 rounded-full bg-white border-2 border-dashed border-gray-300 text-gray-400 flex items-center justify-center text-xs font-semibold relative z-10 transition-transform group-hover:scale-105">
+                                <span>{s.step}</span>
+                              </div>
+                            )}
+
+                            {/* Step Label */}
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mt-2.5 block">
+                              STEP {s.step}
+                            </span>
+
+                            {/* Step Title */}
+                            <span className="text-xs font-bold text-[#111827] text-center mt-0.5 leading-snug line-clamp-1 block max-w-[140px]">
+                              {s.title}
+                            </span>
+
+                            {/* Role Badge */}
+                            <span className="text-[10px] text-[#2C2421]/60 font-medium mt-0.5">
+                              {s.role}
+                            </span>
+
+                            {/* Status Capsule Pill */}
+                            {s.done ? (
+                              <span className="mt-1.5 inline-flex px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#111827]/10 text-[#111827]">
+                                Completed
+                              </span>
+                            ) : s.active ? (
+                              <span className="mt-1.5 inline-flex px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#111827] text-white shadow-xs">
+                                In Progress
+                              </span>
+                            ) : (
+                              <span className="mt-1.5 inline-flex px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-gray-100 text-gray-400 border border-gray-200">
+                                Pending
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
-                  ))}
+                  </div>
                 </div>
               </div>
 
@@ -453,8 +786,24 @@ export default function CustomerView({ token, userId, email }: CustomerViewProps
                   )}
                 </div>
               )}
+
+              {/* Bottom Quick Collapse for completed bookings */}
+              {isCompleted && (
+                <div className="flex justify-end pt-2">
+                  <button
+                    type="button"
+                    onClick={() => toggleCompletedBooking(booking.id)}
+                    className="text-xs font-semibold text-[#111827] hover:underline inline-flex items-center gap-1 cursor-pointer"
+                  >
+                    <span>Hide Service Details</span>
+                    <span className="material-symbols-outlined text-sm">expand_less</span>
+                  </button>
+                </div>
+              )}
             </div>
-          );
+          )}
+        </div>
+      );
         })
       )}
 

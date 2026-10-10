@@ -1,7 +1,5 @@
 "use client";
 
-import { API_BASE_URL } from "@/lib/api";
-
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 
@@ -38,12 +36,84 @@ export default function OwnerView({ token, userId, email }: OwnerViewProps) {
   const [serviceForm, setServiceForm] = useState({ name: "", durationMinutes: 60, basePrice: 4000 });
   const [serviceError, setServiceError] = useState("");
 
+  // Loading flags for shop configuration
+  const [loadingTeam, setLoadingTeam] = useState(true);
+  const [loadingServices, setLoadingServices] = useState(true);
+  const [setupModalDismissed, setSetupModalDismissed] = useState(false);
+  const [hasShownSetupModal, setHasShownSetupModal] = useState(false);
+
+  // Onboarding Setup Modal State
+  const [onboardingTab, setOnboardingTab] = useState<"staff" | "service">("staff");
+  const [onboardingStaffForm, setOnboardingStaffForm] = useState({
+    email: "",
+    password: "",
+    role: "SERVICE_ADVISOR",
+    phoneNumber: "",
+  });
+  const [onboardingStaffError, setOnboardingStaffError] = useState("");
+  const [onboardingStaffSuccess, setOnboardingStaffSuccess] = useState("");
+  const [onboardingStaffSubmitting, setOnboardingStaffSubmitting] = useState(false);
+
+  const [onboardingServiceForm, setOnboardingServiceForm] = useState({
+    name: "General Diagnostics & Inspection",
+    durationMinutes: 60,
+    basePrice: 4500,
+  });
+  const [onboardingServiceError, setOnboardingServiceError] = useState("");
+  const [onboardingServiceSuccess, setOnboardingServiceSuccess] = useState("");
+  const [onboardingServiceSubmitting, setOnboardingServiceSubmitting] = useState(false);
+
+  // Role completeness checks for the selected shop
+  const hasSA = teamMembers.some((m) => m.role === "SERVICE_ADVISOR");
+  const hasTech = teamMembers.some((m) => m.role === "TECHNICIAN");
+  const hasParts = teamMembers.some((m) => m.role === "PARTS_PERSON");
+  const hasQC = teamMembers.some((m) => m.role === "QC_INSPECTOR");
+  const hasServices = services.length >= 1;
+
+  const missingStaffRoles = [
+    !hasSA && { key: "SERVICE_ADVISOR", label: "Service Advisor (SA)" },
+    !hasTech && { key: "TECHNICIAN", label: "Technician" },
+    !hasParts && { key: "PARTS_PERSON", label: "Parts Person" },
+    !hasQC && { key: "QC_INSPECTOR", label: "QC Inspector" },
+  ].filter(Boolean) as { key: string; label: string }[];
+
+  const isSetupIncomplete =
+    !loading &&
+    !loadingTeam &&
+    !loadingServices &&
+    !!selectedShopId &&
+    shops.length > 0 &&
+    (missingStaffRoles.length > 0 || !hasServices);
+
+  useEffect(() => {
+    if (isSetupIncomplete) {
+      setHasShownSetupModal(true);
+    }
+  }, [isSetupIncomplete]);
+
+  useEffect(() => {
+    if (missingStaffRoles.length === 0 && !hasServices) {
+      setOnboardingTab("service");
+    } else if (missingStaffRoles.length > 0) {
+      if (!missingStaffRoles.some((r) => r.key === onboardingStaffForm.role)) {
+        setOnboardingStaffForm((prev) => ({
+          ...prev,
+          role: missingStaffRoles[0].key,
+        }));
+      }
+    }
+  }, [missingStaffRoles.length, hasServices]);
+
   useEffect(() => {
     fetchShops();
   }, [token]);
 
   useEffect(() => {
     if (selectedShopId) {
+      setSetupModalDismissed(false);
+      setHasShownSetupModal(false);
+      setLoadingTeam(true);
+      setLoadingServices(true);
       fetchBookings(selectedShopId);
       fetchTeam(selectedShopId);
       fetchServices(selectedShopId);
@@ -58,7 +128,7 @@ export default function OwnerView({ token, userId, email }: OwnerViewProps) {
     }
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/shops`, {
+      const res = await fetch("http://localhost:4000/api/shops", {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
@@ -90,9 +160,13 @@ export default function OwnerView({ token, userId, email }: OwnerViewProps) {
   };
 
   const fetchTeam = async (shopId: string) => {
-    if (!token || !shopId) return;
+    if (!token || !shopId) {
+      setLoadingTeam(false);
+      return;
+    }
+    setLoadingTeam(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/shops/${shopId}/team`, {
+      const res = await fetch(`http://localhost:4000/api/shops/${shopId}/team`, {
         headers: {
           Authorization: `Bearer ${token}`,
           "X-Shop-Id": shopId,
@@ -107,13 +181,19 @@ export default function OwnerView({ token, userId, email }: OwnerViewProps) {
       }
     } catch (err) {
       setTeamMembers([]);
+    } finally {
+      setLoadingTeam(false);
     }
   };
 
   const fetchServices = async (shopId: string) => {
-    if (!shopId) return;
+    if (!shopId) {
+      setLoadingServices(false);
+      return;
+    }
+    setLoadingServices(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/shops/${shopId}/services`);
+      const res = await fetch(`http://localhost:4000/api/shops/${shopId}/services`);
       const data = await res.json();
       const servicesList = data.data || data.services;
       if (res.ok && data.success && Array.isArray(servicesList)) {
@@ -123,13 +203,15 @@ export default function OwnerView({ token, userId, email }: OwnerViewProps) {
       }
     } catch (err) {
       setServices([]);
+    } finally {
+      setLoadingServices(false);
     }
   };
 
   const fetchAnalytics = async (shopId: string) => {
     if (!token || !shopId) return;
     try {
-      const res = await fetch(`${API_BASE_URL}/api/shops/${shopId}/analytics`, {
+      const res = await fetch(`http://localhost:4000/api/shops/${shopId}/analytics`, {
         headers: {
           Authorization: `Bearer ${token}`,
           "X-Shop-Id": shopId,
@@ -149,7 +231,7 @@ export default function OwnerView({ token, userId, email }: OwnerViewProps) {
     if (!token || !shopId) return;
     setLoadingBookings(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/bookings?shopId=${shopId}`, {
+      const res = await fetch(`http://localhost:4000/api/bookings?shopId=${shopId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
           "X-Shop-Id": shopId,
@@ -174,7 +256,7 @@ export default function OwnerView({ token, userId, email }: OwnerViewProps) {
     e.preventDefault();
     setShopError("");
     try {
-      const res = await fetch(`${API_BASE_URL}/api/shops`, {
+      const res = await fetch("http://localhost:4000/api/shops", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -216,7 +298,7 @@ export default function OwnerView({ token, userId, email }: OwnerViewProps) {
     }
 
     try {
-      const res = await fetch(`${API_BASE_URL}/api/shops/${selectedShopId}/team`, {
+      const res = await fetch(`http://localhost:4000/api/shops/${selectedShopId}/team`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -245,7 +327,7 @@ export default function OwnerView({ token, userId, email }: OwnerViewProps) {
     if (!selectedShopId) return;
 
     try {
-      const res = await fetch(`${API_BASE_URL}/api/shops/${selectedShopId}/services`, {
+      const res = await fetch(`http://localhost:4000/api/shops/${selectedShopId}/services`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -267,6 +349,84 @@ export default function OwnerView({ token, userId, email }: OwnerViewProps) {
     }
   };
 
+  const handleOnboardingAddStaff = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setOnboardingStaffError("");
+    setOnboardingStaffSuccess("");
+
+    if (!selectedShopId) {
+      setOnboardingStaffError("Please select an active shop branch first.");
+      return;
+    }
+
+    setOnboardingStaffSubmitting(true);
+    try {
+      const res = await fetch(`http://localhost:4000/api/shops/${selectedShopId}/team`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+          "X-Shop-Id": selectedShopId,
+        },
+        body: JSON.stringify(onboardingStaffForm),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setOnboardingStaffSuccess(`✓ ${onboardingStaffForm.role} account created successfully!`);
+        setOnboardingStaffForm((prev) => ({
+          ...prev,
+          email: "",
+          password: "",
+          phoneNumber: "",
+        }));
+        await fetchTeam(selectedShopId);
+      } else {
+        setOnboardingStaffError(data.error || data.message || "Failed to add staff member.");
+      }
+    } catch (err: any) {
+      setOnboardingStaffError(err.message || "Server connection error.");
+    } finally {
+      setOnboardingStaffSubmitting(false);
+    }
+  };
+
+  const handleOnboardingAddService = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setOnboardingServiceError("");
+    setOnboardingServiceSuccess("");
+
+    if (!selectedShopId) return;
+
+    setOnboardingServiceSubmitting(true);
+    try {
+      const res = await fetch(`http://localhost:4000/api/shops/${selectedShopId}/services`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+          "X-Shop-Id": selectedShopId,
+        },
+        body: JSON.stringify(onboardingServiceForm),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setOnboardingServiceSuccess(`✓ Service "${onboardingServiceForm.name}" created successfully!`);
+        setOnboardingServiceForm({
+          name: "",
+          durationMinutes: 60,
+          basePrice: 4000,
+        });
+        await fetchServices(selectedShopId);
+      } else {
+        setOnboardingServiceError(data.error || data.message || "Failed to add service item.");
+      }
+    } catch (err: any) {
+      setOnboardingServiceError(err.message || "Server error.");
+    } finally {
+      setOnboardingServiceSubmitting(false);
+    }
+  };
+
   const activeShop = shops.find((s) => s.id === selectedShopId) || shops[0];
 
   if (loading) {
@@ -283,27 +443,17 @@ export default function OwnerView({ token, userId, email }: OwnerViewProps) {
       {/* Top Owner Header */}
       <div className="bg-white rounded-3xl border border-[#2C2421]/15 p-6 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#111827] text-white text-xs font-bold mb-2">
-            <span className="material-symbols-outlined text-sm">admin_panel_settings</span>
-            <span>OWNER CONTROL CENTER</span>
-          </div>
-          <h1 className="font-headline text-2xl sm:text-3xl font-extrabold text-[#2C2421]">
-            Multi-Shop Administration
-          </h1>
-          <p className="text-xs sm:text-sm text-[#2C2421]/70 mt-1">
-            Logged in Owner: <strong className="text-[#2C2421]">{email}</strong>
-          </p>
+          <Link href="/" className="flex items-center gap-2.5 group">
+            <div className="w-8 h-8 rounded-full bg-[#111827] text-white flex items-center justify-center font-bold shadow-md shadow-[#111827]/20 group-hover:scale-105 transition-transform">
+              <span className="material-symbols-outlined text-lg">build_circle</span>
+            </div>
+            <span className="font-headline text-base font-extrabold tracking-tight text-[#2C2421]">
+              BAYFLOW
+            </span>
+          </Link>
         </div>
 
         <div className="flex items-center gap-3 w-full md:w-auto">
-          {/* WhatsApp Link Route */}
-          <Link
-            href="/whatsapp"
-            className="px-3.5 py-2 rounded-xl bg-[#1F5C45] hover:bg-[#164433] text-white text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs"
-          >
-            <span className="material-symbols-outlined text-base">chat</span>
-            <span>Link WhatsApp Gateway</span>
-          </Link>
 
           {/* Shop Switcher */}
           {shops.length > 0 && (
@@ -346,7 +496,7 @@ export default function OwnerView({ token, userId, email }: OwnerViewProps) {
       ) : (
         <>
           {/* Metric Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="bg-white p-5 rounded-2xl border border-[#2C2421]/15 shadow-xs">
               <div className="text-xs font-bold text-[#2C2421]/60 uppercase tracking-wider">Active Shop</div>
               <div className="font-headline text-lg font-extrabold text-[#2C2421] mt-1 truncate">{activeShop?.name}</div>
@@ -370,7 +520,7 @@ export default function OwnerView({ token, userId, email }: OwnerViewProps) {
               <div className="font-headline text-2xl font-extrabold text-[#E85D22] mt-1">{bookings.length} Orders</div>
               <div className="text-[11px] text-[#2C2421]/60 mt-1">Customer appointments</div>
             </div>
-          </div>
+          </div> */}
 
           {/* Tabs */}
           <div className="flex bg-white p-1 rounded-2xl border border-[#2C2421]/15 overflow-x-auto">
@@ -427,28 +577,28 @@ export default function OwnerView({ token, userId, email }: OwnerViewProps) {
           {/* Tab: Live Repairs & Bookings */}
           {activeTab === "bookings" && (
             <div className="bg-white rounded-3xl border border-[#2C2421]/15 p-6 shadow-xs space-y-4">
-              <div className="flex items-center justify-between border-b border-[#2C2421]/10 pb-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[#2C2421]/10 pb-4 gap-3">
                 <div>
                   <h3 className="font-headline text-lg font-bold text-[#2C2421]">
                     Live Repairs &amp; Bookings ({bookings.length})
                   </h3>
-                  <p className="text-xs text-[#2C2421]/60">
+                  <p className="text-xs text-[#2C2421]/60 mt-0.5">
                     Real-time vehicle repair lifecycle for <strong>{activeShop?.name}</strong>
                   </p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2.5">
                   <button
                     onClick={() => selectedShopId && fetchBookings(selectedShopId)}
                     disabled={loadingBookings}
-                    className="px-3.5 py-2 border border-[#2C2421]/15 text-xs font-bold rounded-xl hover:bg-[#F8F8F5] transition-all flex items-center gap-1.5 cursor-pointer"
+                    className="h-9 px-4 border border-[#2C2421]/15 hover:border-[#111827] text-xs font-semibold text-[#111827] rounded-full hover:bg-[#F8F8F5] transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
                   >
                     <span className={`material-symbols-outlined text-base ${loadingBookings ? "animate-spin" : ""}`}>
                       refresh
                     </span>
                     <span>Refresh</span>
                   </button>
-                  <div className="px-3.5 py-2 bg-[#F8F8F5] border border-[#2C2421]/15 text-[#2C2421] text-xs font-bold rounded-xl flex items-center gap-1.5">
-                    <span className="material-symbols-outlined text-base text-[#111827]">visibility</span>
+                  <div className="h-9 px-4 bg-[#111827] text-white text-xs font-semibold rounded-full flex items-center gap-2 shadow-2xs">
+                    <span className="material-symbols-outlined text-base">visibility</span>
                     <span>Executive Oversight Mode</span>
                   </div>
                 </div>
@@ -470,7 +620,7 @@ export default function OwnerView({ token, userId, email }: OwnerViewProps) {
                   </p>
                 </div>
               ) : (
-                <div className="divide-y divide-[#2C2421]/10">
+                <div className="space-y-3 pt-1">
                   {bookings.map((booking: any) => {
                     const vehicle = booking.vehicleDetails || {};
                     const customer = booking.customer || {};
@@ -483,69 +633,80 @@ export default function OwnerView({ token, userId, email }: OwnerViewProps) {
                       minute: "2-digit",
                     });
 
-                    // Badge color matching 15-state machine
-                    const statusColorMap: Record<string, string> = {
-                      PENDING: "bg-amber-100 text-amber-800 border-amber-300",
-                      CONFIRMED: "bg-blue-100 text-blue-800 border-blue-300",
-                      ASSIGNED: "bg-indigo-100 text-indigo-800 border-indigo-300",
-                      INSPECTING: "bg-purple-100 text-purple-800 border-purple-300",
-                      ESTIMATE_REVIEW: "bg-yellow-100 text-yellow-800 border-yellow-300",
-                      AWAITING_CUSTOMER: "bg-amber-100 text-amber-800 border-amber-300",
-                      ESTIMATE_APPROVED: "bg-emerald-100 text-emerald-800 border-emerald-300",
-                      ESTIMATE_REJECTED: "bg-red-100 text-red-800 border-red-300",
-                      PARTS_PENDING: "bg-orange-100 text-orange-800 border-orange-300",
-                      PARTS_READY: "bg-teal-100 text-teal-800 border-teal-300",
-                      IN_REPAIR: "bg-cyan-100 text-cyan-800 border-cyan-300",
-                      QC_PENDING: "bg-purple-100 text-purple-800 border-purple-300",
-                      QC_IN_PROGRESS: "bg-purple-100 text-purple-800 border-purple-300",
-                      READY_FOR_PICKUP: "bg-emerald-100 text-emerald-800 border-emerald-300",
-                      COMPLETED: "bg-gray-100 text-gray-800 border-gray-300",
-                      CANCELLED: "bg-rose-100 text-rose-800 border-rose-300",
-                    };
-                    const badgeClass = statusColorMap[booking.status] || "bg-gray-100 text-gray-700 border-gray-200";
+                    const statusStyle =
+                      booking.status === "COMPLETED"
+                        ? "bg-[#111827] text-white"
+                        : booking.status === "ESTIMATE_APPROVED" || booking.status === "READY_FOR_PICKUP"
+                        ? "bg-[#1F5C45] text-white"
+                        : booking.status === "ESTIMATE_REJECTED" || booking.status === "CANCELLED"
+                        ? "bg-[#E85D22] text-white"
+                        : "bg-[#111827]/10 text-[#111827] border border-[#111827]/20";
 
                     return (
-                      <div key={booking.id} className="py-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <div className="space-y-1.5 flex-1">
+                      <div
+                        key={booking.id}
+                        className="bg-[#F8F8F5] hover:bg-white border border-[#2C2421]/12 hover:border-[#111827]/30 rounded-2xl p-5 transition-all shadow-2xs space-y-3.5"
+                      >
+                        {/* Top Row: Ref, Status, Date & Financials */}
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#2C2421]/10 pb-3">
                           <div className="flex flex-wrap items-center gap-2">
-                            <span className="font-mono text-xs font-black text-[#111827]">
+                            <span className="font-mono text-[11px] font-bold text-[#111827] bg-white border border-[#2C2421]/15 px-2.5 py-1 rounded-md shadow-2xs">
                               #{booking.id.slice(0, 8).toUpperCase()}
                             </span>
-                            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase border ${badgeClass}`}>
+                            <span
+                              className={`h-6 px-3 rounded-full text-xs font-semibold uppercase tracking-wide inline-flex items-center justify-center ${statusStyle}`}
+                            >
                               {booking.status}
                             </span>
-                            <span className="text-[11px] text-[#2C2421]/60 font-medium">
-                              📅 {dateFormatted}
+                            <span className="text-xs text-[#2C2421]/60 font-medium inline-flex items-center gap-1.5 ml-1">
+                              <span className="material-symbols-outlined text-sm">schedule</span>
+                              <span>{dateFormatted}</span>
                             </span>
                           </div>
 
-                          <div className="flex flex-wrap items-center gap-2 text-xs font-bold text-[#2C2421]">
-                            <span className="material-symbols-outlined text-sm text-[#111827]">directions_car</span>
-                            <span>{vehicle.year || ""} {vehicle.make || "Vehicle"} {vehicle.model || ""}</span>
-                            {vehicle.plate && (
-                              <span className="px-2 py-0.5 bg-[#F8F8F5] border border-[#2C2421]/15 rounded font-mono text-[11px]">
-                                {vehicle.plate}
+                          {/* Financials & Role Tag */}
+                          <div className="flex items-center gap-3 self-start sm:self-auto">
+                            <div className="text-left sm:text-right">
+                              <span className="text-[10px] font-bold uppercase tracking-wider text-[#2C2421]/50 block leading-tight">
+                                Estimated Revenue
                               </span>
-                            )}
-                          </div>
-
-                          <div className="text-[11px] text-[#2C2421]/70 flex flex-wrap gap-4">
-                            <span>👤 {customer.email || "Customer"} {customer.phoneNumber ? `(${customer.phoneNumber})` : ""}</span>
-                            <span>🔧 Service: {booking.service?.name || (booking.issuesReported?.[0] || "General Inspection")}</span>
-                            <span>👨‍🔧 Tech: {tech ? (tech.email || "Assigned") : <strong className="text-amber-600">Unassigned</strong>}</span>
+                              <span className="font-headline text-base font-extrabold text-[#111827] block leading-tight mt-0.5">
+                                PKR {(booking.estimateTotal || booking.service?.basePrice || 0).toLocaleString()}
+                              </span>
+                            </div>
+                            <span className="h-7 px-3 rounded-full text-[11px] font-bold uppercase tracking-wide bg-white text-[#111827] border border-[#2C2421]/15 inline-flex items-center justify-center shadow-2xs">
+                              SA Managed
+                            </span>
                           </div>
                         </div>
 
-                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 text-right">
-                          <div className="px-3 py-1 bg-[#F8F8F5] rounded-xl border border-[#2C2421]/10 text-xs">
-                            <span className="text-[#2C2421]/60 text-[10px] block font-mono">ESTIMATE REVENUE</span>
-                            <span className="font-extrabold text-[#111827]">
-                              PKR {(booking.estimateTotal || booking.service?.basePrice || 0).toLocaleString()}
-                            </span>
-                          </div>
-                          <span className="px-2.5 py-1 bg-[#111827]/5 text-[#111827] text-[10px] font-bold rounded-lg border border-[#111827]/10">
-                            SA Managed
+                        {/* Vehicle Title & License Plate */}
+                        <div className="flex flex-wrap items-center gap-2.5">
+                          <span className="material-symbols-outlined text-lg text-[#111827]">directions_car</span>
+                          <span className="text-sm font-bold text-[#2C2421] capitalize">
+                            {vehicle.year ? `${vehicle.year} ` : ""}{vehicle.make || "Vehicle"} {vehicle.model || ""}
                           </span>
+                          {vehicle.plate && (
+                            <span className="px-2.5 py-0.5 bg-white border border-[#2C2421]/15 rounded-md font-mono text-[11px] font-bold text-[#111827] uppercase tracking-wider shadow-2xs">
+                              {vehicle.plate}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Metadata Footer: Customer, Service, Assigned Technician */}
+                        <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-[#2C2421]/70 pt-2 border-t border-[#2C2421]/10">
+                          <div className="flex items-center gap-1.5">
+                            <span className="material-symbols-outlined text-sm text-[#2C2421]/60">person</span>
+                            <span>{customer.email || "Customer"} {customer.phoneNumber ? `(${customer.phoneNumber})` : ""}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="material-symbols-outlined text-sm text-[#2C2421]/60">build</span>
+                            <span>Service: {booking.service?.name || (booking.issuesReported?.[0] || "General Inspection")}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="material-symbols-outlined text-sm text-[#2C2421]/60">engineering</span>
+                            <span>Tech: {tech ? (tech.email || "Assigned") : <strong className="text-amber-700">Unassigned</strong>}</span>
+                          </div>
                         </div>
                       </div>
                     );
@@ -684,7 +845,7 @@ export default function OwnerView({ token, userId, email }: OwnerViewProps) {
                     <div className="p-5 bg-[#F8F8F5] rounded-2xl border border-[#2C2421]/10 space-y-3">
                       <div className="flex items-center justify-between">
                         <span className="font-headline font-bold text-sm text-[#2C2421]">Inventory Valuation &amp; Stock</span>
-                        <span className="text-[10px] font-mono font-bold bg-[#7C3AED]/10 text-[#7C3AED] px-2 py-0.5 rounded">
+                        <span className="text-[10px] font-mono font-bold bg-[#111827]/10 text-[#111827] px-2 py-0.5 rounded">
                           {analytics.inventorySummary?.totalCatalogItems || 0} SKUs Cataloged
                         </span>
                       </div>
@@ -913,6 +1074,354 @@ export default function OwnerView({ token, userId, email }: OwnerViewProps) {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* MANDATORY SHOP OPERATIONS ONBOARDING MODAL */}
+      {selectedShopId && shops.length > 0 && !loading && !loadingTeam && !loadingServices && (isSetupIncomplete || (hasShownSetupModal && !setupModalDismissed)) && (
+        <div className="fixed inset-0 z-50 bg-[#111827]/85 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl border border-[#2C2421]/20 max-w-2xl w-full p-6 sm:p-8 space-y-6 shadow-2xl my-8">
+            {/* Header */}
+            <div className="flex items-start justify-between gap-4 border-b border-[#2C2421]/10 pb-5">
+              <div className="flex items-center gap-3">
+                {/* <div className="w-12 h-12 rounded-2xl bg-[#111827] text-white flex items-center justify-center font-bold shadow-md">
+                  <span className="material-symbols-outlined text-2xl text-amber-400">admin_panel_settings</span>
+                </div> */}
+                <div>
+                  {/* <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[10px] font-extrabold uppercase tracking-wider mb-1">
+                    <span className="material-symbols-outlined text-xs">lock</span>
+                    <span>Setup Required to Proceed</span>
+                  </div> */}
+                  <h2 className="font-headline text-xl sm:text-2xl font-bold text-[#2C2421]">
+                    Required Operations Setup
+                  </h2>
+                  <p className="text-xs text-[#2C2421]/70">
+                    Branch: <strong className="text-[#111827]">{activeShop?.name || "Selected Shop"}</strong> ({activeShop?.city || "Branch"})
+                  </p>
+                </div>
+              </div>
+
+              {/* Requirements Count Badge */}
+              <div className="text-right flex-shrink-0">
+                <span className="text-xs font-mono font-bold text-[#2C2421]/80">
+                  {[hasSA, hasTech, hasParts, hasQC, hasServices].filter(Boolean).length} / 5 Ready
+                </span>
+                <div className="w-24 h-2 bg-[#F4F4F1] rounded-full mt-1.5 overflow-hidden border border-[#2C2421]/10">
+                  <div
+                    className="h-full bg-[#111827] transition-all duration-300"
+                    style={{
+                      width: `${([hasSA, hasTech, hasParts, hasQC, hasServices].filter(Boolean).length / 5) * 100}%`,
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Explanation Notice */}
+            <div className="p-3.5 bg-[#F8F8F5] border border-[#2C2421]/10 rounded-2xl text-xs text-[#2C2421]/80 leading-relaxed">
+              To operate this shop branch under BayFlow&apos;s workflow, you must assign at least one <strong>Service Advisor</strong>, <strong>Technician</strong>, <strong>Parts Person</strong>, and <strong>QC Inspector</strong>, plus create at least <strong>1 Service Catalog item</strong> before proceeding.
+            </div>
+
+            {/* Live Requirements Checklist */}
+            {/* <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs"> */}
+              {/* SA */}
+              {/* <div
+                className={`p-3 rounded-2xl border transition-all ${
+                  hasSA ? "bg-emerald-50/80 border-emerald-200 text-emerald-900" : "bg-amber-50/80 border-amber-200 text-amber-900"
+                }`}
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className="font-bold text-[11px]">Service Advisor</span>
+                  <span className="material-symbols-outlined text-sm">
+                    {hasSA ? "check_circle" : "pending"}
+                  </span>
+                </div>
+                <span className="text-[10px] font-medium block">
+                  {hasSA ? "✓ Added to Team" : "⚠ Missing (Intake & Quote)"}
+                </span>
+              </div> */}
+
+              {/* Technician */}
+              {/* <div
+                className={`p-3 rounded-2xl border transition-all ${
+                  hasTech ? "bg-emerald-50/80 border-emerald-200 text-emerald-900" : "bg-amber-50/80 border-amber-200 text-amber-900"
+                }`}
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className="font-bold text-[11px]">Technician</span>
+                  <span className="material-symbols-outlined text-sm">
+                    {hasTech ? "check_circle" : "pending"}
+                  </span>
+                </div>
+                <span className="text-[10px] font-medium block">
+                  {hasTech ? "✓ Added to Team" : "⚠ Missing (Inspection/Repair)"}
+                </span>
+              </div> */}
+
+              {/* Parts Person */}
+              {/* <div
+                className={`p-3 rounded-2xl border transition-all ${
+                  hasParts ? "bg-emerald-50/80 border-emerald-200 text-emerald-900" : "bg-amber-50/80 border-amber-200 text-amber-900"
+                }`}
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className="font-bold text-[11px]">Parts Person</span>
+                  <span className="material-symbols-outlined text-sm">
+                    {hasParts ? "check_circle" : "pending"}
+                  </span>
+                </div>
+                <span className="text-[10px] font-medium block">
+                  {hasParts ? "✓ Added to Team" : "⚠ Missing (Parts/PO)"}
+                </span>
+              </div> */}
+
+              {/* QC Inspector */}
+              {/* <div
+                className={`p-3 rounded-2xl border transition-all ${
+                  hasQC ? "bg-emerald-50/80 border-emerald-200 text-emerald-900" : "bg-amber-50/80 border-amber-200 text-amber-900"
+                }`}
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className="font-bold text-[11px]">QC Inspector</span>
+                  <span className="material-symbols-outlined text-sm">
+                    {hasQC ? "check_circle" : "pending"}
+                  </span>
+                </div>
+                <span className="text-[10px] font-medium block">
+                  {hasQC ? "✓ Added to Team" : "⚠ Missing (Quality Pass)"}
+                </span>
+              </div> */}
+
+              {/* Service Catalog Item */}
+              {/* <div
+                className={`p-3 rounded-2xl border col-span-2 sm:col-span-2 transition-all ${
+                  hasServices ? "bg-emerald-50/80 border-emerald-200 text-emerald-900" : "bg-amber-50/80 border-amber-200 text-amber-900"
+                }`}
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className="font-bold text-[11px]">Catalog Services</span>
+                  <span className="material-symbols-outlined text-sm">
+                    {hasServices ? "check_circle" : "pending"}
+                  </span>
+                </div>
+                <span className="text-[10px] font-medium block">
+                  {hasServices ? `✓ ${services.length} Service item(s) active` : "⚠ Missing (At least 1 service needed)"}
+                </span>
+              </div> */}
+            {/* </div> */}
+
+            {/* Completed Banner if all 5 requirements satisfied */}
+            {!isSetupIncomplete ? (
+              <div className="p-5 bg-emerald-50 border border-emerald-200 rounded-2xl space-y-3">
+                <div className="flex items-center gap-2.5 text-emerald-900 font-bold text-sm">
+                  <span className="material-symbols-outlined text-xl text-emerald-600">verified</span>
+                  <span>All Operational Prerequisites Are Complete!</span>
+                </div>
+                <p className="text-xs text-emerald-800">
+                  Your branch has all 4 staff roles and catalog services ready. You can now enter the owner dashboard to manage bookings, inventory, and operations.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setSetupModalDismissed(true)}
+                  className="w-full py-3 bg-[#111827] hover:bg-[#0F172A] text-white text-xs font-bold rounded-xl transition-all cursor-pointer shadow-md flex items-center justify-center gap-1.5"
+                >
+                  <span>Enter Owner Dashboard</span>
+                  <span className="material-symbols-outlined text-base">arrow_forward</span>
+                </button>
+              </div>
+            ) : (
+              <>
+                {/* Tab Switcher */}
+                <div className="flex bg-[#F4F4F1] p-1 rounded-2xl border border-[#2C2421]/15">
+                  <button
+                    type="button"
+                    onClick={() => setOnboardingTab("staff")}
+                    className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                      onboardingTab === "staff"
+                        ? "bg-white text-[#111827] shadow-xs"
+                        : "text-[#2C2421]/70 hover:text-[#2C2421]"
+                    }`}
+                  >
+                    <span className="material-symbols-outlined text-sm">group_add</span>
+                    <span>Add Staff Role</span>
+                    {/* {missingStaffRoles.length > 0 && (
+                      <span className="px-1.5 py-0.2 rounded-full bg-amber-500 text-white text-[10px]">
+                        {missingStaffRoles.length}
+                      </span>
+                    )} */}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setOnboardingTab("service")}
+                    className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                      onboardingTab === "service"
+                        ? "bg-white text-[#111827] shadow-xs"
+                        : "text-[#2C2421]/70 hover:text-[#2C2421]"
+                    }`}
+                  >
+                    <span className="material-symbols-outlined text-sm">home_repair_service</span>
+                    <span>Add Initial Service</span>
+                    {!hasServices && (
+                      <span className="px-1.5 py-0.2 rounded-full bg-amber-500 text-white text-[10px]">
+                        1
+                      </span>
+                    )}
+                  </button>
+                </div>
+
+                {/* Form: Add Missing Staff Role */}
+                {onboardingTab === "staff" && (
+                  <form onSubmit={handleOnboardingAddStaff} className="space-y-3.5 text-xs">
+                    {onboardingStaffError && (
+                      <div className="p-3 bg-[#E85D22]/10 border border-[#E85D22]/20 text-[#E85D22] text-xs font-semibold rounded-xl">
+                        {onboardingStaffError}
+                      </div>
+                    )}
+                    {onboardingStaffSuccess && (
+                      <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold rounded-xl">
+                        {onboardingStaffSuccess}
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block font-bold mb-1 text-[#2C2421]">Role to Assign *</label>
+                        <select
+                          value={onboardingStaffForm.role}
+                          onChange={(e) => setOnboardingStaffForm({ ...onboardingStaffForm, role: e.target.value })}
+                          className="w-full p-2.5 bg-[#F8F8F5] border border-[#2C2421]/15 rounded-xl font-bold text-[#2C2421] cursor-pointer"
+                        >
+                          <option value="SERVICE_ADVISOR">
+                            Service Advisor {!hasSA ? "(Needed)" : "✓ (Added)"}
+                          </option>
+                          <option value="TECHNICIAN">
+                            Technician {!hasTech ? "(Needed)" : "✓ (Added)"}
+                          </option>
+                          <option value="PARTS_PERSON">
+                            Parts Person {!hasParts ? "(Needed)" : "✓ (Added)"}
+                          </option>
+                          <option value="QC_INSPECTOR">
+                            QC Inspector {!hasQC ? "(Needed)" : "✓ (Added)"}
+                          </option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block font-bold mb-1 text-[#2C2421]">Staff Email *</label>
+                        <input
+                          required
+                          type="email"
+                          placeholder="staff@bayflow.demo"
+                          value={onboardingStaffForm.email}
+                          onChange={(e) => setOnboardingStaffForm({ ...onboardingStaffForm, email: e.target.value })}
+                          className="w-full p-2.5 bg-[#F8F8F5] border border-[#2C2421]/15 rounded-xl font-medium"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block font-bold mb-1 text-[#2C2421]">Password *</label>
+                        <input
+                          required
+                          type="password"
+                          placeholder="Password (8+ chars)"
+                          value={onboardingStaffForm.password}
+                          onChange={(e) => setOnboardingStaffForm({ ...onboardingStaffForm, password: e.target.value })}
+                          className="w-full p-2.5 bg-[#F8F8F5] border border-[#2C2421]/15 rounded-xl font-medium"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block font-bold mb-1 text-[#2C2421]">Phone Number (Optional)</label>
+                        <input
+                          type="text"
+                          placeholder="+92 300 1234567"
+                          value={onboardingStaffForm.phoneNumber}
+                          onChange={(e) => setOnboardingStaffForm({ ...onboardingStaffForm, phoneNumber: e.target.value })}
+                          className="w-full p-2.5 bg-[#F8F8F5] border border-[#2C2421]/15 rounded-xl font-medium"
+                        />
+                      </div>
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={onboardingStaffSubmitting}
+                      className="w-full py-3 bg-[#111827] hover:bg-[#0F172A] disabled:opacity-50 text-white font-bold rounded-xl cursor-pointer transition-all shadow-sm flex items-center justify-center gap-1.5"
+                    >
+                      <span className="material-symbols-outlined text-sm">
+                        {onboardingStaffSubmitting ? "progress_activity" : "person_add"}
+                      </span>
+                      <span>{onboardingStaffSubmitting ? "Adding Staff Member..." : "Add Staff Member to Team"}</span>
+                    </button>
+                  </form>
+                )}
+
+                {/* Form: Add Initial Service */}
+                {onboardingTab === "service" && (
+                  <form onSubmit={handleOnboardingAddService} className="space-y-3.5 text-xs">
+                    {onboardingServiceError && (
+                      <div className="p-3 bg-[#E85D22]/10 border border-[#E85D22]/20 text-[#E85D22] text-xs font-semibold rounded-xl">
+                        {onboardingServiceError}
+                      </div>
+                    )}
+                    {onboardingServiceSuccess && (
+                      <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold rounded-xl">
+                        {onboardingServiceSuccess}
+                      </div>
+                    )}
+
+                    <div>
+                      <label className="block font-bold mb-1 text-[#2C2421]">Service Name *</label>
+                      <input
+                        required
+                        type="text"
+                        placeholder="e.g. Comprehensive Vehicle Diagnostic & Service"
+                        value={onboardingServiceForm.name}
+                        onChange={(e) => setOnboardingServiceForm({ ...onboardingServiceForm, name: e.target.value })}
+                        className="w-full p-2.5 bg-[#F8F8F5] border border-[#2C2421]/15 rounded-xl font-medium"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block font-bold mb-1 text-[#2C2421]">Base Price (PKR) *</label>
+                        <input
+                          required
+                          type="number"
+                          value={onboardingServiceForm.basePrice}
+                          onChange={(e) => setOnboardingServiceForm({ ...onboardingServiceForm, basePrice: Number(e.target.value) })}
+                          className="w-full p-2.5 bg-[#F8F8F5] border border-[#2C2421]/15 rounded-xl font-bold"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block font-bold mb-1 text-[#2C2421]">Duration (Minutes)</label>
+                        <input
+                          type="number"
+                          value={onboardingServiceForm.durationMinutes}
+                          onChange={(e) => setOnboardingServiceForm({ ...onboardingServiceForm, durationMinutes: Number(e.target.value) })}
+                          className="w-full p-2.5 bg-[#F8F8F5] border border-[#2C2421]/15 rounded-xl font-medium"
+                        />
+                      </div>
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={onboardingServiceSubmitting}
+                      className="w-full py-3 bg-[#111827] hover:bg-[#0F172A] disabled:opacity-50 text-white font-bold rounded-xl cursor-pointer transition-all shadow-sm flex items-center justify-center gap-1.5"
+                    >
+                      <span className="material-symbols-outlined text-sm">
+                        {onboardingServiceSubmitting ? "progress_activity" : "add_circle"}
+                      </span>
+                      <span>{onboardingServiceSubmitting ? "Creating Service..." : "Add Service to Catalog"}</span>
+                    </button>
+                  </form>
+                )}
+              </>
+            )}
           </div>
         </div>
       )}
