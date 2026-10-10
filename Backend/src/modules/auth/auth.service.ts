@@ -83,6 +83,7 @@ export const AuthService = {
     console.log('\n======================================================');
     console.log(`🔑 [BAYFLOW OTP CODE GENERATED]`);
     console.log(`   Target Email : ${result.email}`);
+    console.log(`   Target Phone : ${result.phoneNumber || '(None provided in signup form)'}`);
     console.log(`   OTP Code     : ${otp}`);
     console.log(`   Expires In   : 5 Minutes`);
     console.log('======================================================\n');
@@ -92,14 +93,17 @@ export const AuthService = {
       console.error('⚠️ [Brevo Email Error]:', err.message || err);
     });
 
-    // 2. Fallback: Send via WhatsApp if phone number provided
+    // 2. Send via WhatsApp if phone number provided
     if (result.phoneNumber) {
+      console.log(`📲 [Auth] Dispatching WhatsApp OTP to ${result.phoneNumber}...`);
       WhatsAppService.sendMessage(
         result.phoneNumber,
         `Your BayFlow verification code is: ${otp}. Valid for 5 minutes.`
       ).catch((err) => {
         console.error('⚠️ [WhatsApp Dispatch Error]:', err.message || err);
       });
+    } else {
+      console.log(`ℹ️ [Auth] No phone number provided for ${result.email} — WhatsApp OTP skipped.`);
     }
     
     return {
