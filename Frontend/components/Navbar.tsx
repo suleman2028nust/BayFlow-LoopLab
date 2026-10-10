@@ -15,19 +15,33 @@ export default function Navbar({ onOpenDemo }: NavbarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [token, setToken] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
 
   useEffect(() => {
     const storedToken = localStorage.getItem("bayflow_token");
     setToken(storedToken);
     setIsAuthenticated(!!storedToken);
+
+    const storedRole = localStorage.getItem("bayflow_user_role");
+    if (storedRole) {
+      setUserRole(storedRole);
+    } else if (storedToken) {
+      try {
+        const payload = JSON.parse(atob(storedToken.split(".")[1]));
+        if (payload?.role) setUserRole(payload.role);
+      } catch (e) {}
+    }
   }, []);
 
   const handleSignOut = () => {
     localStorage.removeItem("bayflow_token");
     localStorage.removeItem("bayflow_user_role");
     setIsAuthenticated(false);
+    setUserRole(null);
     router.replace("/login");
   };
+
+  const isCustomerOrGuest = !userRole || userRole === "CUSTOMER";
 
   return (
     <header className="fixed top-5 left-0 w-full z-50 px-4 sm:px-6 lg:px-8">
@@ -53,13 +67,15 @@ export default function Navbar({ onOpenDemo }: NavbarProps) {
           >
             Find Shops
           </Link>
-          <Link
-            href="/book"
-            className="hover:text-[#111827] transition-colors flex items-center gap-1 font-bold text-[#111827]"
-          >
-            <span className="material-symbols-outlined text-sm">auto_fix_high</span>
-            <span>Booking Wizard</span>
-          </Link>
+          {isCustomerOrGuest && (
+            <Link
+              href="/book"
+              className="hover:text-[#111827] transition-colors flex items-center gap-1 font-bold text-[#111827]"
+            >
+              <span className="material-symbols-outlined text-sm">auto_fix_high</span>
+              <span>Guided Booking</span>
+            </Link>
+          )}
           <Link
             href={isAuthenticated ? "/dashboard" : "/login"}
             className="hover:text-[#111827] transition-colors"
@@ -125,14 +141,16 @@ export default function Navbar({ onOpenDemo }: NavbarProps) {
             >
               Find Shops
             </Link>
-            <Link
-              href="/book"
-              onClick={() => setMobileMenuOpen(false)}
-              className="hover:text-[#111827] py-1 font-bold flex items-center gap-1.5 text-[#111827]"
-            >
-              <span className="material-symbols-outlined text-base">auto_fix_high</span>
-              <span>Guided Booking Wizard</span>
-            </Link>
+            {isCustomerOrGuest && (
+              <Link
+                href="/book"
+                onClick={() => setMobileMenuOpen(false)}
+                className="hover:text-[#111827] py-1 font-bold flex items-center gap-1.5 text-[#111827]"
+              >
+                <span className="material-symbols-outlined text-base">auto_fix_high</span>
+                <span>Guided Booking</span>
+              </Link>
+            )}
             <Link
               href={isAuthenticated ? "/dashboard" : "/login"}
               onClick={() => setMobileMenuOpen(false)}
