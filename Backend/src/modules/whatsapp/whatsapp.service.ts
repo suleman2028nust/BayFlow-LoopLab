@@ -75,7 +75,13 @@ async function connect(): Promise<void> {
       isConnected = false;
       const reason = (lastDisconnect?.error as Boom)?.output?.statusCode;
       const shouldReconnect = reason !== DisconnectReason.loggedOut;
-      console.log(`⚠️ [WhatsApp] Connection closed (reason: ${reason}). Reconnect: ${shouldReconnect}`);
+
+      if (reason === DisconnectReason.restartRequired) {
+        console.log('🔄 [WhatsApp] Session restart required (code 515, normal during initial QR pairing) — reconnecting immediately...');
+      } else {
+        console.log(`⚠️ [WhatsApp] Connection closed (reason: ${reason}). Reconnect: ${shouldReconnect}`);
+      }
+
       if (shouldReconnect) {
         await connect(); // auto-reconnect
       } else {
@@ -120,20 +126,40 @@ export const WhatsAppService = {
   },
 
   /** Send a WhatsApp message to any phone number */
-  async sendMessage(phone: string, text: string): Promise<void> {
+  async sendMessage(phone: string, text: string): Promise<boolean> {
+    if (!phone) {
+      console.warn('⚠️ [WhatsApp] Cannot send message: No phone number provided');
+      return false;
+    }
+
     if (!sock || !isConnected) {
-      console.log(`💬 [WhatsApp Offline] To: ${phone} | ${text}`);
-      return;
+      console.warn(`💬 [WhatsApp Offline] Message to ${phone} dropped (not connected): ${text}`);
+      return false;
     }
 
     try {
-      // Normalise number → remove non-digits, append @s.whatsapp.net
-      const digits = phone.replace(/[^0-9]/g, '');
+      // Normalise number → remove non-digits
+      let digits = phone.replace(/[^0-9]/g, '');
+
+      // Handle common country formats (especially Pakistan: 03001234567 -> 923001234567)
+      if (digits.startsWith('00')) {
+        digits = digits.slice(2);
+      } else if (digits.startsWith('0') && digits.length === 11) {
+        digits = '92' + digits.slice(1);
+      } else if (digits.length === 10 && digits.startsWith('3')) {
+        digits = '92' + digits;
+      }
+
       const jid = `${digits}@s.whatsapp.net`;
+      console.log(`📲 [WhatsApp] Sending message to ${phone} (JID: ${jid})...`);
+
       await sock.sendMessage(jid, { text });
-      console.log(`✅ [WhatsApp] Message sent to ${phone}`);
+      console.log(`✅ [WhatsApp] Message successfully delivered to ${jid}`);
+      return true;
     } catch (err: any) {
-      console.error(`❌ [WhatsApp] sendMessage error: ${err?.message || err}`);
+      console.error(`❌ [WhatsApp] sendMessage error to ${phone}:`, err?.message || err);
+      return false;
     }
   },
 };
+
