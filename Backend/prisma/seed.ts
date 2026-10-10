@@ -35,6 +35,12 @@ async function main() {
     }
   });
 
+  // Assign shop ownerId
+  await prisma.shop.update({
+    where: { id: shop1.id },
+    data: { ownerId: owner.id }
+  });
+
   const sa = await prisma.user.upsert({
     where: { email: 'bilal.sa@bayflow.demo' },
     update: {},
@@ -85,31 +91,43 @@ async function main() {
 
   console.log('✅ Staff accounts created.');
 
-  // 3. Create a Customer Account
+  // 3. Create Customer Account (Ahmed)
   const customer = await prisma.user.upsert({
-    where: { email: 'ahmed.customer@bayflow.demo' },
+    where: { email: 'ahmed@mail.com' },
     update: {},
     create: {
-      email: 'ahmed.customer@bayflow.demo',
+      email: 'ahmed@mail.com',
       passwordHash,
       role: Role.CUSTOMER,
+      phoneNumber: '+923001234567',
       isVerified: true
     }
   });
 
-  console.log('✅ Customer account created.');
+  console.log('✅ Customer account created (ahmed@mail.com).');
 
-  // 4. Create Inventory items for Shop 1
-  await prisma.inventory.createMany({
+  // 4. Create Services for Lahore Auto Care
+  await prisma.service.createMany({
     data: [
-      { shopId: shop1.id, sku: 'PART-001', name: 'Ignition Coil', quantity: 5, unitPrice: 6500 },
-      { shopId: shop1.id, sku: 'PART-002', name: 'Oil Filter (Honda)', quantity: 12, unitPrice: 900 },
-      { shopId: shop1.id, sku: 'PART-003', name: 'Engine Oil 4L', quantity: 20, unitPrice: 5200 },
-    ]
+      { shopId: shop1.id, name: 'Check Engine Light Diagnostic', durationMinutes: 60, basePrice: 4000 },
+      { shopId: shop1.id, name: 'Oil change', durationMinutes: 30, basePrice: 1500 },
+      { shopId: shop1.id, name: 'Full Brake Pad Replacement', durationMinutes: 45, basePrice: 5000 },
+    ],
+    skipDuplicates: true
   });
 
-  console.log('✅ Inventory items seeded.');
-  console.log('🎉 Seeding complete. All accounts use password: "demo1234"');
+  // 5. Create Inventory items for Shop 1 (Ignition Coil is 0 to trigger Step 9 PO creation)
+  await prisma.inventory.createMany({
+    data: [
+      { shopId: shop1.id, sku: 'PART-001', name: 'Ignition Coil', quantity: 0, reorderLevel: 2, unitPrice: 6500 },
+      { shopId: shop1.id, sku: 'PART-002', name: 'Oil filter (Honda)', quantity: 12, reorderLevel: 5, unitPrice: 900 },
+      { shopId: shop1.id, sku: 'PART-003', name: 'Engine oil 4L', quantity: 20, reorderLevel: 5, unitPrice: 5200 },
+    ],
+    skipDuplicates: true
+  });
+
+  console.log('✅ Inventory items seeded (Ignition Coil: 0 stock, Oil & Filter available).');
+  console.log('🎉 Seeding complete. All demo accounts use password: "demo1234"');
 }
 
 main()

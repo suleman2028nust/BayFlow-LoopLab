@@ -8,7 +8,7 @@ import { motion } from "framer-motion";
 function VerifyContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const initialEmail = searchParams.get("email") || "user@bayflow.demo";
+  const initialEmail = searchParams?.get("email") || "user@bayflow.demo";
 
   const [email, setEmail] = useState(initialEmail);
   const [digits, setDigits] = useState<string[]>(["", "", "", "", "", ""]);
@@ -23,7 +23,7 @@ function VerifyContent() {
 
   // Update email if query param changes
   useEffect(() => {
-    const qEmail = searchParams.get("email");
+    const qEmail = searchParams?.get("email");
     if (qEmail) setEmail(qEmail);
   }, [searchParams]);
 

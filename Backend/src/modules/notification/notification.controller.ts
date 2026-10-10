@@ -14,7 +14,12 @@ export const NotificationController = {
       const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 50;
 
       const result = await NotificationService.getUserNotifications(userId, limit);
-      res.status(200).json({ success: true, data: result });
+      res.status(200).json({
+        success: true,
+        data: result,
+        notifications: result?.notifications || [],
+        unreadCount: result?.unreadCount || 0,
+      });
     } catch (error: any) {
       res.status(500).json({ success: false, message: error.message });
     }

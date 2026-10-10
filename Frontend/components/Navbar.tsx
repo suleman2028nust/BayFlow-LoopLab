@@ -1,19 +1,37 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import NotificationBell from "@/components/NotificationBell";
 
 interface NavbarProps {
   onOpenDemo?: () => void;
 }
 
 export default function Navbar({ onOpenDemo }: NavbarProps) {
+  const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [token, setToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    const storedToken = localStorage.getItem("bayflow_token");
+    setToken(storedToken);
+    setIsAuthenticated(!!storedToken);
+  }, []);
+
+  const handleSignOut = () => {
+    localStorage.removeItem("bayflow_token");
+    localStorage.removeItem("bayflow_user_role");
+    setIsAuthenticated(false);
+    router.replace("/login");
+  };
 
   return (
     <header className="fixed top-5 left-0 w-full z-50 px-4 sm:px-6 lg:px-8">
-      {/* Warm Alabaster & Emerald Pine Floating Rounded Pill Navbar */}
+      {/* Floating Pill Navbar */}
       <div className="max-w-5xl mx-auto h-14 bg-white/95 backdrop-blur-md border border-[#2C2421]/15 rounded-full shadow-[0_4px_20px_rgba(44,36,33,0.06)] px-4 sm:px-6 flex items-center justify-between">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2.5 group">
@@ -27,8 +45,8 @@ export default function Navbar({ onOpenDemo }: NavbarProps) {
           </span>
         </Link>
 
-        {/* Desktop Nav */}
-        <nav className="hidden md:flex items-center gap-5 lg:gap-7 text-xs font-semibold text-[#2C2421]/80">
+        {/* Desktop Nav Links */}
+        <nav className="hidden md:flex items-center gap-6 lg:gap-8 text-xs font-semibold text-[#2C2421]/80">
           <Link
             href="/shops"
             className="hover:text-[#111827] transition-colors"
@@ -36,45 +54,45 @@ export default function Navbar({ onOpenDemo }: NavbarProps) {
             Find Shops &amp; Book
           </Link>
           <Link
-            href="/pos"
+            href={isAuthenticated ? "/dashboard" : "/login"}
             className="hover:text-[#111827] transition-colors"
           >
-            Shop POS
-          </Link>
-          <Link
-            href="/customer"
-            className="hover:text-[#111827] transition-colors"
-          >
-            Customer Portal
-          </Link>
-          <Link
-            href="/owner"
-            className="hover:text-[#111827] transition-colors"
-          >
-            Owner
+            Dashboard
           </Link>
         </nav>
 
         {/* Action Controls */}
         <div className="flex items-center gap-2 sm:gap-3">
-          <Link
-            href="/login"
-            className="hidden sm:inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full text-xs font-semibold text-[#2C2421] hover:bg-[#F4F4F1] transition-all"
-          >
-            Sign In
-          </Link>
-          <button
-            onClick={onOpenDemo}
-            className="bg-[#111827] hover:bg-[#0F172A] text-white text-xs font-bold px-4 py-2 rounded-full transition-all shadow-md shadow-[#111827]/20 flex items-center gap-1 hover:scale-105 active:scale-95"
-          >
-            <span>Launch Platform</span>
-            <span className="material-symbols-outlined text-sm">arrow_forward</span>
-          </button>
+          {isAuthenticated ? (
+            <div className="flex items-center gap-2">
+              <NotificationBell token={token} />
+              <Link
+                href="/dashboard"
+                className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold bg-[#111827] text-white hover:bg-[#0F172A] transition-all shadow-xs"
+              >
+                <span className="material-symbols-outlined text-sm">space_dashboard</span>
+                <span>Dashboard</span>
+              </Link>
+              <button
+                onClick={handleSignOut}
+                className="hidden sm:inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full text-xs font-semibold text-[#2C2421] hover:bg-[#F4F4F1] transition-all cursor-pointer"
+              >
+                Sign Out
+              </button>
+            </div>
+          ) : (
+            <Link
+              href="/login"
+              className="hidden sm:inline-flex items-center gap-1 px-4 py-2 rounded-full text-xs font-bold bg-[#111827] text-white hover:bg-[#0F172A] transition-all shadow-xs"
+            >
+              Sign In
+            </Link>
+          )}
 
           {/* Mobile Menu Toggle Button */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-1.5 text-[#2C2421] hover:bg-[#F4F4F1] rounded-full transition-colors"
+            className="md:hidden p-1.5 text-[#2C2421] hover:bg-[#F4F4F1] rounded-full transition-colors cursor-pointer"
             aria-label="Toggle navigation menu"
           >
             <span className="material-symbols-outlined text-xl">
@@ -96,48 +114,38 @@ export default function Navbar({ onOpenDemo }: NavbarProps) {
             <Link
               href="/shops"
               onClick={() => setMobileMenuOpen(false)}
-              className="hover:text-[#111827] py-1"
+              className="hover:text-[#111827] py-1 font-semibold"
             >
               Find Shops &amp; Book
             </Link>
             <Link
-              href="/pos"
+              href={isAuthenticated ? "/dashboard" : "/login"}
               onClick={() => setMobileMenuOpen(false)}
-              className="hover:text-[#111827] py-1"
+              className="hover:text-[#111827] py-1 font-semibold"
             >
-              Shop POS Dashboards
+              Dashboard
             </Link>
-            <Link
-              href="/customer"
-              onClick={() => setMobileMenuOpen(false)}
-              className="hover:text-[#111827] py-1"
-            >
-              Customer Portal
-            </Link>
-            <Link
-              href="/owner"
-              onClick={() => setMobileMenuOpen(false)}
-              className="hover:text-[#111827] py-1"
-            >
-              Owner Multi-Shop
-            </Link>
-            <Link
-              href="/login"
-              onClick={() => setMobileMenuOpen(false)}
-              className="hover:text-[#111827] py-1 font-bold text-[#E85D22]"
-            >
-              Sign In Account
-            </Link>
+
             <div className="pt-3 border-t border-[#2C2421]/10 flex flex-col gap-2">
-              <button
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  onOpenDemo?.();
-                }}
-                className="w-full bg-[#111827] hover:bg-[#0F172A] text-white text-xs font-bold py-2.5 rounded-full shadow"
-              >
-                Launch Platform
-              </button>
+              {isAuthenticated ? (
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    handleSignOut();
+                  }}
+                  className="w-full bg-[#E85D22]/10 text-[#E85D22] text-xs font-bold py-2.5 rounded-full"
+                >
+                  Sign Out Account
+                </button>
+              ) : (
+                <Link
+                  href="/login"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full text-center bg-[#111827] text-white text-xs font-bold py-2.5 rounded-full shadow"
+                >
+                  Sign In Account
+                </Link>
+              )}
             </div>
           </motion.div>
         )}

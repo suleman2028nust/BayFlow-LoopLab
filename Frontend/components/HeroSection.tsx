@@ -17,9 +17,9 @@ export default function HeroSection({ onOpenDemo }: HeroSectionProps) {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* 2-Column Hero Header Layout: Left-Aligned Text & Right-Positioned Luxury Car */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center mb-16">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 items-center mb-16">
           {/* Left Column: Text & Action Controls */}
-          <div className="lg:col-span-7 flex flex-col items-start text-left">
+          <div className="lg:col-span-6 flex flex-col items-start text-left">
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -88,16 +88,18 @@ export default function HeroSection({ onOpenDemo }: HeroSectionProps) {
             initial={{ opacity: 0, x: 30 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8, delay: 0.3 }}
-            className="lg:col-span-5 relative flex items-center justify-center"
+            className="lg:col-span-6 relative flex items-center justify-center lg:justify-end"
           >
-            {/* Soft Ambient Background Radial Glow */}
-            <div className="absolute w-72 h-72 bg-gradient-to-tr from-[#111827]/10 to-slate-300/40 blur-3xl rounded-full pointer-events-none" />
-            
-            <img
-              src="/assets/luxury_silver_car.png"
-              alt="Sleek Silver Luxury Vehicle"
-              className="relative z-10 w-full max-w-lg lg:max-w-none object-contain mix-blend-multiply filter drop-shadow-[0_15px_25px_rgba(44,36,33,0.08)] hover:scale-105 transition-transform duration-500 pointer-events-none"
-            />
+            <div className="relative z-10 w-full max-w-2xl lg:max-w-none flex items-center justify-center">
+              <video
+                src="/assets/video.mp4"
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="w-full h-auto max-h-[520px] lg:max-h-[580px] object-contain mix-blend-multiply contrast-[106%] brightness-[105%] hover:scale-[1.02] transition-transform duration-500 pointer-events-none"
+              />
+            </div>
           </motion.div>
         </div>
 

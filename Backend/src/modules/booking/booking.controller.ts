@@ -3,12 +3,19 @@ import { BookingService } from './booking.service';
 import { InventoryService } from '../inventory/inventory.service';
 
 export const BookingController = {
-  // Create booking (Customer)
+  // Create booking (Customer or Guest checkout)
   async create(req: Request, res: Response, next: NextFunction) {
     try {
-      const customerId = (req as any).user.userId;
+      const customerId = (req as any).user?.userId;
       const result = await BookingService.createBooking(req.body, customerId);
-      res.status(201).json({ success: true, data: result });
+      const bookingData = result.booking || result;
+      res.status(201).json({
+        success: true,
+        data: bookingData,
+        booking: bookingData,
+        accessToken: result.accessToken || null,
+        user: result.user || null
+      });
     } catch (error) {
       next(error);
     }
@@ -24,7 +31,7 @@ export const BookingController = {
         shopId: shopId ? String(shopId) : undefined,
         date: date ? String(date) : undefined
       });
-      res.status(200).json({ success: true, data: bookings });
+      res.status(200).json({ success: true, data: bookings, bookings });
     } catch (error) {
       next(error);
     }
@@ -36,7 +43,7 @@ export const BookingController = {
       const user = (req as any).user;
       const { id } = req.params;
       const booking = await BookingService.getBookingById(id as string, user);
-      res.status(200).json({ success: true, data: booking });
+      res.status(200).json({ success: true, data: booking, booking });
     } catch (error) {
       next(error);
     }
@@ -48,7 +55,7 @@ export const BookingController = {
       const user = (req as any).user;
       const { id } = req.params;
       const history = await BookingService.getBookingHistory(id as string, user);
-      res.status(200).json({ success: true, data: history });
+      res.status(200).json({ success: true, data: history, history });
     } catch (error) {
       next(error);
     }
@@ -112,7 +119,7 @@ export const BookingController = {
   async allocateParts(req: Request, res: Response, next: NextFunction) {
     try {
       const id = req.params.id as string;
-      const { items } = req.body; // array of { inventoryId, quantity }
+      const items = req.body.items || req.body.parts; // array of { inventoryId, quantity }
       const user = (req as any).user;
       const result = await InventoryService.allocatePartsToBooking(id, items, user);
       res.status(200).json({ success: true, data: result, message: 'Parts allocated to booking' });
@@ -138,7 +145,7 @@ export const BookingController = {
     try {
       const plate = req.params.plate as string;
       const history = await BookingService.getVehicleHistory(plate);
-      res.status(200).json({ success: true, data: history });
+      res.status(200).json({ success: true, data: history, bookings: history });
     } catch (error) {
       next(error);
     }

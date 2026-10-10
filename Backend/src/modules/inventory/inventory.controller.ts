@@ -11,7 +11,7 @@ export const InventoryController = {
         search ? String(search) : undefined,
         lowStock === 'true'
       );
-      res.status(200).json({ success: true, data: inventory });
+      res.status(200).json({ success: true, data: inventory, inventory });
     } catch (error) {
       next(error);
     }
@@ -79,7 +79,7 @@ export const InventoryController = {
     try {
       const shopId = req.params.shopId || req.params.id || (req as any).user?.shopId;
       const pos = await InventoryService.listPurchaseOrders(shopId as string);
-      res.status(200).json({ success: true, data: pos });
+      res.status(200).json({ success: true, data: pos, purchaseOrders: pos });
     } catch (error) {
       next(error);
     }

@@ -19,10 +19,8 @@ export default function Footer() {
         </div>
 
         <div className="flex items-center gap-6 font-medium text-[#2C2421]">
-          <Link href="/shops" className="hover:text-[#111827] transition-colors">Find Shops</Link>
-          <Link href="/pos" className="hover:text-[#111827] transition-colors">Shop POS</Link>
-          <Link href="/customer" className="hover:text-[#111827] transition-colors">Customer Portal</Link>
-          <Link href="/owner" className="hover:text-[#111827] transition-colors">Owner Dashboard</Link>
+          <Link href="/shops" className="hover:text-[#111827] transition-colors">Find Shops &amp; Book</Link>
+          <Link href="/dashboard" className="hover:text-[#111827] transition-colors">Unified Dashboard</Link>
         </div>
 
         <div className="text-[#2C2421]/50 text-[11px] font-mono">

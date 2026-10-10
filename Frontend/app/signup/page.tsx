@@ -34,6 +34,7 @@ export default function SignupPage() {
         password: formData.password,
         role: formData.role,
       };
+      if (formData.name) payload.name = formData.name;
       if (formData.phoneNumber) payload.phoneNumber = formData.phoneNumber;
       if (formData.role === "OWNER" && formData.shopName) payload.shopName = formData.shopName;
 
