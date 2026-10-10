@@ -59,11 +59,11 @@ export default function CustomerPortalPage() {
           </div>
 
           <Link
-            href="/book"
+            href="/shops"
             className="px-4 py-2 bg-[#111827] text-white text-xs font-bold rounded-xl hover:bg-[#0F172A] transition-all flex items-center gap-1.5 shadow"
           >
-            <span className="material-symbols-outlined text-base">auto_fix_high</span>
-            <span>Guided Booking Wizard</span>
+            <span className="material-symbols-outlined text-base">add</span>
+            <span>Book a Service</span>
           </Link>
         </div>
 
