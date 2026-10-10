@@ -71,3 +71,6 @@ Backend/.wwebjs_auth/
 Backend/.wwebjs_cache/
 Backend/.wwebjs_auth/
 Backend/.wwebjs_cache/
+Backend/.wa_session/
+.wa_session/
+

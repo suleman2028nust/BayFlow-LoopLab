@@ -38,6 +38,7 @@ export default function VoiceCallModal({
   const remoteAudioRef = useRef<HTMLAudioElement | null>(null);
   const isCallerRef = useRef<boolean>(!existingCallId);
   const pendingCandidatesRef = useRef<RTCIceCandidateInit[]>([]);
+  const audioCtxRef = useRef<AudioContext | null>(null);
 
   // Sync isCallerRef
   useEffect(() => {
@@ -79,9 +80,10 @@ export default function VoiceCallModal({
               body: JSON.stringify({ bookingId }),
             });
             const data = await res.json();
-            if (res.ok && data.success && data.data?.callId) {
-              currentCallId = data.data.callId;
-              setActiveCallId(currentCallId);
+            const cid = data.data?.id || data.data?.callId;
+            if (res.ok && data.success && cid) {
+              currentCallId = cid;
+              setActiveCallId(cid);
             }
           } catch (err) {
             console.warn("Failed to initiate call on backend:", err);
@@ -271,20 +273,42 @@ export default function VoiceCallModal({
 
           // Receive remote audio track from other person
           pc.ontrack = (event) => {
+            console.log("🔊 [WebRTC] Remote audio track received:", event.track.id);
             const incomingStream =
               event.streams && event.streams[0]
                 ? event.streams[0]
                 : new MediaStream([event.track]);
 
+            // 1. Play via real DOM audio element
             if (remoteAudioRef.current) {
               remoteAudioRef.current.srcObject = incomingStream;
               remoteAudioRef.current.volume = 1.0;
               remoteAudioRef.current.muted = false;
               remoteAudioRef.current
                 .play()
+                .then(() => console.log("🔊 [WebRTC] Audio element playing!"))
                 .catch((err) => {
-                  console.warn("Autoplay audio blocked by browser. User interaction will unblock:", err);
+                  console.warn("Autoplay audio blocked by browser:", err);
                 });
+            }
+
+            // 2. Play via direct AudioContext hardware sink (bypasses browser DOM audio restrictions)
+            try {
+              const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+              if (AudioContextClass) {
+                if (!audioCtxRef.current || audioCtxRef.current.state === "closed") {
+                  audioCtxRef.current = new AudioContextClass();
+                }
+                const ctx = audioCtxRef.current;
+                const source = ctx.createMediaStreamSource(incomingStream);
+                source.connect(ctx.destination);
+                if (ctx.state === "suspended") {
+                  ctx.resume().catch(() => {});
+                }
+                console.log("🔊 [WebRTC] WebAudio destination connected!");
+              }
+            } catch (ctxErr) {
+              console.warn("WebAudio direct sink error:", ctxErr);
             }
           };
 
@@ -436,6 +460,10 @@ export default function VoiceCallModal({
       if (remoteAudioRef.current) {
         remoteAudioRef.current.srcObject = null;
       }
+      if (audioCtxRef.current) {
+        audioCtxRef.current.close().catch(() => {});
+        audioCtxRef.current = null;
+      }
     };
   }, [callStatus, activeCallId, existingCallId, token, onClose, bookingId]);
 
@@ -473,6 +501,10 @@ export default function VoiceCallModal({
     }
     if (remoteAudioRef.current) {
       remoteAudioRef.current.srcObject = null;
+    }
+    if (audioCtxRef.current) {
+      audioCtxRef.current.close().catch(() => {});
+      audioCtxRef.current = null;
     }
 
     setCallStatus("ENDED");
@@ -522,7 +554,15 @@ export default function VoiceCallModal({
         ref={remoteAudioRef}
         autoPlay
         playsInline
-        className="hidden"
+        style={{
+          position: "fixed",
+          bottom: 0,
+          left: 0,
+          width: "1px",
+          height: "1px",
+          opacity: 0.01,
+          pointerEvents: "none",
+        }}
         aria-hidden="true"
       />
 
