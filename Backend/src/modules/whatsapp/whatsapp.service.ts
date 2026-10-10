@@ -1,197 +1,139 @@
-import { Client, LocalAuth } from 'whatsapp-web.js';
+/**
+ * WhatsApp Service — powered by @whiskeysockets/baileys
+ *
+ * Pure Node.js WebSocket connection to WhatsApp.
+ * NO Puppeteer. NO Chrome. NO browser.
+ *
+ * First run: QR code is generated → scan once with phone → session saved to disk.
+ * All future restarts: session is restored automatically, no re-scan needed.
+ */
+
+import makeWASocket, {
+  useMultiFileAuthState,
+  DisconnectReason,
+  fetchLatestBaileysVersion,
+  makeCacheableSignalKeyStore,
+  WASocket,
+} from '@whiskeysockets/baileys';
+import { Boom } from '@hapi/boom';
 import QRCode from 'qrcode';
-import fs from 'fs';
 import path from 'path';
+import pino from 'pino';
 
-let qrCodeData: string | null = null;
+// ─── State ───────────────────────────────────────────────────────────────────
+
+let sock: WASocket | null = null;
 let isConnected = false;
-let client: Client | null = null;
+let currentQrDataUrl: string | null = null;
+let initStarted = false;
 
-// Catch unhandled Chrome launcher errors so cloud hosts (Render) never crash
-process.on('unhandledRejection', (reason: any) => {
-  const msg = String(reason?.message || reason);
-  if (msg.includes('Could not find Chrome') || msg.includes('puppeteer')) {
-    console.warn('⚠️ [WhatsApp] Chrome headless browser not available on cloud host; standby mode active.');
-    return;
-  }
-});
+// Session stored on disk — survives server restarts
+const AUTH_DIR = path.resolve(process.cwd(), '.wa_session');
 
-function findChromeInCache(): string | undefined {
-  const searchDirs = [
-    path.resolve(process.cwd(), '.cache', 'puppeteer'),
-    path.resolve(process.cwd(), '..', '.cache', 'puppeteer'),
-    '/opt/render/project/src/Backend/.cache/puppeteer',
-    '/opt/render/.cache/puppeteer',
-  ];
+const logger = pino({ level: 'silent' }); // suppress noisy baileys logs
 
-  function walk(dir: string): string | undefined {
-    try {
-      if (!fs.existsSync(dir)) return undefined;
-      const entries = fs.readdirSync(dir, { withFileTypes: true });
-      for (const entry of entries) {
-        const fullPath = path.join(dir, entry.name);
-        if (entry.isDirectory()) {
-          const res = walk(fullPath);
-          if (res) return res;
-        } else if (
-          entry.isFile() &&
-          (entry.name === 'chrome' || entry.name === 'chrome.exe' || entry.name === 'chromium')
-        ) {
-          return fullPath;
-        }
-      }
-    } catch {
-      return undefined;
-    }
-    return undefined;
-  }
+// ─── Connect ─────────────────────────────────────────────────────────────────
 
-  for (const dir of searchDirs) {
-    const found = walk(dir);
-    if (found) return found;
-  }
-  return undefined;
-}
+async function connect(): Promise<void> {
+  const { state, saveCreds } = await useMultiFileAuthState(AUTH_DIR);
+  const { version } = await fetchLatestBaileysVersion();
 
-// Auto-detect installed Chrome or Edge executable on Windows & Linux
-function getExecutablePath(): string | undefined {
-  if (process.env.PUPPETEER_EXECUTABLE_PATH && fs.existsSync(process.env.PUPPETEER_EXECUTABLE_PATH)) {
-    return process.env.PUPPETEER_EXECUTABLE_PATH;
-  }
+  sock = makeWASocket({
+    version,
+    logger,
+    auth: {
+      creds: state.creds,
+      keys: makeCacheableSignalKeyStore(state.keys, logger),
+    },
+    printQRInTerminal: false, // we handle QR ourselves
+    browser: ['BayFlow', 'Chrome', '3.0.0'],
+    connectTimeoutMs: 60_000,
+    keepAliveIntervalMs: 30_000,
+    retryRequestDelayMs: 2000,
+  });
 
-  const cached = findChromeInCache();
-  if (cached) return cached;
+  // ── QR code ──────────────────────────────────────────────────────────────
+  sock.ev.on('connection.update', async (update) => {
+    const { connection, lastDisconnect, qr } = update;
 
-  if (process.platform === 'win32') {
-    const windowsPaths = [
-      'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
-      'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
-      'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
-      'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe',
-      `${process.env.LOCALAPPDATA || ''}\\Google\\Chrome\\Application\\chrome.exe`,
-      `${process.env.LOCALAPPDATA || ''}\\Microsoft\\Edge\\Application\\msedge.exe`,
-    ];
-    for (const p of windowsPaths) {
-      if (fs.existsSync(p)) return p;
-    }
-  } else if (process.platform === 'linux') {
-    const linuxPaths = [
-      '/usr/bin/google-chrome-stable',
-      '/usr/bin/google-chrome',
-      '/usr/bin/chromium-browser',
-      '/usr/bin/chromium',
-    ];
-    for (const p of linuxPaths) {
-      if (fs.existsSync(p)) return p;
-    }
-  }
-  return undefined;
-}
-
-const execPath = getExecutablePath();
-
-// Initialize WhatsApp client unless explicitly disabled
-const shouldStartWhatsApp = process.env.DISABLE_WHATSAPP !== 'true';
-
-if (shouldStartWhatsApp) {
-  try {
-    client = new Client({
-      authStrategy: new LocalAuth({ dataPath: './.wwebjs_auth' }),
-      puppeteer: {
-        executablePath: execPath,
-        headless: true,
-        args: [
-          '--no-sandbox',
-          '--disable-setuid-sandbox',
-          '--disable-dev-shm-usage',
-          '--disable-accelerated-2d-canvas',
-          '--no-first-run',
-          '--no-zygote',
-          '--single-process',
-          '--disable-gpu',
-          '--disable-extensions',
-          '--disable-software-rasterizer',
-          '--disable-default-apps',
-          '--mute-audio',
-          '--no-default-browser-check',
-          '--disable-background-networking',
-          '--disable-background-timer-throttling',
-          '--disable-backgrounding-occluded-windows',
-          '--disable-breakpad',
-          '--disable-renderer-backgrounding',
-          '--js-flags=--max-old-space-size=128',
-        ],
-      },
-    });
-
-    client.on('qr', async (qr) => {
+    if (qr) {
       try {
         const terminalQr = await QRCode.toString(qr, { type: 'terminal', small: true });
-        console.log('\n📱 [WHATSAPP QR CODE] Scan with WhatsApp:\n' + terminalQr);
-      } catch (err) {}
-      try {
-        qrCodeData = await QRCode.toDataURL(qr);
-      } catch (e) {}
-    });
+        console.log('\n📱 [WhatsApp] Scan this QR code:\n' + terminalQr);
+        currentQrDataUrl = await QRCode.toDataURL(qr);
+        isConnected = false;
+      } catch (_) {}
+    }
 
-    client.on('ready', () => {
-      console.log('\n✅ [WhatsApp] Connected and ready to dispatch notifications!\n');
+    if (connection === 'open') {
+      console.log('\n✅ [WhatsApp] Connected via Baileys — ready to send messages!\n');
       isConnected = true;
-      qrCodeData = null;
-    });
+      currentQrDataUrl = null;
+    }
 
-    client.on('disconnected', () => {
-      console.log('\n❌ [WhatsApp] Disconnected. Re-initializing session...\n');
+    if (connection === 'close') {
       isConnected = false;
-      if (client) {
-        client.initialize().catch(() => {});
+      const reason = (lastDisconnect?.error as Boom)?.output?.statusCode;
+      const shouldReconnect = reason !== DisconnectReason.loggedOut;
+      console.log(`⚠️ [WhatsApp] Connection closed (reason: ${reason}). Reconnect: ${shouldReconnect}`);
+      if (shouldReconnect) {
+        await connect(); // auto-reconnect
+      } else {
+        console.log('🔒 [WhatsApp] Logged out. Delete .wa_session folder and restart to re-scan QR.');
+        currentQrDataUrl = null;
+        sock = null;
       }
-    });
+    }
+  });
 
-    client.initialize().catch((err) => {
-      console.warn('⚠️ [WhatsApp] Headless Chrome could not be initialized:', err.message || err);
-      client = null;
-    });
-  } catch (err: any) {
-    console.warn('⚠️ [WhatsApp] Client initialization skipped:', err.message || err);
-    client = null;
-  }
-} else {
-  console.log('ℹ️ [WhatsApp] Running in Cloud Standby mode (Chrome not detected on Linux host).');
+  // ── Persist credentials on every update ──────────────────────────────────
+  sock.ev.on('creds.update', saveCreds);
 }
 
+// Start Baileys on module load
+(async () => {
+  if (initStarted) return;
+  initStarted = true;
+  try {
+    await connect();
+  } catch (err: any) {
+    console.error('❌ [WhatsApp] Failed to initialise Baileys:', err?.message || err);
+  }
+})();
+
+// ─── Public API ──────────────────────────────────────────────────────────────
+
 export const WhatsAppService = {
-  // 1. Get QR Code for the Frontend
+
+  /** Called by the QR endpoint so the frontend page can display status / QR image */
   getQrCode() {
     if (isConnected) {
-      return { status: 'CONNECTED', message: 'WhatsApp is already connected!' };
+      return { status: 'CONNECTED', message: '✅ WhatsApp connected! Messages will be delivered.' };
     }
-    if (qrCodeData) {
-      return { status: 'QR_READY', qrCode: qrCodeData };
+    if (currentQrDataUrl) {
+      return { status: 'QR_READY', qrCode: currentQrDataUrl };
     }
     return {
-      status: 'STANDBY',
-      message: 'WhatsApp Web is on standby (requires desktop Chrome session). In-app alerts are active.',
+      status: 'INITIALIZING',
+      message: 'WhatsApp engine is starting up. QR code will appear in a few seconds — refresh the page.',
     };
   },
 
-  // 2. Send Message directly from Node.js with graceful fallback
-  async sendMessage(phone: string, text: string) {
-    if (!client || !isConnected) {
-      console.log(`💬 [WhatsApp Offline / Mock Dispatch] To: ${phone} | Content: ${text}`);
+  /** Send a WhatsApp message to any phone number */
+  async sendMessage(phone: string, text: string): Promise<void> {
+    if (!sock || !isConnected) {
+      console.log(`💬 [WhatsApp Offline] To: ${phone} | ${text}`);
       return;
     }
 
     try {
-      let cleanPhone = phone.replace(/[^0-9]/g, '');
-      if (cleanPhone.startsWith('03')) {
-        cleanPhone = '92' + cleanPhone.substring(1);
-      }
-      const formattedPhone = cleanPhone + '@c.us';
-      await client.sendMessage(formattedPhone, text);
-      console.log(`✅ WhatsApp message sent successfully to ${formattedPhone}`);
-    } catch (error: any) {
-      console.warn('⚠️ [WhatsApp Dispatch Warning]:', error.message || error);
+      // Normalise number → remove non-digits, append @s.whatsapp.net
+      const digits = phone.replace(/[^0-9]/g, '');
+      const jid = `${digits}@s.whatsapp.net`;
+      await sock.sendMessage(jid, { text });
+      console.log(`✅ [WhatsApp] Message sent to ${phone}`);
+    } catch (err: any) {
+      console.error(`❌ [WhatsApp] sendMessage error: ${err?.message || err}`);
     }
   },
 };

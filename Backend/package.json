@@ -20,6 +20,7 @@
   "dependencies": {
     "@getbrevo/brevo": "^6.0.3",
     "@upstash/redis": "^1.39.0",
+    "@whiskeysockets/baileys": "^7.0.0-rc14",
     "bcrypt": "^6.0.0",
     "brevo": "^1.0.0",
     "cors": "^2.8.6",
@@ -30,6 +31,7 @@
     "ioredis": "^6.0.0",
     "jsonwebtoken": "^9.0.3",
     "nodemailer": "^10.0.16",
+    "pino": "^10.4.0",
     "qrcode": "^1.5.4",
     "swagger-jsdoc": "^6.3.0",
     "swagger-ui-express": "^5.0.1",
