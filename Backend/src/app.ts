@@ -17,6 +17,9 @@ dotenv.config();
 
 const app = express();
 
+// Trust reverse proxy (Render, Vercel, Cloudflare) for accurate client IP in express-rate-limit
+app.set('trust proxy', 1);
+
 // Middlewares
 app.use(helmet());
 app.use(cors({
