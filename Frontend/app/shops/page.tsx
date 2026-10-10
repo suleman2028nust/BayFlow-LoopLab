@@ -1,5 +1,7 @@
 "use client";
 
+import { API_BASE_URL } from "@/lib/api";
+
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -143,7 +145,7 @@ export default function ShopsPage() {
   const fetchShops = async () => {
     setLoadingShops(true);
     try {
-      const res = await fetch("http://localhost:4000/api/shops");
+      const res = await fetch(`${API_BASE_URL}/api/shops`);
       const data = await res.json();
       const shopList = data.data || data.shops;
       if (res.ok && data.success && Array.isArray(shopList) && shopList.length > 0) {
@@ -171,7 +173,7 @@ export default function ShopsPage() {
     // Fetch services for shop
     setLoadingServices(true);
     try {
-      const res = await fetch(`http://localhost:4000/api/shops/${shop.id}/services`);
+      const res = await fetch(`${API_BASE_URL}/api/shops/${shop.id}/services`);
       const data = await res.json();
       const servicesList = data.data || data.services;
       if (res.ok && data.success && Array.isArray(servicesList) && servicesList.length > 0) {
@@ -190,7 +192,7 @@ export default function ShopsPage() {
   const fetchSlotsForShop = async (shopId: string, dateStr: string) => {
     setLoadingSlots(true);
     try {
-      const res = await fetch(`http://localhost:4000/api/shops/${shopId}/slots?date=${dateStr}`);
+      const res = await fetch(`${API_BASE_URL}/api/shops/${shopId}/slots?date=${dateStr}`);
       const data = await res.json();
       const slotsList = data.data || data.slots;
       if (res.ok && data.success && Array.isArray(slotsList)) {
@@ -266,7 +268,7 @@ export default function ShopsPage() {
         headers["Authorization"] = `Bearer ${authToken}`;
       }
 
-      const res = await fetch("http://localhost:4000/api/bookings", {
+      const res = await fetch(`${API_BASE_URL}/api/bookings`, {
         method: "POST",
         headers,
         body: JSON.stringify(payload),
