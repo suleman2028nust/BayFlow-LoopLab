@@ -37,4 +37,4 @@ RUN npm run build
 
 EXPOSE 4000
 
-CMD ["node", "dist/app.js"]
+CMD ["node", "--max-old-space-size=256", "dist/app.js"]
