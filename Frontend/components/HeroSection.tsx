@@ -90,13 +90,26 @@ export default function HeroSection({ onOpenDemo }: HeroSectionProps) {
             transition={{ duration: 0.8, delay: 0.3 }}
             className="lg:col-span-6 relative flex items-center justify-center lg:justify-end"
           >
-            <div className="relative z-10 w-full max-w-2xl lg:max-w-none flex items-center justify-center">
+            <div className="relative z-10 w-full max-w-2xl lg:max-w-none flex items-center justify-center overflow-visible">
+              {/* Soft Inset Blur on Corners and Edges so no boundary shows */}
+              <div className="absolute -inset-4 pointer-events-none z-20 [box-shadow:inset_0_0_60px_45px_#F4F4F1]" />
+
+              {/* Radial Edge Vignette blending seamlessly into #F4F4F1 background */}
+              <div className="absolute -inset-1 pointer-events-none z-20 [background:radial-gradient(ellipse_85%_80%_at_center,transparent_55%,rgba(244,244,241,0.5)_75%,#F4F4F1_96%)]" />
+
               <video
                 src="/assets/video.mp4"
+                poster="/assets/luxury_silver_car.png"
                 autoPlay
                 loop
                 muted
                 playsInline
+                style={{
+                  maskImage:
+                    "radial-gradient(ellipse 85% 80% at center, black 55%, rgba(0,0,0,0.85) 75%, transparent 97%)",
+                  WebkitMaskImage:
+                    "radial-gradient(ellipse 85% 80% at center, black 55%, rgba(0,0,0,0.85) 75%, transparent 97%)",
+                }}
                 className="w-full h-auto max-h-[520px] lg:max-h-[580px] object-contain mix-blend-multiply contrast-[106%] brightness-[105%] hover:scale-[1.02] transition-transform duration-500 pointer-events-none"
               />
             </div>

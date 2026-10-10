@@ -86,9 +86,9 @@ export default function VoiceCallModal({
           }
         }
 
-        // 3. Fast poll backend (every 500ms) to check if receiver answered
+        // 3. Fast poll backend (every 400ms) to check if receiver answered
         const checkStatus = async () => {
-          const targetId = currentCallId || activeCallId;
+          const targetId = currentCallId || activeCallId || bookingId;
           if (!targetId || !activeToken) return;
 
           try {
@@ -99,10 +99,16 @@ export default function VoiceCallModal({
             const call = data.data;
 
             if (res.ok && call) {
+              if (call.id && !currentCallId) {
+                currentCallId = call.id;
+                setActiveCallId(call.id);
+              }
+
               if (call.status === "CONNECTED") {
                 stopOutgoingRingtone();
                 if (pollTimerRef.current) clearInterval(pollTimerRef.current);
                 if (ringTimeoutRef.current) clearTimeout(ringTimeoutRef.current);
+                if (call.id) setActiveCallId(call.id);
                 setCallStatus("CONNECTED");
               } else if (call.status === "REJECTED") {
                 stopOutgoingRingtone();
@@ -124,7 +130,7 @@ export default function VoiceCallModal({
         };
 
         if (pollTimerRef.current) clearInterval(pollTimerRef.current);
-        pollTimerRef.current = setInterval(checkStatus, 500);
+        pollTimerRef.current = setInterval(checkStatus, 400);
 
         // 4. Timeout after 40 seconds if receiver doesn't answer (Missed Call)
         if (ringTimeoutRef.current) clearTimeout(ringTimeoutRef.current);

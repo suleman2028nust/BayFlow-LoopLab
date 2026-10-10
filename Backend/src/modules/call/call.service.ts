@@ -129,8 +129,9 @@ export const CallService = {
       },
     };
 
-    // Cache in-memory for sub-millisecond polling
+    // Cache in-memory for sub-millisecond polling by both callLog.id and bookingId
     activeCallsMap.set(callLog.id, callPayload);
+    activeCallsMap.set(bookingId, callPayload);
 
     // Send In-App Notification
     const callerTitle = caller.role === 'CUSTOMER' ? 'Customer' : 'Service Advisor';
@@ -156,53 +157,116 @@ export const CallService = {
 
   // 2. Update Call Status (CONNECTED, MISSED, REJECTED, ENDED) + Duration
   async updateCallStatus(callId: string, status: 'RINGING' | 'CONNECTED' | 'MISSED' | 'REJECTED' | 'ENDED', duration = 0) {
-    // 1. Update in-memory state immediately (0.01ms)
-    const inMem = activeCallsMap.get(callId);
+    // 1. Update in-memory state immediately
+    let inMem = activeCallsMap.get(callId);
+    if (!inMem) {
+      for (const call of activeCallsMap.values()) {
+        if (call.id === callId || call.bookingId === callId) {
+          inMem = call;
+          break;
+        }
+      }
+    }
+
     if (inMem) {
       inMem.status = status;
       if (duration > 0) inMem.duration = duration;
+      // Also update the mirrored bookingId or callId key in map
+      if (activeCallsMap.has(inMem.id)) activeCallsMap.get(inMem.id).status = status;
+      if (activeCallsMap.has(inMem.bookingId)) activeCallsMap.get(inMem.bookingId).status = status;
     }
 
     if (status === 'ENDED' || status === 'REJECTED' || status === 'MISSED') {
       callSignals.delete(callId);
-      // Clean up in-memory call after 15 seconds
-      setTimeout(() => activeCallsMap.delete(callId), 15000);
+      if (inMem) {
+        callSignals.delete(inMem.id);
+        callSignals.delete(inMem.bookingId);
+      }
+      setTimeout(() => {
+        activeCallsMap.delete(callId);
+        if (inMem) {
+          activeCallsMap.delete(inMem.id);
+          activeCallsMap.delete(inMem.bookingId);
+        }
+      }, 20000);
     }
 
-    // 2. Sync to Database
+    // 2. Sync to Database (Try by id, then by bookingId)
     try {
-      const updated = await prisma.callLog.update({
-        where: { id: callId },
-        data: {
-          status: status as any,
-          duration: duration > 0 ? duration : inMem?.duration || 0,
-        },
-      });
-      return updated;
+      let dbCall = await prisma.callLog.findUnique({ where: { id: callId } }).catch(() => null);
+      if (!dbCall) {
+        dbCall = await prisma.callLog.findFirst({
+          where: { bookingId: callId },
+          orderBy: { createdAt: 'desc' }
+        }).catch(() => null);
+      }
+
+      if (dbCall) {
+        const updated = await prisma.callLog.update({
+          where: { id: dbCall.id },
+          data: {
+            status: status as any,
+            duration: duration > 0 ? duration : inMem?.duration || dbCall.duration,
+          },
+        });
+        return updated;
+      }
     } catch (err) {
-      if (inMem) return inMem;
-      throw err;
+      console.warn('DB updateCallStatus sync error:', err);
     }
+
+    return inMem || { id: callId, status, duration };
   },
 
-  // 3. Get Call Log by ID (In-memory first, DB fallback)
+  // 3. Get Call Log by ID (In-memory first, DB fallback, checks both id and bookingId)
   async getCallById(callId: string) {
+    // 1. Check in-memory by key
     const inMem = activeCallsMap.get(callId);
     if (inMem) return inMem;
 
-    return prisma.callLog.findUnique({
-      where: { id: callId },
-      include: {
-        booking: {
-          select: {
-            id: true,
-            vehicleDetails: true,
-            customer: { select: { id: true, email: true, phoneNumber: true } },
-            shop: { select: { id: true, name: true, phone: true } },
+    // 2. Scan in-memory
+    for (const call of activeCallsMap.values()) {
+      if (call.id === callId || call.bookingId === callId) {
+        return call;
+      }
+    }
+
+    // 3. Check DB by id
+    try {
+      const byId = await prisma.callLog.findUnique({
+        where: { id: callId },
+        include: {
+          booking: {
+            select: {
+              id: true,
+              vehicleDetails: true,
+              customer: { select: { id: true, email: true, phoneNumber: true } },
+              shop: { select: { id: true, name: true, phone: true } },
+            },
           },
         },
-      },
-    });
+      });
+      if (byId) return byId;
+
+      // 4. Check DB by bookingId (latest call)
+      const byBooking = await prisma.callLog.findFirst({
+        where: { bookingId: callId },
+        include: {
+          booking: {
+            select: {
+              id: true,
+              vehicleDetails: true,
+              customer: { select: { id: true, email: true, phoneNumber: true } },
+              shop: { select: { id: true, name: true, phone: true } },
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+      if (byBooking) return byBooking;
+    } catch (e) {}
+
+    return null;
   },
 
   // 4. Get Call History for a Booking
@@ -300,12 +364,27 @@ export const CallService = {
     current.push(newSignal);
     if (current.length > 80) current.shift();
     callSignals.set(callId, current);
+
+    // Also mirror to activeCall's bookingId or id key if available
+    const inMem = activeCallsMap.get(callId);
+    if (inMem) {
+      if (inMem.id !== callId) callSignals.set(inMem.id, current);
+      if (inMem.bookingId !== callId) callSignals.set(inMem.bookingId, current);
+    }
+
     return newSignal;
   },
 
   // 7. WebRTC Signaling: Get Signals from opposing party
   getSignals(callId: string, sender: 'caller' | 'receiver', afterTimestamp = 0) {
-    const signals = callSignals.get(callId) || [];
-    return signals.filter((s) => s.sender !== sender && s.timestamp > afterTimestamp);
+    let signals = callSignals.get(callId);
+    if (!signals || signals.length === 0) {
+      const inMem = activeCallsMap.get(callId);
+      if (inMem) {
+        signals = callSignals.get(inMem.id) || callSignals.get(inMem.bookingId);
+      }
+    }
+    const list = signals || [];
+    return list.filter((s) => s.sender !== sender && s.timestamp > afterTimestamp);
   },
 };
