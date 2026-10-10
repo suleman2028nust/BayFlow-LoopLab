@@ -1,3 +1,4 @@
+import { API_BASE_URL } from "@/lib/api";
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -12,7 +13,7 @@ export default function WhatsAppLinkPage() {
     try {
       // Calling our own Node.js backend
       // Replace localhost:5000 with your actual backend URL if different
-      const res = await fetch('http://localhost:4000/api/whatsapp/qr', {
+      const res = await fetch(`${API_BASE_URL}/api/whatsapp/qr`, {
         headers: {
           // You will need to pass the JWT token of the logged-in OWNER here eventually
           // 'Authorization': `Bearer ${localStorage.getItem('token')}`

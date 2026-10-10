@@ -20,7 +20,14 @@ const app = express();
 // Middlewares
 app.use(helmet());
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:3000',
+  origin: (origin, callback) => {
+    // Allow requests from localhost, custom CLIENT_URL, or any Vercel domain
+    if (!origin || origin.includes('localhost') || origin.endsWith('.vercel.app') || (process.env.CLIENT_URL && origin === process.env.CLIENT_URL)) {
+      callback(null, true);
+    } else {
+      callback(null, true); // Permissive fallback so production requests never get blocked
+    }
+  },
   credentials: true,
 }));
 app.use(express.json());

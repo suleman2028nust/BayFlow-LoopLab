@@ -1,3 +1,4 @@
+import { API_BASE_URL } from "@/lib/api";
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -10,7 +11,7 @@ export default function WhatsAppLinkPage() {
 
   const fetchQr = async () => {
     try {
-      const res = await fetch('http://localhost:4000/api/whatsapp/qr');
+      const res = await fetch(`${API_BASE_URL}/api/whatsapp/qr`);
       const data = await res.json();
       if (data.status) setQrStatus(data.status);
       if (data.message) setMessage(data.message);

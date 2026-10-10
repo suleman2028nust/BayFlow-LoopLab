@@ -70,7 +70,9 @@ client.on('disconnected', () => {
 });
 
 // Automatically start the headless browser in the background when the server starts
-client.initialize();
+client.initialize().catch((err) => {
+  console.warn('⚠️ [WhatsApp] Headless Chrome could not be initialized on this host:', err.message || err);
+});
 
 export const WhatsAppService = {
   // 1. Get QR Code for the Frontend
