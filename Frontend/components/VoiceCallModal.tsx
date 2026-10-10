@@ -1,5 +1,7 @@
 "use client";
 
+import { API_BASE_URL } from "@/lib/api";
+
 import React, { useState, useEffect, useRef } from "react";
 import { startOutgoingRingtone, stopOutgoingRingtone } from "@/lib/utils";
 
@@ -76,7 +78,7 @@ export default function VoiceCallModal({
         if (!currentCallId && activeToken && bookingId) {
           try {
             const res = await fetch(
-              "http://localhost:4000/api/calls/initiate",
+              `${API_BASE_URL}/api/calls/initiate`,
               {
                 method: "POST",
                 headers: {
@@ -103,7 +105,7 @@ export default function VoiceCallModal({
 
           try {
             const res = await fetch(
-              `http://localhost:4000/api/calls/${targetId}`,
+              `${API_BASE_URL}/api/calls/${targetId}`,
               {
                 headers: { Authorization: `Bearer ${activeToken}` },
               },
@@ -160,7 +162,7 @@ export default function VoiceCallModal({
           if (targetId && activeToken) {
             try {
               await fetch(
-                `http://localhost:4000/api/calls/${targetId}/status`,
+                `${API_BASE_URL}/api/calls/${targetId}/status`,
                 {
                   method: "PATCH",
                   headers: {
@@ -268,7 +270,7 @@ export default function VoiceCallModal({
           // Send ICE candidates to opposing party
           pc.onicecandidate = (event) => {
             if (event.candidate && targetId && activeToken) {
-              fetch(`http://localhost:4000/api/calls/${targetId}/signal`, {
+              fetch(`${API_BASE_URL}/api/calls/${targetId}/signal`, {
                 method: "POST",
                 headers: {
                   "Content-Type": "application/json",
@@ -290,7 +292,7 @@ export default function VoiceCallModal({
 
             if (targetId && activeToken) {
               await fetch(
-                `http://localhost:4000/api/calls/${targetId}/signal`,
+                `${API_BASE_URL}/api/calls/${targetId}/signal`,
                 {
                   method: "POST",
                   headers: {
@@ -313,7 +315,7 @@ export default function VoiceCallModal({
 
             try {
               const res = await fetch(
-                `http://localhost:4000/api/calls/${targetId}/signals?sender=${role}&after=${lastSignalTime}`,
+                `${API_BASE_URL}/api/calls/${targetId}/signals?sender=${role}&after=${lastSignalTime}`,
                 {
                   headers: { Authorization: `Bearer ${activeToken}` },
                 },
@@ -337,7 +339,7 @@ export default function VoiceCallModal({
                   await peer.setLocalDescription(answer);
 
                   await fetch(
-                    `http://localhost:4000/api/calls/${targetId}/signal`,
+                    `${API_BASE_URL}/api/calls/${targetId}/signal`,
                     {
                       method: "POST",
                       headers: {
@@ -380,7 +382,7 @@ export default function VoiceCallModal({
         remoteCheckInterval = setInterval(async () => {
           try {
             const res = await fetch(
-              `http://localhost:4000/api/calls/${targetId}`,
+              `${API_BASE_URL}/api/calls/${targetId}`,
               {
                 headers: { Authorization: `Bearer ${activeToken}` },
               },
@@ -462,7 +464,7 @@ export default function VoiceCallModal({
 
     if (activeToken && targetCallId) {
       try {
-        await fetch(`http://localhost:4000/api/calls/${targetCallId}/status`, {
+        await fetch(`${API_BASE_URL}/api/calls/${targetCallId}/status`, {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
