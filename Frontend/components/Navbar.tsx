@@ -51,7 +51,14 @@ export default function Navbar({ onOpenDemo }: NavbarProps) {
             href="/shops"
             className="hover:text-[#111827] transition-colors"
           >
-            Find Shops &amp; Book
+            Find Shops
+          </Link>
+          <Link
+            href="/book"
+            className="hover:text-[#111827] transition-colors flex items-center gap-1 font-bold text-[#111827]"
+          >
+            <span className="material-symbols-outlined text-sm">auto_fix_high</span>
+            <span>Booking Wizard</span>
           </Link>
           <Link
             href={isAuthenticated ? "/dashboard" : "/login"}
@@ -116,7 +123,15 @@ export default function Navbar({ onOpenDemo }: NavbarProps) {
               onClick={() => setMobileMenuOpen(false)}
               className="hover:text-[#111827] py-1 font-semibold"
             >
-              Find Shops &amp; Book
+              Find Shops
+            </Link>
+            <Link
+              href="/book"
+              onClick={() => setMobileMenuOpen(false)}
+              className="hover:text-[#111827] py-1 font-bold flex items-center gap-1.5 text-[#111827]"
+            >
+              <span className="material-symbols-outlined text-base">auto_fix_high</span>
+              <span>Guided Booking Wizard</span>
             </Link>
             <Link
               href={isAuthenticated ? "/dashboard" : "/login"}

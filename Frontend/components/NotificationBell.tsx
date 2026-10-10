@@ -1,7 +1,5 @@
 "use client";
 
-import { API_BASE_URL } from "@/lib/api";
-
 import React, { useState, useEffect, useRef } from "react";
 import { playNotificationChime } from "@/lib/utils";
 
@@ -79,7 +77,7 @@ export default function NotificationBell({ token }: NotificationBellProps) {
 
   const fetchNotifications = async (authToken: string) => {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/notifications`, {
+      const res = await fetch("http://localhost:4000/api/notifications", {
         headers: { Authorization: `Bearer ${authToken}` },
       });
       const data = await res.json();
@@ -153,7 +151,7 @@ export default function NotificationBell({ token }: NotificationBellProps) {
     const activeToken = token || (typeof window !== "undefined" ? localStorage.getItem("bayflow_token") : null);
     if (activeToken) {
       try {
-        await fetch(`${API_BASE_URL}/api/notifications/read-all`, {
+        await fetch("http://localhost:4000/api/notifications/read-all", {
           method: "PATCH",
           headers: { Authorization: `Bearer ${activeToken}` },
         });
@@ -169,7 +167,7 @@ export default function NotificationBell({ token }: NotificationBellProps) {
     const activeToken = token || (typeof window !== "undefined" ? localStorage.getItem("bayflow_token") : null);
     if (activeToken) {
       try {
-        await fetch(`${API_BASE_URL}/api/notifications/${id}/read`, {
+        await fetch(`http://localhost:4000/api/notifications/${id}/read`, {
           method: "PATCH",
           headers: { Authorization: `Bearer ${activeToken}` },
         });

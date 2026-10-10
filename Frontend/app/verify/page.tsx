@@ -1,7 +1,5 @@
 "use client";
 
-import { API_BASE_URL } from "@/lib/api";
-
 import React, { useState, useEffect, useRef, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -107,7 +105,7 @@ function VerifyContent() {
     setErrorMsg("");
     setSuccessMsg("");
     try {
-      const res = await fetch(`${API_BASE_URL}/api/auth/forgot-password`, {
+      const res = await fetch("http://localhost:4000/api/auth/forgot-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
@@ -139,7 +137,7 @@ function VerifyContent() {
     setSuccessMsg("");
 
     try {
-      const res = await fetch(`${API_BASE_URL}/api/auth/verify`, {
+      const res = await fetch("http://localhost:4000/api/auth/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, otp: otpCode }),

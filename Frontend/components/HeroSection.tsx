@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 
 interface HeroSectionProps {
@@ -8,7 +9,17 @@ interface HeroSectionProps {
 }
 
 export default function HeroSection({ onOpenDemo }: HeroSectionProps) {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<"live-job" | "multi-shop" | "ai-voice">("live-job");
+
+  const handleLaunchPlatform = () => {
+    const token = typeof window !== "undefined" ? localStorage.getItem("bayflow_token") : null;
+    if (token) {
+      router.push("/dashboard");
+    } else {
+      router.push("/login");
+    }
+  };
 
   return (
     <section className="relative w-full pt-28 pb-16 lg:pt-36 lg:pb-24 overflow-hidden bg-[#F4F4F1]">
@@ -64,14 +75,21 @@ export default function HeroSection({ onOpenDemo }: HeroSectionProps) {
               className="mt-8 flex flex-wrap items-center gap-4"
             >
               <button
-                onClick={onOpenDemo}
-                className="px-6 py-3.5 rounded-xl bg-[#111827] hover:bg-[#0F172A] text-white font-bold text-sm shadow-xl shadow-[#111827]/15 transition-all flex items-center gap-2 group hover:scale-[1.02]"
+                onClick={handleLaunchPlatform}
+                className="px-6 py-3.5 rounded-xl bg-[#111827] hover:bg-[#0F172A] text-white font-bold text-sm shadow-xl shadow-[#111827]/15 transition-all flex items-center gap-2 group hover:scale-[1.02] cursor-pointer"
               >
                 <span className="material-symbols-outlined text-lg">play_circle</span>
                 <span>Launch Platform</span>
                 <span className="material-symbols-outlined text-base group-hover:translate-x-1 transition-transform">
                   arrow_forward
                 </span>
+              </button>
+              <button
+                onClick={() => router.push("/book")}
+                className="px-6 py-3.5 rounded-xl bg-[#1F5C45] hover:bg-[#164433] text-white font-bold text-sm shadow-lg shadow-[#1F5C45]/15 transition-all flex items-center gap-2 group hover:scale-[1.02] cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-lg">auto_fix_high</span>
+                <span>Guided Booking Wizard</span>
               </button>
               <a
                 href="#roles-pos"

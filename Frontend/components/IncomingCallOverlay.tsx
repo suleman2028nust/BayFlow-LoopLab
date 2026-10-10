@@ -1,7 +1,5 @@
 "use client";
 
-import { API_BASE_URL } from "@/lib/api";
-
 import React, { useState, useEffect, useRef } from "react";
 import VoiceCallModal from "@/components/VoiceCallModal";
 import { formatUserName, startPhoneRingtone, stopPhoneRingtone } from "@/lib/utils";
@@ -33,7 +31,7 @@ export default function IncomingCallOverlay({ token }: IncomingCallOverlayProps)
       if (!activeToken) return;
 
       try {
-        const res = await fetch(`${API_BASE_URL}/api/calls/incoming`, {
+        const res = await fetch("http://localhost:4000/api/calls/incoming", {
           headers: { Authorization: `Bearer ${activeToken}` },
         });
 
@@ -92,7 +90,7 @@ export default function IncomingCallOverlay({ token }: IncomingCallOverlayProps)
 
     if (activeToken) {
       try {
-        await fetch(`${API_BASE_URL}/api/calls/${acceptedCall.id}/status`, {
+        await fetch(`http://localhost:4000/api/calls/${acceptedCall.id}/status`, {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
@@ -119,7 +117,7 @@ export default function IncomingCallOverlay({ token }: IncomingCallOverlayProps)
 
     if (activeToken) {
       try {
-        await fetch(`${API_BASE_URL}/api/calls/${currentCallId}/status`, {
+        await fetch(`http://localhost:4000/api/calls/${currentCallId}/status`, {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",

@@ -1,7 +1,5 @@
 "use client";
 
-import { API_BASE_URL } from "@/lib/api";
-
 import React, { useState, useEffect } from "react";
 import VoiceCallModal from "@/components/VoiceCallModal";
 import { formatUserName } from "@/lib/utils";
@@ -89,7 +87,7 @@ export default function StaffPosView({ token, role, shopId }: StaffPosViewProps)
       const headers: any = { Authorization: `Bearer ${token}` };
       if (shopId) headers["X-Shop-Id"] = shopId;
 
-      const url = shopId ? `${API_BASE_URL}/api/bookings?shopId=${shopId}` : `${API_BASE_URL}/api/bookings`;
+      const url = shopId ? `http://localhost:4000/api/bookings?shopId=${shopId}` : "http://localhost:4000/api/bookings";
       const res = await fetch(url, { headers });
       const data = await res.json();
       const bookingList = data.data || data.bookings;
@@ -114,7 +112,7 @@ export default function StaffPosView({ token, role, shopId }: StaffPosViewProps)
 
   const fetchTechnicians = async (currentShopId: string) => {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/shops/${currentShopId}/team`, {
+      const res = await fetch(`http://localhost:4000/api/shops/${currentShopId}/team`, {
         headers: { Authorization: `Bearer ${token}`, "X-Shop-Id": currentShopId },
       });
       const data = await res.json();
@@ -133,7 +131,7 @@ export default function StaffPosView({ token, role, shopId }: StaffPosViewProps)
 
   const fetchInventory = async (currentShopId: string) => {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/shops/${currentShopId}/inventory`, {
+      const res = await fetch(`http://localhost:4000/api/shops/${currentShopId}/inventory`, {
         headers: { Authorization: `Bearer ${token}`, "X-Shop-Id": currentShopId },
       });
       const data = await res.json();
@@ -157,7 +155,7 @@ export default function StaffPosView({ token, role, shopId }: StaffPosViewProps)
 
   const fetchPurchaseOrders = async (currentShopId: string) => {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/shops/${currentShopId}/inventory/purchase-orders`, {
+      const res = await fetch(`http://localhost:4000/api/shops/${currentShopId}/inventory/purchase-orders`, {
         headers: { Authorization: `Bearer ${token}`, "X-Shop-Id": currentShopId },
       });
       const data = await res.json();
@@ -182,7 +180,7 @@ export default function StaffPosView({ token, role, shopId }: StaffPosViewProps)
       };
       if (shopId) headers["X-Shop-Id"] = shopId;
 
-      const res = await fetch(`${API_BASE_URL}/api/bookings/${bookingId}/status`, {
+      const res = await fetch(`http://localhost:4000/api/bookings/${bookingId}/status`, {
         method: "PATCH",
         headers,
         body: JSON.stringify({ status: nextStatus, notes: note || `Transitioned to ${nextStatus}` }),
@@ -214,7 +212,7 @@ export default function StaffPosView({ token, role, shopId }: StaffPosViewProps)
       };
       if (shopId) headers["X-Shop-Id"] = shopId;
 
-      const res = await fetch(`${API_BASE_URL}/api/bookings/${selectedBookingForAssign.id}/assign`, {
+      const res = await fetch(`http://localhost:4000/api/bookings/${selectedBookingForAssign.id}/assign`, {
         method: "POST",
         headers,
         body: JSON.stringify({ technicianId: selectedTechId }),
@@ -245,7 +243,7 @@ export default function StaffPosView({ token, role, shopId }: StaffPosViewProps)
       if (shopId) headers["X-Shop-Id"] = shopId;
 
       const totalCost = Number(estimateForm.labourCost) + Number(estimateForm.partsCost);
-      const res = await fetch(`${API_BASE_URL}/api/bookings/${selectedBookingForEst.id}/estimate`, {
+      const res = await fetch(`http://localhost:4000/api/bookings/${selectedBookingForEst.id}/estimate`, {
         method: "POST",
         headers,
         body: JSON.stringify({
@@ -284,7 +282,7 @@ export default function StaffPosView({ token, role, shopId }: StaffPosViewProps)
       const totalCost = Number(adjustedLabour) + Number(partsCost);
 
       // 1. Update revised estimate in DB
-      await fetch(`${API_BASE_URL}/api/bookings/${selectedBookingForReview.id}/estimate`, {
+      await fetch(`http://localhost:4000/api/bookings/${selectedBookingForReview.id}/estimate`, {
         method: "POST",
         headers,
         body: JSON.stringify({
@@ -296,7 +294,7 @@ export default function StaffPosView({ token, role, shopId }: StaffPosViewProps)
       });
 
       // 2. Transition to Step 6: AWAITING_CUSTOMER
-      const res = await fetch(`${API_BASE_URL}/api/bookings/${selectedBookingForReview.id}/status`, {
+      const res = await fetch(`http://localhost:4000/api/bookings/${selectedBookingForReview.id}/status`, {
         method: "PATCH",
         headers,
         body: JSON.stringify({ status: "AWAITING_CUSTOMER", notes: `Estimate revised to PKR ${totalCost} and sent to customer.` }),
@@ -327,7 +325,7 @@ export default function StaffPosView({ token, role, shopId }: StaffPosViewProps)
         return;
       }
 
-      const res = await fetch(`${API_BASE_URL}/api/shops/${shopId}/inventory/purchase-orders`, {
+      const res = await fetch(`http://localhost:4000/api/shops/${shopId}/inventory/purchase-orders`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -359,7 +357,7 @@ export default function StaffPosView({ token, role, shopId }: StaffPosViewProps)
   const handleReceivePo = async (poId: string) => {
     if (!shopId) return;
     try {
-      const res = await fetch(`${API_BASE_URL}/api/shops/${shopId}/inventory/purchase-orders/${poId}/receive`, {
+      const res = await fetch(`http://localhost:4000/api/shops/${shopId}/inventory/purchase-orders/${poId}/receive`, {
         method: "PATCH",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -412,7 +410,7 @@ export default function StaffPosView({ token, role, shopId }: StaffPosViewProps)
           };
         });
 
-      const res = await fetch(`${API_BASE_URL}/api/bookings/${bookingId}/parts/allocate`, {
+      const res = await fetch(`http://localhost:4000/api/bookings/${bookingId}/parts/allocate`, {
         method: "POST",
         headers,
         body: JSON.stringify({ items: itemsToAllocate.length > 0 ? itemsToAllocate : [{ inventoryId: inventory[0]?.id, quantity: 1 }] }),
@@ -444,7 +442,7 @@ export default function StaffPosView({ token, role, shopId }: StaffPosViewProps)
       };
       if (shopId) headers["X-Shop-Id"] = shopId;
 
-      const res = await fetch(`${API_BASE_URL}/api/bookings/${selectedBookingForQc.id}/qc-issue`, {
+      const res = await fetch(`http://localhost:4000/api/bookings/${selectedBookingForQc.id}/qc-issue`, {
         method: "POST",
         headers,
         body: JSON.stringify({ description: qcIssueDescription }),
@@ -497,14 +495,14 @@ export default function StaffPosView({ token, role, shopId }: StaffPosViewProps)
           <h1 className="font-headline text-2xl sm:text-3xl font-extrabold text-white">
             Console: {activeRole.replace("_", " ")}
           </h1>
-          <p className="text-xs text-white/70 mt-1">
+          {/* <p className="text-xs text-white/70 mt-1">
             Access locked to authenticated role <strong className="text-white">({activeRole})</strong>.
-          </p>
+          </p> */}
         </div>
 
-        <div className="bg-white/10 px-4 py-2 rounded-2xl border border-white/15 text-xs font-mono font-bold">
+        {/* <div className="bg-white/10 px-4 py-2 rounded-2xl border border-white/15 text-xs font-mono font-bold">
           Shop Scope: {shopId ? `${shopId.slice(0, 18)}...` : "Isolated Scope"}
-        </div>
+        </div> */}
       </div>
 
       {actionMsg && (
@@ -535,12 +533,12 @@ export default function StaffPosView({ token, role, shopId }: StaffPosViewProps)
       {activeRole === "SERVICE_ADVISOR" && (
         <div className="space-y-4">
           <div className="bg-white rounded-3xl border border-[#2C2421]/15 p-6 sm:p-8 shadow-xs space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between border-b border-[#2C2421]/10 pb-4">
               <div>
                 <h3 className="font-headline text-lg font-bold text-[#2C2421]">Service Advisor Intake &amp; Coordination</h3>
-                <p className="text-xs text-[#2C2421]/60">Step 1 (Intake Review), Step 2 (Assign Tech), Step 5 (Send Estimate), Step 7 (Assign Parts), Step 14 (Ready For Pickup)</p>
+                <p className="text-xs text-[#2C2421]/60 mt-0.5">Step 1 (Intake Review), Step 2 (Assign Tech), Step 5 (Send Estimate), Step 7 (Assign Parts), Step 14 (Ready For Pickup)</p>
               </div>
-              <span className="text-xs font-mono font-bold bg-[#111827] text-white px-3 py-1 rounded-full">
+              <span className="h-8 px-3.5 bg-[#111827] text-white text-xs font-semibold rounded-full inline-flex items-center gap-1.5 shadow-2xs">
                 {bookings.length} Bookings
               </span>
             </div>
@@ -550,48 +548,83 @@ export default function StaffPosView({ token, role, shopId }: StaffPosViewProps)
                 No active bookings in the shop intake queue currently.
               </div>
             ) : (
-              <div className="divide-y divide-[#2C2421]/10 text-xs">
+              <div className="space-y-3 pt-1">
                 {bookings.map((b) => {
                   const stepMeta = STEP_METADATA[b.status] || { step: "-", title: b.status };
 
-                  return (
-                    <div key={b.id} className="py-4 space-y-3">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-mono font-bold text-[#111827] bg-[#F4F4F1] px-2 py-0.5 rounded">
-                              #{b.id.slice(0, 8).toUpperCase()}
-                            </span>
-                            <span className="font-bold text-xs text-[#1F5C45]">
-                              {b.vehicleDetails?.year || ""} {b.vehicleDetails?.make} {b.vehicleDetails?.model} ({b.vehicleDetails?.plate || "LEA-1234"})
-                            </span>
-                            <span className="bg-[#111827]/10 text-[#111827] text-[10px] font-extrabold px-2 py-0.5 rounded">
-                              Step {stepMeta.step}: {stepMeta.title}
-                            </span>
-                          </div>
-                          <h4 className="font-bold text-sm text-[#2C2421] mt-1 flex items-center gap-1.5">
-                            <span>👤 {formatUserName(b.customer, "Customer")}</span>
-                            {b.customer?.email && (
-                              <span className="text-[#2C2421]/50 text-xs font-normal">({b.customer.email})</span>
-                            )}
-                          </h4>
-                          <p className="text-[#2C2421]/60 mt-0.5">
-                            Symptoms: {Array.isArray(b.issuesReported) ? b.issuesReported.join(", ") : b.issuesReported || "Check engine light, car vibrates at idle"}
-                          </p>
-                        </div>
+                  const statusStyle =
+                    b.status === "COMPLETED"
+                      ? "bg-[#111827] text-white"
+                      : b.status === "ESTIMATE_APPROVED" || b.status === "READY_FOR_PICKUP"
+                      ? "bg-[#1F5C45] text-white"
+                      : b.status === "ESTIMATE_REJECTED" || b.status === "CANCELLED"
+                      ? "bg-[#E85D22] text-white"
+                      : "bg-[#111827]/10 text-[#111827] border border-[#111827]/20";
 
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => triggerCallCustomer(b.customer?.email || "Customer", b.id)}
-                            className="px-3 py-1 bg-[#1F5C45] text-white text-[11px] font-bold rounded-lg hover:bg-[#164433] flex items-center gap-1 cursor-pointer"
+                  return (
+                    <div
+                      key={b.id}
+                      className="bg-[#F8F8F5] hover:bg-white border border-[#2C2421]/12 hover:border-[#111827]/30 rounded-2xl p-5 transition-all shadow-2xs space-y-4"
+                    >
+                      {/* Card Top: Ref, Status, Step, and Call Customer */}
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#2C2421]/10 pb-3">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-mono text-[11px] font-bold text-[#111827] bg-white border border-[#2C2421]/15 px-2.5 py-1 rounded-md shadow-2xs">
+                            #{b.id.slice(0, 8).toUpperCase()}
+                          </span>
+                          <span
+                            className={`h-6 px-3 rounded-full text-xs font-semibold uppercase tracking-wide inline-flex items-center justify-center ${statusStyle}`}
                           >
-                            <span className="material-symbols-outlined text-sm">phone</span>
-                            <span>Call</span>
-                          </button>
-                          <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase bg-[#111827] text-white">
                             {b.status}
                           </span>
+                          <span className="h-6 px-2.5 rounded-full text-[11px] font-bold bg-[#111827]/5 text-[#111827] border border-[#111827]/10 inline-flex items-center">
+                            Step {stepMeta.step}: {stepMeta.title}
+                          </span>
                         </div>
+
+                        {/* Top Right: Call Customer Action */}
+                        <div className="flex items-center gap-2 self-start sm:self-auto">
+                          <button
+                            onClick={() => triggerCallCustomer(b.customer?.email || "Customer", b.id)}
+                            className="h-8 px-3.5 bg-[#1F5C45] hover:bg-[#164433] text-white text-xs font-semibold rounded-full transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                          >
+                            <span className="material-symbols-outlined text-sm">phone</span>
+                            <span>Call Customer</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Vehicle & Customer Row */}
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        {/* Vehicle Title & License Plate */}
+                        <div className="flex flex-wrap items-center gap-2.5">
+                          <span className="material-symbols-outlined text-lg text-[#111827]">directions_car</span>
+                          <span className="text-sm font-bold text-[#2C2421] capitalize">
+                            {b.vehicleDetails?.year || "2016"} {b.vehicleDetails?.make || "Honda"} {b.vehicleDetails?.model || "Civic"}
+                          </span>
+                          {b.vehicleDetails?.plate && (
+                            <span className="px-2.5 py-0.5 bg-white border border-[#2C2421]/15 rounded-md font-mono text-[11px] font-bold text-[#111827] uppercase tracking-wider shadow-2xs">
+                              {b.vehicleDetails.plate}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Customer Info */}
+                        <div className="flex items-center gap-1.5 text-xs text-[#2C2421]/80">
+                          <span className="material-symbols-outlined text-sm text-[#2C2421]/60">person</span>
+                          <span className="font-semibold text-[#2C2421]">{formatUserName(b.customer, "Customer")}</span>
+                          {b.customer?.email && (
+                            <span className="text-[#2C2421]/50 text-[11px]">({b.customer.email})</span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Reported Symptoms */}
+                      <div className="p-3 bg-white rounded-xl border border-[#2C2421]/10 text-xs text-[#2C2421]/80">
+                        <span className="font-bold text-[#2C2421] block mb-0.5">Reported Symptoms:</span>
+                        <p className="leading-relaxed">
+                          {Array.isArray(b.issuesReported) ? b.issuesReported.join(", ") : b.issuesReported || "Check engine light, car vibrates at idle"}
+                        </p>
                       </div>
 
                       {/* SA Step Actions */}
@@ -601,14 +634,14 @@ export default function StaffPosView({ token, role, shopId }: StaffPosViewProps)
                           <>
                             <button
                               onClick={() => handleUpdateStatus(b.id, "CONFIRMED")}
-                              className="px-3.5 py-1.5 bg-[#1F5C45] text-white rounded-xl text-xs font-bold hover:bg-[#164433] transition-all cursor-pointer flex items-center gap-1"
+                              className="px-4 py-2 bg-[#1F5C45] hover:bg-[#164433] text-white rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs"
                             >
                               <span className="material-symbols-outlined text-sm">check</span>
                               <span>Confirm Booking (Move to Step 2: CONFIRMED)</span>
                             </button>
                             <button
                               onClick={() => handleUpdateStatus(b.id, "CANCELLED")}
-                              className="px-3.5 py-1.5 border border-[#E85D22] text-[#E85D22] rounded-xl text-xs font-bold hover:bg-[#E85D22]/10 transition-all cursor-pointer"
+                              className="px-4 py-2 border border-[#E85D22] text-[#E85D22] hover:bg-[#E85D22]/10 rounded-xl text-xs font-bold transition-all cursor-pointer"
                             >
                               Decline
                             </button>
@@ -622,7 +655,7 @@ export default function StaffPosView({ token, role, shopId }: StaffPosViewProps)
                               setSelectedBookingForAssign(b);
                               setShowAssignModal(true);
                             }}
-                            className="px-3.5 py-1.5 bg-[#111827] text-white rounded-xl text-xs font-bold hover:bg-[#0F172A] transition-all cursor-pointer flex items-center gap-1"
+                            className="px-4 py-2 bg-[#111827] hover:bg-[#1f2937] text-white rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs"
                           >
                             <span className="material-symbols-outlined text-sm">person_add</span>
                             <span>Assign Technician (Move to Step 3: ASSIGNED)</span>
@@ -637,7 +670,7 @@ export default function StaffPosView({ token, role, shopId }: StaffPosViewProps)
                               setAdjustedLabour(b.estimate?.labourCost || 3500);
                               setShowReviewModal(true);
                             }}
-                            className="px-3.5 py-1.5 bg-[#0284C7] text-white rounded-xl text-xs font-bold hover:bg-[#0369A1] transition-all cursor-pointer flex items-center gap-1"
+                            className="px-4 py-2 bg-[#111827] hover:bg-[#1f2937] text-white rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs"
                           >
                             <span className="material-symbols-outlined text-sm">edit_note</span>
                             <span>Review &amp; Send Estimate to Customer (Move to Step 6)</span>
@@ -648,7 +681,7 @@ export default function StaffPosView({ token, role, shopId }: StaffPosViewProps)
                         {b.status === "ESTIMATE_APPROVED" && (
                           <button
                             onClick={() => handleUpdateStatus(b.id, "PARTS_PENDING", "SA assigned Parts Department.")}
-                            className="px-3.5 py-1.5 bg-[#7C3AED] text-white rounded-xl text-xs font-bold hover:bg-[#6D28D9] transition-all cursor-pointer flex items-center gap-1"
+                            className="px-4 py-2 bg-[#111827] hover:bg-[#1f2937] text-white rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs"
                           >
                             <span className="material-symbols-outlined text-sm">handyman</span>
                             <span>Assign Parts Person (Move to Step 8: PARTS_PENDING)</span>
@@ -659,7 +692,7 @@ export default function StaffPosView({ token, role, shopId }: StaffPosViewProps)
                         {b.status === "READY_FOR_PICKUP" && (
                           <button
                             onClick={() => handleUpdateStatus(b.id, "COMPLETED", "Customer collected vehicle. Booking completed.")}
-                            className="px-3.5 py-1.5 bg-[#1F5C45] text-white rounded-xl text-xs font-bold hover:bg-[#164433] transition-all cursor-pointer flex items-center gap-1"
+                            className="px-4 py-2 bg-[#1F5C45] hover:bg-[#164433] text-white rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs"
                           >
                             <span className="material-symbols-outlined text-sm">task_alt</span>
                             <span>Vehicle Picked Up - Close Booking (Move to Step 15: COMPLETED)</span>
@@ -679,13 +712,13 @@ export default function StaffPosView({ token, role, shopId }: StaffPosViewProps)
       {activeRole === "TECHNICIAN" && (
         <div className="space-y-4">
           <div className="bg-white rounded-3xl border border-[#2C2421]/15 p-6 sm:p-8 shadow-xs space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between border-b border-[#2C2421]/10 pb-4">
               <div>
                 <h3 className="font-headline text-lg font-bold text-[#2C2421]">Technician Repair Floor</h3>
-                <p className="text-xs text-[#2C2421]/60">Step 3 &amp; 4 (Inspection &amp; Estimate), Step 11 (Repair &amp; Dispatch to QC)</p>
+                <p className="text-xs text-[#2C2421]/60 mt-0.5">Step 3 &amp; 4 (Inspection &amp; Estimate), Step 11 (Repair &amp; Dispatch to QC)</p>
               </div>
-              <span className="text-xs font-mono font-bold bg-[#D97706] text-white px-3 py-1 rounded-full">
-                Mechanic View
+              <span className="h-8 px-3.5 bg-[#111827] text-white text-xs font-semibold rounded-full inline-flex items-center gap-1.5 shadow-2xs">
+                Mechanic Console
               </span>
             </div>
 
@@ -694,46 +727,80 @@ export default function StaffPosView({ token, role, shopId }: StaffPosViewProps)
                 No active repair jobs in queue currently.
               </div>
             ) : (
-              <div className="divide-y divide-[#2C2421]/10 text-xs">
+              <div className="space-y-3 pt-1">
                 {bookings.map((b) => {
                   const stepMeta = STEP_METADATA[b.status] || { step: "-", title: b.status };
 
+                  const statusStyle =
+                    b.status === "COMPLETED"
+                      ? "bg-[#111827] text-white"
+                      : b.status === "ESTIMATE_APPROVED" || b.status === "READY_FOR_PICKUP"
+                      ? "bg-[#1F5C45] text-white"
+                      : b.status === "ESTIMATE_REJECTED" || b.status === "CANCELLED"
+                      ? "bg-[#E85D22] text-white"
+                      : "bg-[#111827]/10 text-[#111827] border border-[#111827]/20";
+
                   return (
-                    <div key={b.id} className="py-4 space-y-3">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-mono font-bold text-[#111827] bg-[#F4F4F1] px-2 py-0.5 rounded">
-                              #{b.id.slice(0, 8).toUpperCase()}
-                            </span>
-                            <span className="font-bold text-xs text-[#2C2421]">
-                              {b.vehicleDetails?.year || "2016"} {b.vehicleDetails?.make || "Honda"} {b.vehicleDetails?.model || "Civic"} ({b.vehicleDetails?.plate || "LEA-1234"})
-                            </span>
-                            <span className="bg-[#D97706]/10 text-[#D97706] text-[10px] font-extrabold px-2 py-0.5 rounded">
-                              Step {stepMeta.step}: {stepMeta.title}
-                            </span>
-                          </div>
-                          <p className="text-[#2C2421]/70 mt-1 font-medium">
-                            Reported Symptoms: {Array.isArray(b.issuesReported) ? b.issuesReported.join(", ") : b.issuesReported || "Light came on yesterday, car vibrates at idle."}
-                          </p>
-                          {b.estimateTotal && (
-                            <p className="text-[11px] text-[#111827] font-bold mt-0.5">
-                              Estimate: PKR {b.estimateTotal.toLocaleString()}
-                            </p>
-                          )}
+                    <div
+                      key={b.id}
+                      className="bg-[#F8F8F5] hover:bg-white border border-[#2C2421]/12 hover:border-[#111827]/30 rounded-2xl p-5 transition-all shadow-2xs space-y-4"
+                    >
+                      {/* Card Top: Ref, Status, Step, and Estimate */}
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#2C2421]/10 pb-3">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-mono text-[11px] font-bold text-[#111827] bg-white border border-[#2C2421]/15 px-2.5 py-1 rounded-md shadow-2xs">
+                            #{b.id.slice(0, 8).toUpperCase()}
+                          </span>
+                          <span
+                            className={`h-6 px-3 rounded-full text-xs font-semibold uppercase tracking-wide inline-flex items-center justify-center ${statusStyle}`}
+                          >
+                            {b.status}
+                          </span>
+                          <span className="h-6 px-2.5 rounded-full text-[11px] font-bold bg-[#111827]/5 text-[#111827] border border-[#111827]/10 inline-flex items-center">
+                            Step {stepMeta.step}: {stepMeta.title}
+                          </span>
                         </div>
 
-                        <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase bg-[#D97706] text-white">
-                          {b.status}
-                        </span>
+                        {b.estimateTotal ? (
+                          <div className="text-left sm:text-right">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-[#2C2421]/50 block leading-tight">
+                              Estimate Value
+                            </span>
+                            <span className="font-headline text-base font-extrabold text-[#111827] block leading-tight mt-0.5">
+                              PKR {b.estimateTotal.toLocaleString()}
+                            </span>
+                          </div>
+                        ) : null}
                       </div>
 
+                      {/* Vehicle Info & License Plate */}
+                      <div className="flex flex-wrap items-center gap-2.5">
+                        <span className="material-symbols-outlined text-lg text-[#111827]">directions_car</span>
+                        <span className="text-sm font-bold text-[#2C2421] capitalize">
+                          {b.vehicleDetails?.year || "2016"} {b.vehicleDetails?.make || "Honda"} {b.vehicleDetails?.model || "Civic"}
+                        </span>
+                        {b.vehicleDetails?.plate && (
+                          <span className="px-2.5 py-0.5 bg-white border border-[#2C2421]/15 rounded-md font-mono text-[11px] font-bold text-[#111827] uppercase tracking-wider shadow-2xs">
+                            {b.vehicleDetails.plate}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Reported Symptoms */}
+                      <div className="p-3 bg-white rounded-xl border border-[#2C2421]/10 text-xs text-[#2C2421]/80">
+                        <span className="font-bold text-[#2C2421] block mb-0.5">Reported Symptoms:</span>
+                        <p className="leading-relaxed">
+                          {Array.isArray(b.issuesReported) ? b.issuesReported.join(", ") : b.issuesReported || "Light came on yesterday, car vibrates at idle."}
+                        </p>
+                      </div>
+
+                      {/* Action Buttons */}
                       <div className="flex flex-wrap gap-2 pt-2 border-t border-[#2C2421]/10">
                         {/* Step 3 -> Step 4: Start Physical Inspection */}
                         {b.status === "ASSIGNED" && (
                           <button
                             onClick={() => handleUpdateStatus(b.id, "INSPECTING", "Technician started physical vehicle inspection.")}
-                            className="px-3.5 py-1.5 bg-[#111827] text-white rounded-xl text-xs font-bold hover:bg-[#0F172A] cursor-pointer flex items-center gap-1"
+                            className="px-4 py-2 bg-[#111827] hover:bg-[#1f2937] text-white rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs"
                           >
                             <span className="material-symbols-outlined text-sm">search</span>
                             <span>Start Physical Inspection (Move to Step 4: INSPECTING)</span>
@@ -747,7 +814,7 @@ export default function StaffPosView({ token, role, shopId }: StaffPosViewProps)
                               setSelectedBookingForEst(b);
                               setShowEstimateModal(true);
                             }}
-                            className="px-3.5 py-1.5 bg-[#D97706] text-white rounded-xl text-xs font-bold hover:bg-[#B45309] cursor-pointer flex items-center gap-1"
+                            className="px-4 py-2 bg-[#111827] hover:bg-[#1f2937] text-white rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs"
                           >
                             <span className="material-symbols-outlined text-sm">receipt_long</span>
                             <span>Submit Diagnosis &amp; Estimate Line Items (Move to Step 5: ESTIMATE_REVIEW)</span>
@@ -758,7 +825,7 @@ export default function StaffPosView({ token, role, shopId }: StaffPosViewProps)
                         {b.status === "IN_REPAIR" && (
                           <button
                             onClick={() => handleUpdateStatus(b.id, "QC_PENDING", "Technician completed repair work. Dispatched to QC queue.")}
-                            className="px-3.5 py-1.5 bg-[#059669] text-white rounded-xl text-xs font-bold hover:bg-[#047857] cursor-pointer flex items-center gap-1"
+                            className="px-4 py-2 bg-[#1F5C45] hover:bg-[#164433] text-white rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs"
                           >
                             <span className="material-symbols-outlined text-sm">speed</span>
                             <span>Complete Repair &amp; Dispatch to QC (Move to Step 12: QC_PENDING)</span>
@@ -792,7 +859,7 @@ export default function StaffPosView({ token, role, shopId }: StaffPosViewProps)
                   }
                   setShowPoModal(true);
                 }}
-                className="px-4 py-2 bg-[#7C3AED] hover:bg-[#6D28D9] text-white text-xs font-bold rounded-xl shadow-xs cursor-pointer flex items-center gap-1"
+                className="px-4 py-2 bg-[#111827] hover:bg-[#0F172A] text-white text-xs font-bold rounded-xl shadow-xs cursor-pointer flex items-center gap-1"
               >
                 <span className="material-symbols-outlined text-base">shopping_cart</span>
                 <span>Create Purchase Order (Step 9)</span>
@@ -848,7 +915,7 @@ export default function StaffPosView({ token, role, shopId }: StaffPosViewProps)
                 <h3 className="font-headline text-lg font-bold text-[#2C2421]">Active Jobs Sourcing Parts</h3>
                 <p className="text-xs text-[#2C2421]/60">Bookings currently in Parts Floor steps (Step 8: Sourcing, Step 9: Ordered, Step 10: Ready)</p>
               </div>
-              <span className="px-3 py-1 rounded-full text-xs font-mono font-bold bg-[#7C3AED] text-white">
+              <span className="px-3 py-1 rounded-full text-xs font-mono font-bold bg-[#111827] text-white">
                 {activePartsBookings.length} Active
               </span>
             </div>
@@ -875,7 +942,7 @@ export default function StaffPosView({ token, role, shopId }: StaffPosViewProps)
                           <span className="font-bold text-xs text-[#2C2421]">
                             {b.vehicleDetails?.make} {b.vehicleDetails?.model} ({b.vehicleDetails?.plate || "LEA-1234"})
                           </span>
-                          <span className="bg-[#7C3AED]/10 text-[#7C3AED] text-[10px] font-extrabold px-2 py-0.5 rounded">
+                          <span className="bg-[#111827]/10 text-[#111827] text-[10px] font-extrabold px-2 py-0.5 rounded">
                             Step {stepMeta.step}: {stepMeta.title}
                           </span>
                         </div>
@@ -920,7 +987,7 @@ export default function StaffPosView({ token, role, shopId }: StaffPosViewProps)
                                 }
                                 setShowPoModal(true);
                               }}
-                              className="px-4 py-2 bg-[#7C3AED] hover:bg-[#6D28D9] text-white rounded-xl font-bold text-xs cursor-pointer shadow-xs flex items-center gap-1.5"
+                              className="px-4 py-2 bg-[#111827] hover:bg-[#0F172A] text-white rounded-xl font-bold text-xs cursor-pointer shadow-xs flex items-center gap-1.5"
                             >
                               <span className="material-symbols-outlined text-sm">add_shopping_cart</span>
                               <span>Order Missing Ignition Coil (Move to Step 9: PARTS_ORDERED)</span>
@@ -1000,7 +1067,7 @@ export default function StaffPosView({ token, role, shopId }: StaffPosViewProps)
                       {b.status === "ESTIMATE_APPROVED" ? (
                         <button
                           onClick={() => handleUpdateStatus(b.id, "PARTS_PENDING", "Parts department pulled job into Parts Sourcing queue.")}
-                          className="px-3 py-1 bg-[#7C3AED] text-white rounded-lg text-[11px] font-bold hover:bg-[#6D28D9] cursor-pointer"
+                          className="px-3 py-1 bg-[#111827] text-white rounded-lg text-[11px] font-bold hover:bg-[#0F172A] cursor-pointer"
                         >
                           Pull into Step 8: PARTS_PENDING
                         </button>
@@ -1251,7 +1318,7 @@ export default function StaffPosView({ token, role, shopId }: StaffPosViewProps)
                 <button type="button" onClick={() => setShowEstimateModal(false)} className="px-4 py-2.5 border rounded-xl font-bold cursor-pointer">
                   Cancel
                 </button>
-                <button type="submit" className="px-5 py-2.5 bg-[#D97706] text-white font-bold rounded-xl shadow-xs cursor-pointer">
+                <button type="submit" className="px-5 py-2.5 bg-[#111827] hover:bg-[#1f2937] text-white font-bold rounded-xl shadow-xs cursor-pointer">
                   Submit to SA (Move to Step 5: ESTIMATE_REVIEW)
                 </button>
               </div>
@@ -1334,7 +1401,7 @@ export default function StaffPosView({ token, role, shopId }: StaffPosViewProps)
       {showPoModal && (
         <div className="fixed inset-0 z-50 bg-[#111827]/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl border border-[#2C2421]/20 max-w-md w-full p-6 space-y-4 shadow-xl">
-            <h3 className="font-headline text-lg font-bold text-[#7C3AED]">Create Supplier Purchase Order</h3>
+            <h3 className="font-headline text-lg font-bold text-[#111827]">Create Supplier Purchase Order</h3>
             <p className="text-xs text-[#2C2421]/70">Select the required part and order quantity to dispatch a purchase order to suppliers.</p>
             <form onSubmit={handleCreatePo} className="space-y-3 text-xs">
               <div>
@@ -1375,7 +1442,7 @@ export default function StaffPosView({ token, role, shopId }: StaffPosViewProps)
                 <button type="button" onClick={() => setShowPoModal(false)} className="px-4 py-2.5 border rounded-xl font-bold cursor-pointer">
                   Cancel
                 </button>
-                <button type="submit" className="px-5 py-2.5 bg-[#7C3AED] hover:bg-[#6D28D9] text-white font-bold rounded-xl cursor-pointer">
+                <button type="submit" className="px-5 py-2.5 bg-[#111827] hover:bg-[#0F172A] text-white font-bold rounded-xl cursor-pointer">
                   Dispatch Purchase Order (Move to Step 9: PARTS_ORDERED)
                 </button>
               </div>
