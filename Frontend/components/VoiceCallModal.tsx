@@ -1,6 +1,5 @@
 "use client";
 
-import { API_BASE_URL } from "@/lib/api";
 import React, { useState, useEffect, useRef } from "react";
 import { startOutgoingRingtone, stopOutgoingRingtone } from "@/lib/utils";
 
@@ -23,11 +22,15 @@ export default function VoiceCallModal({
   initialStatus = "RINGING",
   existingCallId,
 }: VoiceCallModalProps) {
-  const [callStatus, setCallStatus] = useState<"RINGING" | "CONNECTED" | "ENDED">(initialStatus);
+  const [callStatus, setCallStatus] = useState<
+    "RINGING" | "CONNECTED" | "ENDED"
+  >(initialStatus);
   const [statusMessage, setStatusMessage] = useState<string>("");
   const [duration, setDuration] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
-  const [activeCallId, setActiveCallId] = useState<string | null>(existingCallId || null);
+  const [activeCallId, setActiveCallId] = useState<string | null>(
+    existingCallId || null,
+  );
   const [micActive, setMicActive] = useState(false);
   const [micNotice, setMicNotice] = useState<string>("");
 
@@ -37,8 +40,6 @@ export default function VoiceCallModal({
   const localStreamRef = useRef<MediaStream | null>(null);
   const remoteAudioRef = useRef<HTMLAudioElement | null>(null);
   const isCallerRef = useRef<boolean>(!existingCallId);
-  const pendingCandidatesRef = useRef<RTCIceCandidateInit[]>([]);
-  const audioCtxRef = useRef<AudioContext | null>(null);
 
   // Sync isCallerRef
   useEffect(() => {
@@ -59,7 +60,10 @@ export default function VoiceCallModal({
     setStatusMessage("");
 
     const activeToken =
-      token || (typeof window !== "undefined" ? localStorage.getItem("bayflow_token") : null);
+      token ||
+      (typeof window !== "undefined"
+        ? localStorage.getItem("bayflow_token")
+        : null);
 
     if (initialStatus === "RINGING") {
       // 1. Play real outgoing ringback tone for caller
@@ -71,19 +75,21 @@ export default function VoiceCallModal({
 
         if (!currentCallId && activeToken && bookingId) {
           try {
-            const res = await fetch(`${API_BASE_URL}/api/calls/initiate`, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${activeToken}`,
+            const res = await fetch(
+              "http://localhost:4000/api/calls/initiate",
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${activeToken}`,
+                },
+                body: JSON.stringify({ bookingId }),
               },
-              body: JSON.stringify({ bookingId }),
-            });
+            );
             const data = await res.json();
-            const cid = data.data?.id || data.data?.callId;
-            if (res.ok && data.success && cid) {
-              currentCallId = cid;
-              setActiveCallId(cid);
+            if (res.ok && data.success && data.data?.callId) {
+              currentCallId = data.data.callId;
+              setActiveCallId(currentCallId);
             }
           } catch (err) {
             console.warn("Failed to initiate call on backend:", err);
@@ -96,9 +102,12 @@ export default function VoiceCallModal({
           if (!targetId || !activeToken) return;
 
           try {
-            const res = await fetch(`${API_BASE_URL}/api/calls/${targetId}`, {
-              headers: { Authorization: `Bearer ${activeToken}` },
-            });
+            const res = await fetch(
+              `http://localhost:4000/api/calls/${targetId}`,
+              {
+                headers: { Authorization: `Bearer ${activeToken}` },
+              },
+            );
             const data = await res.json();
             const call = data.data;
 
@@ -111,20 +120,23 @@ export default function VoiceCallModal({
               if (call.status === "CONNECTED") {
                 stopOutgoingRingtone();
                 if (pollTimerRef.current) clearInterval(pollTimerRef.current);
-                if (ringTimeoutRef.current) clearTimeout(ringTimeoutRef.current);
+                if (ringTimeoutRef.current)
+                  clearTimeout(ringTimeoutRef.current);
                 if (call.id) setActiveCallId(call.id);
                 setCallStatus("CONNECTED");
               } else if (call.status === "REJECTED") {
                 stopOutgoingRingtone();
                 if (pollTimerRef.current) clearInterval(pollTimerRef.current);
-                if (ringTimeoutRef.current) clearTimeout(ringTimeoutRef.current);
+                if (ringTimeoutRef.current)
+                  clearTimeout(ringTimeoutRef.current);
                 setCallStatus("ENDED");
                 setStatusMessage("Call Declined by recipient");
                 setTimeout(onClose, 1500);
               } else if (call.status === "ENDED") {
                 stopOutgoingRingtone();
                 if (pollTimerRef.current) clearInterval(pollTimerRef.current);
-                if (ringTimeoutRef.current) clearTimeout(ringTimeoutRef.current);
+                if (ringTimeoutRef.current)
+                  clearTimeout(ringTimeoutRef.current);
                 setCallStatus("ENDED");
                 setStatusMessage("Call Ended");
                 setTimeout(onClose, 1200);
@@ -147,14 +159,17 @@ export default function VoiceCallModal({
           const targetId = currentCallId || activeCallId;
           if (targetId && activeToken) {
             try {
-              await fetch(`${API_BASE_URL}/api/calls/${targetId}/status`, {
-                method: "PATCH",
-                headers: {
-                  "Content-Type": "application/json",
-                  Authorization: `Bearer ${activeToken}`,
+              await fetch(
+                `http://localhost:4000/api/calls/${targetId}/status`,
+                {
+                  method: "PATCH",
+                  headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${activeToken}`,
+                  },
+                  body: JSON.stringify({ status: "MISSED" }),
                 },
-                body: JSON.stringify({ status: "MISSED" }),
-              });
+              );
             } catch (e) {}
           }
 
@@ -184,138 +199,76 @@ export default function VoiceCallModal({
         setDuration((prev) => prev + 1);
       }, 1000);
 
-      const targetId = activeCallId || existingCallId || bookingId;
+      const targetId = activeCallId || existingCallId;
       const activeToken =
-        token || (typeof window !== "undefined" ? localStorage.getItem("bayflow_token") : null);
+        token ||
+        (typeof window !== "undefined"
+          ? localStorage.getItem("bayflow_token")
+          : null);
 
-      const role: "caller" | "receiver" = isCallerRef.current ? "caller" : "receiver";
+      const role: "caller" | "receiver" = isCallerRef.current
+        ? "caller"
+        : "receiver";
       let lastSignalTime = 0;
       const handledSignalIds = new Set<string>();
 
-      // Flush queued candidates once remote description is set
-      const flushPendingCandidates = async (peer: RTCPeerConnection) => {
-        if (!peer.remoteDescription) return;
-        const queued = [...pendingCandidatesRef.current];
-        pendingCandidatesRef.current = [];
-        for (const cand of queued) {
-          try {
-            await peer.addIceCandidate(new RTCIceCandidate(cand));
-          } catch (e) {
-            console.warn("Could not add queued ICE candidate:", e);
-          }
-        }
-      };
-
       // 2. Initialize Real WebRTC Audio Peer Connection
       const setupWebRTC = async () => {
-        if (typeof window === "undefined" || !navigator.mediaDevices?.getUserMedia) {
+        if (
+          typeof window === "undefined" ||
+          !navigator.mediaDevices?.getUserMedia
+        ) {
           setMicNotice("WebRTC not supported in this environment");
           return;
         }
 
         try {
-          // Request microphone audio with fallback for strict mobile devices
-          let stream: MediaStream;
-          try {
-            stream = await navigator.mediaDevices.getUserMedia({
-              audio: {
-                echoCancellation: true,
-                noiseSuppression: true,
-                autoGainControl: true,
-              },
-              video: false,
-            });
-          } catch (err) {
-            stream = await navigator.mediaDevices.getUserMedia({
-              audio: true,
-              video: false,
-            });
-          }
-
-          // Ensure audio tracks are unmuted
-          stream.getAudioTracks().forEach((track) => {
-            track.enabled = true;
+          // Request real microphone audio
+          const stream = await navigator.mediaDevices.getUserMedia({
+            audio: {
+              echoCancellation: true,
+              noiseSuppression: true,
+              autoGainControl: true,
+            },
+            video: false,
           });
 
           localStreamRef.current = stream;
           setMicActive(true);
           setMicNotice("Live Voice Audio Active");
 
-          // Comprehensive ICE Servers (STUN + free global TURN relay for symmetric NAT/mobile 4G)
           const pc = new RTCPeerConnection({
             iceServers: [
               { urls: "stun:stun.l.google.com:19302" },
               { urls: "stun:stun1.l.google.com:19302" },
-              { urls: "stun:stun2.l.google.com:19302" },
-              { urls: "stun:stun.cloudflare.com:3478" },
-              {
-                urls: "turn:openrelay.metered.ca:80",
-                username: "openrelay",
-                credential: "openrelay",
-              },
-              {
-                urls: "turn:openrelay.metered.ca:443",
-                username: "openrelay",
-                credential: "openrelay",
-              },
-              {
-                urls: "turn:openrelay.metered.ca:443?transport=tcp",
-                username: "openrelay",
-                credential: "openrelay",
-              },
             ],
-            iceCandidatePoolSize: 10,
           });
           peerConnRef.current = pc;
 
           // Add microphone audio tracks to peer connection
-          stream.getAudioTracks().forEach((track) => pc.addTrack(track, stream));
+          stream
+            .getAudioTracks()
+            .forEach((track) => pc.addTrack(track, stream));
 
           // Receive remote audio track from other person
           pc.ontrack = (event) => {
-            console.log("🔊 [WebRTC] Remote audio track received:", event.track.id);
-            const incomingStream =
-              event.streams && event.streams[0]
-                ? event.streams[0]
-                : new MediaStream([event.track]);
-
-            // 1. Play via real DOM audio element
-            if (remoteAudioRef.current) {
-              remoteAudioRef.current.srcObject = incomingStream;
-              remoteAudioRef.current.volume = 1.0;
-              remoteAudioRef.current.muted = false;
-              remoteAudioRef.current
-                .play()
-                .then(() => console.log("🔊 [WebRTC] Audio element playing!"))
-                .catch((err) => {
-                  console.warn("Autoplay audio blocked by browser:", err);
-                });
-            }
-
-            // 2. Play via direct AudioContext hardware sink (bypasses browser DOM audio restrictions)
-            try {
-              const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-              if (AudioContextClass) {
-                if (!audioCtxRef.current || audioCtxRef.current.state === "closed") {
-                  audioCtxRef.current = new AudioContextClass();
-                }
-                const ctx = audioCtxRef.current;
-                const source = ctx.createMediaStreamSource(incomingStream);
-                source.connect(ctx.destination);
-                if (ctx.state === "suspended") {
-                  ctx.resume().catch(() => {});
-                }
-                console.log("🔊 [WebRTC] WebAudio destination connected!");
+            if (event.streams && event.streams[0]) {
+              if (!remoteAudioRef.current) {
+                const audio = new Audio();
+                audio.srcObject = event.streams[0];
+                audio.autoplay = true;
+                remoteAudioRef.current = audio;
+              } else {
+                remoteAudioRef.current.srcObject = event.streams[0];
               }
-            } catch (ctxErr) {
-              console.warn("WebAudio direct sink error:", ctxErr);
+              remoteAudioRef.current.play().catch(() => {});
             }
           };
 
           // Send ICE candidates to opposing party
           pc.onicecandidate = (event) => {
             if (event.candidate && targetId && activeToken) {
-              fetch(`${API_BASE_URL}/api/calls/${targetId}/signal`, {
+              fetch(`http://localhost:4000/api/calls/${targetId}/signal`, {
                 method: "POST",
                 headers: {
                   "Content-Type": "application/json",
@@ -324,7 +277,7 @@ export default function VoiceCallModal({
                 body: JSON.stringify({
                   sender: role,
                   type: "candidate",
-                  payload: event.candidate.toJSON ? event.candidate.toJSON() : event.candidate,
+                  payload: event.candidate,
                 }),
               }).catch(() => {});
             }
@@ -332,25 +285,25 @@ export default function VoiceCallModal({
 
           // If caller, initiate WebRTC Offer
           if (role === "caller") {
-            const offer = await pc.createOffer({
-              offerToReceiveAudio: true,
-              offerToReceiveVideo: false,
-            });
+            const offer = await pc.createOffer();
             await pc.setLocalDescription(offer);
 
             if (targetId && activeToken) {
-              await fetch(`${API_BASE_URL}/api/calls/${targetId}/signal`, {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  Authorization: `Bearer ${activeToken}`,
+              await fetch(
+                `http://localhost:4000/api/calls/${targetId}/signal`,
+                {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${activeToken}`,
+                  },
+                  body: JSON.stringify({
+                    sender: role,
+                    type: "offer",
+                    payload: offer,
+                  }),
                 },
-                body: JSON.stringify({
-                  sender: role,
-                  type: "offer",
-                  payload: offer,
-                }),
-              }).catch(() => {});
+              ).catch(() => {});
             }
           }
 
@@ -360,10 +313,10 @@ export default function VoiceCallModal({
 
             try {
               const res = await fetch(
-                `${API_BASE_URL}/api/calls/${targetId}/signals?sender=${role}&after=${lastSignalTime}`,
+                `http://localhost:4000/api/calls/${targetId}/signals?sender=${role}&after=${lastSignalTime}`,
                 {
                   headers: { Authorization: `Bearer ${activeToken}` },
-                }
+                },
               );
               const data = await res.json();
               const signals = data.data || [];
@@ -377,39 +330,39 @@ export default function VoiceCallModal({
                 if (!peer) continue;
 
                 if (sig.type === "offer" && role === "receiver") {
-                  await peer.setRemoteDescription(new RTCSessionDescription(sig.payload));
-                  await flushPendingCandidates(peer);
-
+                  await peer.setRemoteDescription(
+                    new RTCSessionDescription(sig.payload),
+                  );
                   const answer = await peer.createAnswer();
                   await peer.setLocalDescription(answer);
 
-                  await fetch(`${API_BASE_URL}/api/calls/${targetId}/signal`, {
-                    method: "POST",
-                    headers: {
-                      "Content-Type": "application/json",
-                      Authorization: `Bearer ${activeToken}`,
+                  await fetch(
+                    `http://localhost:4000/api/calls/${targetId}/signal`,
+                    {
+                      method: "POST",
+                      headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${activeToken}`,
+                      },
+                      body: JSON.stringify({
+                        sender: role,
+                        type: "answer",
+                        payload: answer,
+                      }),
                     },
-                    body: JSON.stringify({
-                      sender: role,
-                      type: "answer",
-                      payload: answer,
-                    }),
-                  });
+                  );
                 } else if (sig.type === "answer" && role === "caller") {
                   if (peer.signalingState !== "stable") {
-                    await peer.setRemoteDescription(new RTCSessionDescription(sig.payload));
-                    await flushPendingCandidates(peer);
+                    await peer.setRemoteDescription(
+                      new RTCSessionDescription(sig.payload),
+                    );
                   }
                 } else if (sig.type === "candidate") {
-                  if (peer.remoteDescription && peer.remoteDescription.type) {
-                    try {
-                      await peer.addIceCandidate(new RTCIceCandidate(sig.payload));
-                    } catch (e) {
-                      console.warn("Failed to add candidate:", e);
-                    }
-                  } else {
-                    pendingCandidatesRef.current.push(sig.payload);
-                  }
+                  try {
+                    await peer.addIceCandidate(
+                      new RTCIceCandidate(sig.payload),
+                    );
+                  } catch (e) {}
                 }
               }
             } catch (err) {}
@@ -426,9 +379,12 @@ export default function VoiceCallModal({
       if (targetId && activeToken) {
         remoteCheckInterval = setInterval(async () => {
           try {
-            const res = await fetch(`${API_BASE_URL}/api/calls/${targetId}`, {
-              headers: { Authorization: `Bearer ${activeToken}` },
-            });
+            const res = await fetch(
+              `http://localhost:4000/api/calls/${targetId}`,
+              {
+                headers: { Authorization: `Bearer ${activeToken}` },
+              },
+            );
             const data = await res.json();
             const call = data.data;
             if (res.ok && call) {
@@ -459,21 +415,13 @@ export default function VoiceCallModal({
       }
       if (remoteAudioRef.current) {
         remoteAudioRef.current.srcObject = null;
-      }
-      if (audioCtxRef.current) {
-        audioCtxRef.current.close().catch(() => {});
-        audioCtxRef.current = null;
+        remoteAudioRef.current = null;
       }
     };
-  }, [callStatus, activeCallId, existingCallId, token, onClose, bookingId]);
+  }, [callStatus, activeCallId, existingCallId, token, onClose]);
 
   // Handle Mute/Unmute
   const toggleMute = () => {
-    // Also unlock remote audio if paused
-    if (remoteAudioRef.current && remoteAudioRef.current.paused) {
-      remoteAudioRef.current.play().catch(() => {});
-    }
-
     if (localStreamRef.current) {
       const nextMuted = !isMuted;
       localStreamRef.current.getAudioTracks().forEach((track) => {
@@ -501,20 +449,20 @@ export default function VoiceCallModal({
     }
     if (remoteAudioRef.current) {
       remoteAudioRef.current.srcObject = null;
-    }
-    if (audioCtxRef.current) {
-      audioCtxRef.current.close().catch(() => {});
-      audioCtxRef.current = null;
+      remoteAudioRef.current = null;
     }
 
     setCallStatus("ENDED");
     const activeToken =
-      token || (typeof window !== "undefined" ? localStorage.getItem("bayflow_token") : null);
-    const targetCallId = activeCallId || existingCallId || bookingId;
+      token ||
+      (typeof window !== "undefined"
+        ? localStorage.getItem("bayflow_token")
+        : null);
+    const targetCallId = activeCallId || existingCallId;
 
     if (activeToken && targetCallId) {
       try {
-        await fetch(`${API_BASE_URL}/api/calls/${targetCallId}/status`, {
+        await fetch(`http://localhost:4000/api/calls/${targetCallId}/status`, {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
@@ -540,32 +488,7 @@ export default function VoiceCallModal({
   };
 
   return (
-    <div
-      onClick={() => {
-        // Unlock browser audio context on any user click inside the modal
-        if (remoteAudioRef.current && remoteAudioRef.current.paused) {
-          remoteAudioRef.current.play().catch(() => {});
-        }
-      }}
-      className="fixed inset-0 z-50 bg-[#111827]/85 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200"
-    >
-      {/* Real DOM Audio Element for incoming WebRTC stream output */}
-      <audio
-        ref={remoteAudioRef}
-        autoPlay
-        playsInline
-        style={{
-          position: "fixed",
-          bottom: 0,
-          left: 0,
-          width: "1px",
-          height: "1px",
-          opacity: 0.01,
-          pointerEvents: "none",
-        }}
-        aria-hidden="true"
-      />
-
+    <div className="fixed inset-0 z-50 bg-[#111827]/85 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
       <div className="bg-[#111827] border border-white/20 text-white rounded-3xl max-w-sm w-full p-8 text-center space-y-6 shadow-2xl relative overflow-hidden">
         {/* Animated Background Glow */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-slate-500/15 rounded-full blur-3xl pointer-events-none" />
@@ -575,7 +498,9 @@ export default function VoiceCallModal({
             {callStatus === "RINGING" && (
               <span className="absolute inset-0 rounded-full border-2 border-amber-400 animate-ping opacity-75" />
             )}
-            <span className="material-symbols-outlined text-4xl">phone_in_talk</span>
+            <span className="material-symbols-outlined text-4xl">
+              phone_in_talk
+            </span>
           </div>
 
           <div>
@@ -585,7 +510,9 @@ export default function VoiceCallModal({
             <h3 className="font-headline text-2xl font-extrabold text-white mt-1">
               {recipientName}
             </h3>
-            <p className="text-xs text-white/70 font-mono mt-0.5">Ref: {bookingId}</p>
+            <p className="text-xs text-white/70 font-mono mt-0.5">
+              Ref: {bookingId}
+            </p>
           </div>
 
           <div className="pt-2">
@@ -621,7 +548,9 @@ export default function VoiceCallModal({
           <button
             onClick={toggleMute}
             className={`w-12 h-12 rounded-full flex items-center justify-center transition-all cursor-pointer ${
-              isMuted ? "bg-rose-500 text-white" : "bg-white/10 hover:bg-white/20 text-white"
+              isMuted
+                ? "bg-rose-500 text-white"
+                : "bg-white/10 hover:bg-white/20 text-white"
             }`}
             title={isMuted ? "Unmute Microphone" : "Mute Microphone"}
           >

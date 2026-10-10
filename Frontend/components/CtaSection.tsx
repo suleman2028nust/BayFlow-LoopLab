@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 
 interface CtaSectionProps {
@@ -8,6 +9,16 @@ interface CtaSectionProps {
 }
 
 export default function CtaSection({ onOpenDemo }: CtaSectionProps) {
+  const router = useRouter();
+
+  const handleLaunchPlatform = () => {
+    const token = typeof window !== "undefined" ? localStorage.getItem("bayflow_token") : null;
+    if (token) {
+      router.push("/dashboard");
+    } else {
+      router.push("/login");
+    }
+  };
   return (
     <section className="w-full px-4 sm:px-6 lg:px-8 py-20 bg-white border-t border-[#2C2421]/15 relative overflow-hidden">
       <div className="max-w-5xl mx-auto rounded-3xl bg-[#2C2421] text-white p-8 sm:p-12 lg:p-16 relative shadow-2xl overflow-hidden text-center flex flex-col items-center">
@@ -30,8 +41,8 @@ export default function CtaSection({ onOpenDemo }: CtaSectionProps) {
 
           <div className="mt-8 flex flex-wrap justify-center gap-4">
             <button
-              onClick={onOpenDemo}
-              className="px-6 py-3.5 rounded-xl bg-white hover:bg-[#F4F4F1] text-[#2C2421] font-bold text-sm shadow-lg transition-all flex items-center gap-2 hover:scale-[1.02]"
+              onClick={handleLaunchPlatform}
+              className="px-6 py-3.5 rounded-xl bg-white hover:bg-[#F4F4F1] text-[#2C2421] font-bold text-sm shadow-lg transition-all flex items-center gap-2 hover:scale-[1.02] cursor-pointer"
             >
               <span className="material-symbols-outlined text-lg">play_circle</span>
               <span>Launch Platform</span>
