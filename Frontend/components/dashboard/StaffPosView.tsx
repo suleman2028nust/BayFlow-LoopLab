@@ -53,7 +53,7 @@ export default function StaffPosView({ token, role, shopId }: StaffPosViewProps)
   const [estimateForm, setEstimateForm] = useState({
     labourCost: 4000,
     partsCost: 12600,
-    notes: "Faulty ignition coil on cylinder 2. Need Ignition Coil x1 (6500), Oil Filter x1 (900), Engine Oil 4L (5200). Total PKR 16,600.",
+    notes: "Diagnostic inspection completed. Standard service and parts inspection required.",
   });
 
   // SA Review / Adjust Estimate Modal (Step 5 -> Step 6)
@@ -627,11 +627,12 @@ export default function StaffPosView({ token, role, shopId }: StaffPosViewProps)
                           </button>
                         )}
 
-                        {/* Step 5 -> Step 6: SA Reviews, adjusts labour to 3,500 and sends to Ahmed */}
+                        {/* Step 5 -> Step 6: SA Reviews, adjusts labour and sends to customer */}
                         {b.status === "ESTIMATE_REVIEW" && (
                           <button
                             onClick={() => {
                               setSelectedBookingForReview(b);
+                              setAdjustedLabour(b.estimate?.labourCost || 3500);
                               setShowReviewModal(true);
                             }}
                             className="px-3.5 py-1.5 bg-[#0284C7] text-white rounded-xl text-xs font-bold hover:bg-[#0369A1] transition-all cursor-pointer flex items-center gap-1"
@@ -641,10 +642,10 @@ export default function StaffPosView({ token, role, shopId }: StaffPosViewProps)
                           </button>
                         )}
 
-                        {/* Step 7 -> Step 8: SA Assigns Parts Person (Usman) */}
+                        {/* Step 7 -> Step 8: SA Assigns Parts Department */}
                         {b.status === "ESTIMATE_APPROVED" && (
                           <button
-                            onClick={() => handleUpdateStatus(b.id, "PARTS_PENDING", "SA assigned Usman (Parts).")}
+                            onClick={() => handleUpdateStatus(b.id, "PARTS_PENDING", "SA assigned Parts Department.")}
                             className="px-3.5 py-1.5 bg-[#7C3AED] text-white rounded-xl text-xs font-bold hover:bg-[#6D28D9] transition-all cursor-pointer flex items-center gap-1"
                           >
                             <span className="material-symbols-outlined text-sm">handyman</span>
@@ -778,7 +779,7 @@ export default function StaffPosView({ token, role, shopId }: StaffPosViewProps)
           <div className="bg-white rounded-3xl border border-[#2C2421]/15 p-6 sm:p-8 shadow-xs space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-headline text-lg font-bold text-[#2C2421]">Workshop Inventory Stock (Usman)</h3>
+                <h3 className="font-headline text-lg font-bold text-[#2C2421]">Workshop Inventory Stock</h3>
                 <p className="text-xs text-[#2C2421]/60">Step 8 (Check Stock &amp; Source Parts), Step 9 (Parts Ordered), Step 10 (Receive &amp; Allocate)</p>
               </div>
               <button
@@ -1203,7 +1204,7 @@ export default function StaffPosView({ token, role, shopId }: StaffPosViewProps)
         <div className="fixed inset-0 z-50 bg-[#111827]/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl border border-[#2C2421]/20 max-w-md w-full p-6 space-y-4 shadow-xl">
             <h3 className="font-headline text-lg font-bold text-[#2C2421]">Submit Vehicle Repair Estimate</h3>
-            <p className="text-xs text-[#2C2421]/70">Line items: Ignition Coil (6,500), Oil Filter (900), Engine Oil 4L (5,200), Labour (4,000).</p>
+            <p className="text-xs text-[#2C2421]/70">Enter diagnostic labour and required parts estimate for customer approval.</p>
             <form onSubmit={handleTechSubmitEstimate} className="space-y-3 text-xs">
               <div>
                 <label className="block font-bold mb-1">Labour Cost (PKR) *</label>
@@ -1261,9 +1262,9 @@ export default function StaffPosView({ token, role, shopId }: StaffPosViewProps)
       {showReviewModal && (
         <div className="fixed inset-0 z-50 bg-[#111827]/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl border border-[#2C2421]/20 max-w-md w-full p-6 space-y-4 shadow-xl">
-            <h3 className="font-headline text-lg font-bold text-[#2C2421]">Review &amp; Adjust Labour (Bilal SA)</h3>
+            <h3 className="font-headline text-lg font-bold text-[#2C2421]">Review &amp; Adjust Labour</h3>
             <p className="text-xs text-[#2C2421]/70">
-              Imran submitted PKR 4,000 labour (Total PKR 16,600). Bilal adjusts labour to PKR 3,500 (New Total PKR 16,100) and sends to Ahmed.
+              Review technician labour charges and adjust if required before dispatching quote to customer.
             </p>
             <form onSubmit={handleReviewAndSendEstimate} className="space-y-3 text-xs">
               <div>
@@ -1280,7 +1281,7 @@ export default function StaffPosView({ token, role, shopId }: StaffPosViewProps)
               <div className="p-3 bg-[#0284C7]/10 rounded-xl border border-[#0284C7]/30 flex justify-between font-bold text-[#0284C7]">
                 <span>Total Quote Sent to Customer:</span>
                 <span className="text-sm font-extrabold">
-                  PKR {(Number(adjustedLabour) + Number(selectedBookingForReview?.estimate?.partsCost || 12600)).toLocaleString()}
+                  PKR {(Number(adjustedLabour) + Number(selectedBookingForReview?.estimate?.partsCost ?? 0)).toLocaleString()}
                 </span>
               </div>
 
@@ -1301,7 +1302,7 @@ export default function StaffPosView({ token, role, shopId }: StaffPosViewProps)
       {showQcModal && (
         <div className="fixed inset-0 z-50 bg-[#111827]/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl border border-[#2C2421]/20 max-w-md w-full p-6 space-y-4 shadow-xl">
-            <h3 className="font-headline text-lg font-bold text-[#E85D22]">Report Quality Check Defect (Sara QC)</h3>
+            <h3 className="font-headline text-lg font-bold text-[#E85D22]">Report Quality Check Defect</h3>
             <form onSubmit={handleQcFailIssue} className="space-y-3 text-xs">
               <div>
                 <label className="block font-bold mb-1">Defect / Issue Description *</label>
@@ -1331,8 +1332,8 @@ export default function StaffPosView({ token, role, shopId }: StaffPosViewProps)
       {showPoModal && (
         <div className="fixed inset-0 z-50 bg-[#111827]/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl border border-[#2C2421]/20 max-w-md w-full p-6 space-y-4 shadow-xl">
-            <h3 className="font-headline text-lg font-bold text-[#7C3AED]">Create Supplier Purchase Order (Usman)</h3>
-            <p className="text-xs text-[#2C2421]/70">Step 8: Sourcing missing Ignition Coil OEM (PKR 6,500) to move booking to Step 9 (PARTS_ORDERED).</p>
+            <h3 className="font-headline text-lg font-bold text-[#7C3AED]">Create Supplier Purchase Order</h3>
+            <p className="text-xs text-[#2C2421]/70">Select the required part and order quantity to dispatch a purchase order to suppliers.</p>
             <form onSubmit={handleCreatePo} className="space-y-3 text-xs">
               <div>
                 <label className="block font-bold mb-1">Target Part Item *</label>
