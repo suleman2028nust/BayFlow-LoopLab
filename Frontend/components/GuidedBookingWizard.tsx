@@ -336,11 +336,17 @@ export default function GuidedBookingWizard({
     checkAuthStatus();
   }, [searchParams, initialShopId]);
 
+  const [userRole, setUserRole] = useState<string | null>(null);
+
   const checkAuthStatus = () => {
     const token = typeof window !== "undefined" ? localStorage.getItem("bayflow_token") : null;
+    const storedRole = typeof window !== "undefined" ? localStorage.getItem("bayflow_user_role") : null;
+    if (storedRole) setUserRole(storedRole);
+
     if (token) {
       try {
         const payload = JSON.parse(atob(token.split(".")[1]));
+        if (payload?.role) setUserRole(payload.role);
         if (payload?.email) {
           setIsAuthenticated(true);
           setCurrentUserEmail(payload.email);
@@ -607,6 +613,44 @@ export default function GuidedBookingWizard({
     { num: 4, title: "Date & Time", icon: "calendar_month" },
     { num: 5, title: "Review & Book", icon: "assignment_turned_in" },
   ];
+
+  if (userRole && userRole !== "CUSTOMER") {
+    return (
+      <div className={`w-full max-w-xl mx-auto ${isStandalonePage ? "py-12" : "my-8"}`}>
+        <div className="bg-white rounded-3xl p-8 sm:p-10 border border-[#2C2421]/15 text-center space-y-5 shadow-sm">
+          <div className="w-14 h-14 rounded-2xl bg-[#111827] text-white flex items-center justify-center mx-auto shadow-md">
+            <span className="material-symbols-outlined text-3xl">badge</span>
+          </div>
+          <div className="space-y-2">
+            <span className="px-3 py-1 rounded-full bg-amber-500/10 text-amber-700 text-xs font-bold font-mono">
+              STAFF / {userRole} SESSION ACTIVE
+            </span>
+            <h2 className="font-headline text-2xl font-extrabold text-[#2C2421]">
+              Customer Portal Feature
+            </h2>
+            <p className="text-xs sm:text-sm text-[#2C2421]/70 leading-relaxed max-w-md mx-auto">
+              The Guided Booking Wizard is designed for customers to diagnose vehicle symptoms and book appointments. You are currently signed in under the staff/management role of <strong>{userRole}</strong>.
+            </p>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+            <Link
+              href="/dashboard"
+              className="w-full sm:w-auto px-6 py-3 bg-[#111827] hover:bg-[#0F172A] text-white rounded-xl text-xs font-bold shadow transition-all text-center"
+            >
+              Go to {userRole} Dashboard
+            </Link>
+            <Link
+              href="/shops"
+              className="w-full sm:w-auto px-5 py-3 bg-white hover:bg-[#F8F8F5] border border-[#2C2421]/20 text-[#2C2421] rounded-xl text-xs font-bold transition-all text-center"
+            >
+              View Shop Directory
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`w-full max-w-5xl mx-auto ${isStandalonePage ? "py-4 sm:py-8" : "my-4"}`}>

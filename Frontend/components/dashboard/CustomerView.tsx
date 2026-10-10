@@ -295,11 +295,11 @@ export default function CustomerView({ token, userId, email }: CustomerViewProps
         </div>
 
         <Link
-          href="/book"
+          href="/shops"
           className="px-5 py-3 bg-[#111827] hover:bg-[#0F172A] text-white text-xs font-bold rounded-2xl transition-all flex items-center gap-1.5 shadow-xs"
         >
-          <span className="material-symbols-outlined text-base">auto_fix_high</span>
-          <span>Guided Booking Wizard</span>
+          <span className="material-symbols-outlined text-base">add</span>
+          <span>Book a Service</span>
         </Link>
       </div>
 
@@ -321,11 +321,11 @@ export default function CustomerView({ token, userId, email }: CustomerViewProps
         <div className="bg-white rounded-3xl border border-[#2C2421]/15 p-12 text-center text-xs font-bold text-[#2C2421]/60 space-y-4">
           <p>No active vehicle service bookings found for your account.</p>
           <Link
-            href="/book"
+            href="/shops"
             className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-[#111827] text-white rounded-full text-xs font-bold"
           >
-            <span className="material-symbols-outlined text-sm">auto_fix_high</span>
-            <span>Launch Guided Booking Wizard</span>
+            <span className="material-symbols-outlined text-sm">add</span>
+            <span>Book a Service</span>
           </Link>
         </div>
       ) : (
