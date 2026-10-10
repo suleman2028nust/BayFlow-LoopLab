@@ -7,8 +7,6 @@ import FeaturesGrid from "@/components/FeaturesGrid";
 import ShowcaseModules from "@/components/ShowcaseModules";
 import AiConciergeSection from "@/components/AiConciergeSection";
 import HowItWorksSection from "@/components/HowItWorksSection";
-import CtaSection from "@/components/CtaSection";
-import DeveloperHandover from "@/components/DeveloperHandover";
 import Footer from "@/components/Footer";
 import DemoModal from "@/components/DemoModal";
 
@@ -35,8 +33,6 @@ export default function Home() {
         <ShowcaseModules onOpenDemo={handleOpenDemo} />
         <AiConciergeSection onOpenDemo={handleOpenDemo} />
         <HowItWorksSection />
-        <CtaSection onOpenDemo={handleOpenDemo} />
-        <DeveloperHandover />
       </main>
 
       <Footer />
