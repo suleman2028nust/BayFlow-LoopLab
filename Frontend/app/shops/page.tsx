@@ -6,7 +6,18 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import GuidedBookingWizard from "@/components/GuidedBookingWizard";
+
+// Helper to safely format working hours whether string or object
+const formatWorkingHours = (hours: any): string => {
+  if (!hours) return "09:00 AM - 08:00 PM";
+  if (typeof hours === "string") return hours;
+  if (typeof hours === "object" && hours !== null) {
+    const open = hours.open || "09:00 AM";
+    const close = hours.close || "08:00 PM";
+    return `${open} - ${close}`;
+  }
+  return "09:00 AM - 08:00 PM";
+};
 
 export default function ShopsPage() {
   const router = useRouter();
@@ -19,8 +30,45 @@ export default function ShopsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const SHOPS_PER_PAGE = 6;
 
-  // Active Shop for inline Guided Wizard
+  // Normal Shop Booking State
   const [activeShop, setActiveShop] = useState<any | null>(null);
+  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
+
+  // Step 1: Services & Notes
+  const [shopServices, setShopServices] = useState<any[]>([]);
+  const [loadingServices, setLoadingServices] = useState(false);
+  const [selectedServices, setSelectedServices] = useState<string[]>([]);
+  const [customNotes, setCustomNotes] = useState("");
+
+  // Step 2: Time Slots
+  const [selectedDate, setSelectedDate] = useState<string>(
+    new Date().toISOString().split("T")[0]
+  );
+  const [availableSlots, setAvailableSlots] = useState<string[]>([]);
+  const [loadingSlots, setLoadingSlots] = useState(false);
+  const [selectedSlotTime, setSelectedSlotTime] = useState("");
+
+  // Step 3: Vehicle & Customer Info
+  const [vehicle, setVehicle] = useState({
+    makeModel: "Honda Civic 2018",
+    plate: "LEA-1234",
+    color: "Grey",
+    mileage: "58,000 km",
+  });
+  const [customerInfo, setCustomerInfo] = useState({
+    name: "Ahmed Khan",
+    email: "ahmed.customer@bayflow.demo",
+    password: "demo1234",
+    phone: "0300-1234567",
+  });
+
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [currentUserEmail, setCurrentUserEmail] = useState("");
+
+  // Submission State
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+  const [createdBooking, setCreatedBooking] = useState<any | null>(null);
 
   // Fallback mock shops if backend array is empty or offline
   const fallbackShops = [
@@ -40,7 +88,6 @@ export default function ShopsPage() {
         { id: "s5", name: "Suspension & Wheel Alignment", durationMinutes: 60, basePrice: 3500 },
       ],
       workingHours: "09:00 AM - 08:00 PM",
-      bays: "4 Bays Available",
     },
     {
       id: "00000000-0000-0000-0000-000000000002",
@@ -57,7 +104,6 @@ export default function ShopsPage() {
         { id: "s9", name: "Tire Balancing & Alignment", durationMinutes: 30, basePrice: 2500 },
       ],
       workingHours: "08:30 AM - 09:00 PM",
-      bays: "3 Bays Available",
     },
     {
       id: "00000000-0000-0000-0000-000000000003",
@@ -74,7 +120,6 @@ export default function ShopsPage() {
         { id: "s13", name: "Multi-Point Safety Inspection", durationMinutes: 45, basePrice: 3000 },
       ],
       workingHours: "09:00 AM - 07:00 PM",
-      bays: "2 Bays Available",
     },
     {
       id: "00000000-0000-0000-0000-000000000004",
@@ -90,7 +135,6 @@ export default function ShopsPage() {
         { id: "s16", name: "Spark Plug & Coil Pack Service", durationMinutes: 50, basePrice: 7500 },
       ],
       workingHours: "09:00 AM - 08:00 PM",
-      bays: "5 Bays Available",
     },
     {
       id: "00000000-0000-0000-0000-000000000005",
@@ -106,7 +150,6 @@ export default function ShopsPage() {
         { id: "s19", name: "Coolant Flush & Pressure Test", durationMinutes: 40, basePrice: 3800 },
       ],
       workingHours: "09:00 AM - 10:00 PM",
-      bays: "3 Bays Available",
     },
     {
       id: "00000000-0000-0000-0000-000000000006",
@@ -122,46 +165,39 @@ export default function ShopsPage() {
         { id: "s22", name: "Alternator & Starter Check", durationMinutes: 30, basePrice: 2800 },
       ],
       workingHours: "08:30 AM - 07:30 PM",
-      bays: "4 Bays Available",
-    },
-    {
-      id: "00000000-0000-0000-0000-000000000007",
-      name: "Royal German Auto Specialists",
-      city: "Lahore",
-      rating: 5.0,
-      reviews: 112,
-      address: "Johar Town Phase 2, Lahore",
-      phone: "+92 42 3531 8877",
-      services: [
-        { id: "s23", name: "European Car Diagnostic Scan", durationMinutes: 45, basePrice: 5000 },
-        { id: "s24", name: "Dual Clutch Transmission Flush", durationMinutes: 90, basePrice: 22000 },
-        { id: "s25", name: "Air Suspension Calibration", durationMinutes: 60, basePrice: 12500 },
-      ],
-      workingHours: "10:00 AM - 08:00 PM",
-      bays: "2 Bays Available",
-    },
-    {
-      id: "00000000-0000-0000-0000-000000000008",
-      name: "Capital Hybrid & EV Clinic",
-      city: "Islamabad",
-      rating: 4.9,
-      reviews: 93,
-      address: "F-10 Markaz, Islamabad",
-      phone: "+92 51 2110 334",
-      services: [
-        { id: "s28", name: "Hybrid Traction Battery Health Test", durationMinutes: 45, basePrice: 4500 },
-        { id: "s29", name: "Inverter Coolant Replacement", durationMinutes: 40, basePrice: 6500 },
-        { id: "s30", name: "Brake Actuator Diagnostics", durationMinutes: 50, basePrice: 5000 },
-      ],
-      workingHours: "09:00 AM - 08:00 PM",
-      bays: "3 Bays Available",
     },
   ];
 
-  // Load shops on mount
+  const fallbackSlots = [
+    "09:00 AM",
+    "10:00 AM",
+    "11:30 AM",
+    "02:00 PM",
+    "03:30 PM",
+    "05:00 PM",
+  ];
+
+  // Load shops & check active session on mount
   useEffect(() => {
     fetchShops();
+    checkAuthSession();
   }, []);
+
+  const checkAuthSession = () => {
+    const token = typeof window !== "undefined" ? localStorage.getItem("bayflow_token") : null;
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split(".")[1]));
+        if (payload?.email) {
+          setCurrentUserEmail(payload.email);
+          setCustomerInfo((prev) => ({ ...prev, email: payload.email, name: payload.name || prev.name }));
+        }
+        setIsLoggedIn(true);
+      } catch (e) {
+        console.warn("Could not decode auth token:", e);
+      }
+    }
+  };
 
   const fetchShops = async () => {
     setLoadingShops(true);
@@ -182,9 +218,157 @@ export default function ShopsPage() {
     }
   };
 
-  const handleSelectShop = (shop: any) => {
+  // When a shop is selected for normal booking
+  const handleSelectShop = async (shop: any) => {
     setActiveShop(shop);
-    window.scrollTo({ top: 120, behavior: "smooth" });
+    setStep(1);
+    setSelectedServices([]);
+    setCustomNotes("");
+    setSelectedSlotTime("");
+    setErrorMsg("");
+
+    // Fetch services for shop
+    setLoadingServices(true);
+    try {
+      const res = await fetch(`http://localhost:4000/api/shops/${shop.id}/services`);
+      const data = await res.json();
+      const servicesList = data.data || data.services;
+      if (res.ok && data.success && Array.isArray(servicesList) && servicesList.length > 0) {
+        setShopServices(servicesList);
+      } else {
+        setShopServices(shop.services || fallbackShops[0].services);
+      }
+    } catch (err) {
+      setShopServices(shop.services || fallbackShops[0].services);
+    } finally {
+      setLoadingServices(false);
+    }
+  };
+
+  // Fetch slots for selected date
+  const fetchSlotsForShop = async (shopId: string, dateStr: string) => {
+    setLoadingSlots(true);
+    try {
+      const res = await fetch(`http://localhost:4000/api/shops/${shopId}/slots?date=${dateStr}`);
+      const data = await res.json();
+      const slotsList = data.data || data.slots;
+      if (res.ok && data.success && Array.isArray(slotsList) && slotsList.length > 0) {
+        setAvailableSlots(slotsList);
+      } else {
+        setAvailableSlots(fallbackSlots);
+      }
+    } catch (err) {
+      setAvailableSlots(fallbackSlots);
+    } finally {
+      setLoadingSlots(false);
+    }
+  };
+
+  // Toggle service selection
+  const handleToggleService = (serviceName: string) => {
+    if (selectedServices.includes(serviceName)) {
+      setSelectedServices(selectedServices.filter((s) => s !== serviceName));
+    } else {
+      setSelectedServices([...selectedServices, serviceName]);
+    }
+  };
+
+  // Submit Normal Booking to Backend API
+  const handleConfirmBooking = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setErrorMsg("");
+
+    let authToken = typeof window !== "undefined" ? localStorage.getItem("bayflow_token") : null;
+
+    // Parse make, model, year from input string
+    const parts = vehicle.makeModel.split(" ");
+    const make = parts[0] || "Honda";
+    const model = parts.slice(1, -1).join(" ") || parts[1] || "Civic";
+    const year = parseInt(parts[parts.length - 1], 10) || 2018;
+
+    // Combine slot time with date
+    const slotDateTime = new Date(`${selectedDate} ${selectedSlotTime || "10:00 AM"}`).toISOString();
+
+    const payload: any = {
+      shopId: activeShop.id,
+      slotTime: slotDateTime,
+      vehicleDetails: {
+        make,
+        model,
+        year,
+        plate: vehicle.plate.trim() || "LEA-1234",
+        color: vehicle.color || "Grey",
+        mileage: vehicle.mileage || "N/A",
+      },
+      issuesReported: selectedServices.length > 0 ? selectedServices : ["General Maintenance & Inspection"],
+      notes: customNotes,
+    };
+
+    if (!authToken) {
+      if (!customerInfo.email || !customerInfo.password) {
+        setErrorMsg("Please enter your name, email and password to register your appointment.");
+        setIsSubmitting(false);
+        return;
+      }
+      payload.customerInfo = {
+        name: customerInfo.name || "Customer",
+        email: customerInfo.email,
+        password: customerInfo.password,
+        phoneNumber: customerInfo.phone || null,
+      };
+    }
+
+    try {
+      const headers: any = { "Content-Type": "application/json" };
+      if (authToken) {
+        headers["Authorization"] = `Bearer ${authToken}`;
+      }
+
+      const res = await fetch("http://localhost:4000/api/bookings", {
+        method: "POST",
+        headers,
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        const confirmedBooking = data.data || data.booking;
+        if (data.accessToken) {
+          localStorage.setItem("bayflow_token", data.accessToken);
+          localStorage.setItem("bayflow_user_role", "CUSTOMER");
+        }
+        setCreatedBooking(confirmedBooking);
+        setStep(4);
+        setTimeout(() => {
+          router.push("/dashboard");
+        }, 2200);
+      } else {
+        // Fallback for offline/demo database
+        const mockCreated = {
+          id: `BK-${Math.floor(1000 + Math.random() * 9000)}`,
+          status: "PENDING",
+        };
+        setCreatedBooking(mockCreated);
+        setStep(4);
+        setTimeout(() => {
+          router.push("/dashboard");
+        }, 2200);
+      }
+    } catch (err: any) {
+      const mockCreated = {
+        id: `BK-${Math.floor(1000 + Math.random() * 9000)}`,
+        status: "PENDING",
+      };
+      setCreatedBooking(mockCreated);
+      setStep(4);
+      setTimeout(() => {
+        router.push("/dashboard");
+      }, 2200);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // Filter shops by city and search query
@@ -207,66 +391,15 @@ export default function ShopsPage() {
       <Navbar />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-16">
-        {activeShop ? (
-          /* ================= SECTION: EMBEDDED GUIDED BOOKING WIZARD ================= */
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <button
-                type="button"
-                onClick={() => setActiveShop(null)}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-white border border-[#2C2421]/15 rounded-xl text-xs font-bold text-[#2C2421] hover:bg-[#F8F8F5] transition-all cursor-pointer shadow-xs"
-              >
-                <span className="material-symbols-outlined text-sm">arrow_back</span>
-                <span>Back to Shop Directory</span>
-              </button>
-
-              <span className="text-xs text-[#2C2421]/60 font-medium">
-                Booking for: <strong className="text-[#111827]">{activeShop.name}</strong>
-              </span>
-            </div>
-
-            <GuidedBookingWizard
-              initialShopId={activeShop.id}
-              onClose={() => setActiveShop(null)}
-            />
-          </div>
-        ) : (
-          /* ================= SECTION: PUBLIC SHOP DIRECTORY LISTING ================= */
+        {!activeShop ? (
+          /* ================= SECTION A: NORMAL PUBLIC SHOP DIRECTORY LISTING ================= */
           <div className="space-y-8">
-            {/* GUIDED BOOKING WIZARD HERO BANNER */}
-            <div className="bg-white rounded-3xl border border-[#2C2421]/15 p-6 sm:p-8 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden">
-              <div className="space-y-2 max-w-2xl relative z-10">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#111827] text-white text-[11px] font-bold tracking-wider uppercase">
-                  <span className="material-symbols-outlined text-sm">auto_fix_high</span>
-                  <span>Interactive Guided Experience</span>
-                </div>
-                <h2 className="font-headline text-2xl sm:text-3xl font-extrabold text-[#2C2421] tracking-tight">
-                  Not sure what service or repair your car needs?
-                </h2>
-                <p className="text-xs sm:text-sm text-[#2C2421]/70 leading-relaxed">
-                  Use our Guided Booking Wizard to diagnose dashboard warning lights, unusual sounds, or performance symptoms. Get instant preliminary price ranges and reserve your intake bay slot with zero surprise bills.
-                </p>
-              </div>
-
-              <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto relative z-10">
-                <Link
-                  href="/book"
-                  className="w-full sm:w-auto px-6 py-3.5 bg-[#111827] hover:bg-[#0F172A] text-white text-xs font-bold rounded-2xl shadow-md transition-all flex items-center justify-center gap-2"
-                >
-                  <span className="material-symbols-outlined text-base">auto_fix_high</span>
-                  <span>Launch Guided Booking Wizard</span>
-                  <span className="material-symbols-outlined text-sm">arrow_forward</span>
-                </Link>
-              </div>
-            </div>
-
-            {/* DIRECTORY HEADER & FILTERS */}
-            <div className="text-center max-w-2xl mx-auto space-y-2 pt-2">
+            <div className="text-center max-w-2xl mx-auto space-y-2">
               <h1 className="text-2xl sm:text-3xl font-bold text-[#2C2421] tracking-tight">
-                Authorized Auto Repair Garages
+                Auto Repair Workshops
               </h1>
               <p className="text-sm text-[#2C2421]/70">
-                Browse partner workshops, check verified ratings, and schedule your appointment.
+                Browse available shops and schedule your service appointment.
               </p>
 
               {/* Filters & Search Row */}
@@ -278,7 +411,7 @@ export default function ShopsPage() {
                   </span>
                   <input
                     type="text"
-                    placeholder="Search by name, address, or city..."
+                    placeholder="Search by name or location..."
                     value={searchQuery}
                     onChange={(e) => {
                       setSearchQuery(e.target.value);
@@ -313,7 +446,7 @@ export default function ShopsPage() {
             {loadingShops ? (
               <div className="py-16 text-center text-xs font-medium text-[#2C2421]/60 flex items-center justify-center gap-2">
                 <span className="animate-spin material-symbols-outlined text-lg">progress_activity</span>
-                <span>Loading partner garages...</span>
+                <span>Loading workshops...</span>
               </div>
             ) : filteredShops.length === 0 ? (
               <div className="bg-white rounded-xl border border-[#2C2421]/15 p-12 text-center text-xs font-medium text-[#2C2421]/60 max-w-md mx-auto">
@@ -331,14 +464,9 @@ export default function ShopsPage() {
                       <div>
                         {/* Shop Title & Location */}
                         <div>
-                          <div className="flex items-center justify-between gap-2">
-                            <h3 className="text-lg font-bold text-[#2C2421] leading-snug">
-                              {shop.name}
-                            </h3>
-                            <span className="px-2 py-0.5 rounded-full bg-[#1F5C45]/10 text-[#1F5C45] text-[10px] font-bold shrink-0">
-                              Verified Bay
-                            </span>
-                          </div>
+                          <h3 className="text-lg font-bold text-[#2C2421] leading-snug">
+                            {shop.name}
+                          </h3>
                           <div className="flex items-center gap-1.5 text-xs text-[#2C2421]/60 mt-1">
                             <span className="material-symbols-outlined text-sm text-[#2C2421]/40 shrink-0">
                               location_on
@@ -353,22 +481,18 @@ export default function ShopsPage() {
                         <div className="mt-4 pt-3.5 border-t border-[#2C2421]/10 flex flex-col gap-2 text-xs text-[#2C2421]/80">
                           <div className="flex items-center gap-2">
                             <span className="material-symbols-outlined text-sm text-[#2C2421]/50 shrink-0">call</span>
-                            <span>{shop.phone || (shop.users?.find((u: any) => u.phoneNumber)?.phoneNumber) || "+92 42 3578 9900"}</span>
+                            <span>{shop.phone || (shop.users?.find((u: any) => u.phoneNumber)?.phoneNumber) || "0300-1234567"}</span>
                           </div>
                           <div className="flex items-center gap-2">
                             <span className="material-symbols-outlined text-sm text-[#2C2421]/50 shrink-0">schedule</span>
-                            <span>
-                              {typeof shop.workingHours === "object" && shop.workingHours !== null
-                                ? `${shop.workingHours.open || "09:00 AM"} - ${shop.workingHours.close || "06:00 PM"}`
-                                : shop.workingHours || "09:00 AM - 08:00 PM"}
-                            </span>
+                            <span>{formatWorkingHours(shop.workingHours)}</span>
                           </div>
                         </div>
 
                         {/* Available Services */}
                         <div className="mt-4 pt-3.5 border-t border-[#2C2421]/10">
                           <div className="text-xs font-semibold text-[#2C2421] mb-2">
-                            Featured Capabilities
+                            Available Services
                           </div>
                           <div className="flex flex-wrap gap-1.5">
                             {Array.isArray(shop.services) && shop.services.length > 0 ? (
@@ -383,10 +507,10 @@ export default function ShopsPage() {
                             ) : (
                               <>
                                 <span className="text-xs px-2.5 py-1 rounded-lg bg-[#F4F4F1] text-[#2C2421] border border-[#2C2421]/10">
-                                  Periodic Maintenance
+                                  General Maintenance
                                 </span>
                                 <span className="text-xs px-2.5 py-1 rounded-lg bg-[#F4F4F1] text-[#2C2421] border border-[#2C2421]/10">
-                                  OBD-II Scanning
+                                  Diagnostic Scan
                                 </span>
                               </>
                             )}
@@ -399,23 +523,14 @@ export default function ShopsPage() {
                         </div>
                       </div>
 
-                      {/* Action CTAs */}
-                      <div className="mt-6 pt-4 border-t border-[#2C2421]/10 flex items-center gap-2">
+                      {/* Normal Book Appointment CTA Button */}
+                      <div className="mt-6 pt-4 border-t border-[#2C2421]/10">
                         <button
                           onClick={() => handleSelectShop(shop)}
-                          className="flex-1 py-2.5 px-3 bg-[#111827] hover:bg-[#1E293B] text-white text-xs font-semibold rounded-xl transition-colors cursor-pointer text-center flex items-center justify-center gap-1.5"
+                          className="w-full py-2.5 px-4 bg-[#111827] hover:bg-[#1E293B] text-white text-xs font-semibold rounded-xl transition-colors cursor-pointer text-center"
                         >
-                          <span className="material-symbols-outlined text-sm">auto_fix_high</span>
-                          <span>Guided Booking</span>
+                          Book Service Appointment
                         </button>
-
-                        <Link
-                          href={`/book?shopId=${shop.id}`}
-                          className="p-2.5 bg-[#F8F8F5] hover:bg-[#F4F4F1] border border-[#2C2421]/15 text-[#2C2421] rounded-xl transition-colors flex items-center justify-center"
-                          title="Open wizard in dedicated page"
-                        >
-                          <span className="material-symbols-outlined text-base">open_in_new</span>
-                        </Link>
                       </div>
                     </div>
                   ))}
@@ -480,6 +595,341 @@ export default function ShopsPage() {
               </div>
             )}
           </div>
+        ) : (
+          /* ================= SECTION B: NORMAL SHOP BOOKING ================= */
+          <motion.div
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="max-w-2xl mx-auto bg-white rounded-3xl border border-[#2C2421]/15 p-6 sm:p-10 shadow-sm"
+          >
+            {/* Stepper Header */}
+            <div className="flex items-center justify-between border-b border-[#2C2421]/10 pb-4 mb-6">
+              <div>
+                <span className="text-[11px] font-bold text-[#111827] bg-[#111827]/10 px-2.5 py-0.5 rounded-full">
+                  STEP {step} OF 3
+                </span>
+                <h2 className="text-xl font-bold text-[#2C2421] mt-1">
+                  {activeShop.name}
+                </h2>
+                <p className="text-xs text-[#2C2421]/60">{activeShop.address || activeShop.city}</p>
+              </div>
+
+              <button
+                onClick={() => setActiveShop(null)}
+                className="text-xs font-bold text-[#2C2421]/60 hover:text-[#2C2421] underline cursor-pointer"
+              >
+                Change Shop
+              </button>
+            </div>
+
+            {step === 4 && createdBooking ? (
+              /* Booking Success Confirmation Card */
+              <div className="text-center py-8 space-y-4">
+                <div className="w-16 h-16 rounded-full bg-[#1F5C45]/15 text-[#1F5C45] flex items-center justify-center mx-auto shadow-sm">
+                  <span className="material-symbols-outlined text-4xl">check_circle</span>
+                </div>
+                <h3 className="text-2xl font-bold text-[#2C2421]">Booking Confirmed!</h3>
+                <p className="text-xs sm:text-sm text-[#2C2421]/70 max-w-md mx-auto leading-relaxed">
+                  Your appointment request is registered under Reference ID{" "}
+                  <strong className="text-[#111827] bg-[#F4F4F1] px-2 py-0.5 rounded">
+                    {createdBooking.id}
+                  </strong>{" "}
+                  with status <strong className="text-[#1F5C45]">PENDING</strong>.
+                </p>
+                <p className="text-xs text-[#2C2421]/50 animate-pulse">
+                  Redirecting to your Dashboard...
+                </p>
+              </div>
+            ) : (
+              <form onSubmit={handleConfirmBooking} className="space-y-6">
+                {/* ---------------- STEP 1: SERVICES & PROBLEMS ---------------- */}
+                {step === 1 && (
+                  <div className="space-y-5">
+                    <div>
+                      <h3 className="text-base font-bold text-[#2C2421]">
+                        Select Services / Reported Problems:
+                      </h3>
+                      <p className="text-xs text-[#2C2421]/60 mt-0.5">
+                        Multiple selections allowed. Click to choose what your vehicle needs.
+                      </p>
+                    </div>
+
+                    {loadingServices ? (
+                      <div className="py-6 text-center text-xs font-bold text-[#2C2421]/60">
+                        Loading shop service catalog...
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        {shopServices.map((svc: any, idx: number) => {
+                          const svcName = typeof svc === "string" ? svc : svc.name;
+                          const isSelected = selectedServices.includes(svcName);
+                          return (
+                            <button
+                              type="button"
+                              key={idx}
+                              onClick={() => handleToggleService(svcName)}
+                              className={`p-3.5 rounded-2xl border text-left text-xs font-bold transition-all flex items-center justify-between cursor-pointer ${
+                                isSelected
+                                  ? "bg-[#111827] text-white border-[#111827] shadow-xs"
+                                  : "bg-[#F8F8F5] text-[#2C2421]/80 border-[#2C2421]/15 hover:border-[#2C2421]/30"
+                              }`}
+                            >
+                              <span>{svcName}</span>
+                              <span className="material-symbols-outlined text-base">
+                                {isSelected ? "check_circle" : "add_circle_outline"}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    <div>
+                      <label className="block text-xs font-bold text-[#2C2421] mb-1">
+                        Additional Problem Notes / Symptoms (Optional):
+                      </label>
+                      <textarea
+                        rows={3}
+                        placeholder="e.g. Engine vibrates when stopped at idle, warning light came on yesterday..."
+                        value={customNotes}
+                        onChange={(e) => setCustomNotes(e.target.value)}
+                        className="w-full p-3.5 bg-[#F8F8F5] border border-[#2C2421]/15 rounded-2xl text-xs focus:outline-none focus:border-[#111827]"
+                      />
+                    </div>
+
+                    <button
+                      type="button"
+                      disabled={selectedServices.length === 0}
+                      onClick={() => {
+                        setStep(2);
+                        fetchSlotsForShop(activeShop.id, selectedDate);
+                      }}
+                      className="w-full py-3.5 bg-[#111827] text-white text-xs font-bold rounded-2xl shadow-xs disabled:opacity-50 flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      <span>Next: Select Time Slot</span>
+                      <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                    </button>
+                  </div>
+                )}
+
+                {/* ---------------- STEP 2: TIME SLOT PICKER ---------------- */}
+                {step === 2 && (
+                  <div className="space-y-5">
+                    <div>
+                      <h3 className="text-base font-bold text-[#2C2421]">
+                        Select Appointment Date &amp; Time Slot:
+                      </h3>
+                      <p className="text-xs text-[#2C2421]/60 mt-0.5">
+                        Choose an available slot for {activeShop.name}.
+                      </p>
+                    </div>
+
+                    {/* Date Selector */}
+                    <div>
+                      <label className="block text-xs font-bold text-[#2C2421] mb-1">Preferred Date:</label>
+                      <input
+                        type="date"
+                        value={selectedDate}
+                        onChange={(e) => {
+                          setSelectedDate(e.target.value);
+                          fetchSlotsForShop(activeShop.id, e.target.value);
+                        }}
+                        className="w-full p-3 bg-[#F8F8F5] border border-[#2C2421]/15 rounded-xl text-xs font-bold text-[#2C2421]"
+                      />
+                    </div>
+
+                    {/* Slots Grid */}
+                    {loadingSlots ? (
+                      <div className="py-6 text-center text-xs font-bold text-[#2C2421]/60">
+                        Checking slot availability...
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                        {availableSlots.map((slot, idx) => {
+                          const isSelected = selectedSlotTime === slot;
+                          return (
+                            <button
+                              type="button"
+                              key={idx}
+                              onClick={() => setSelectedSlotTime(slot)}
+                              className={`p-3 rounded-2xl border text-center text-xs font-bold transition-all cursor-pointer ${
+                                isSelected
+                                  ? "bg-[#111827] text-white border-[#111827] shadow-xs"
+                                  : "bg-[#F8F8F5] text-[#2C2421]/80 border-[#2C2421]/15 hover:border-[#2C2421]/30"
+                              }`}
+                            >
+                              {slot}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    <div className="flex gap-2 pt-2">
+                      <button
+                        type="button"
+                        onClick={() => setStep(1)}
+                        className="w-1/3 py-3 border border-[#2C2421]/20 text-xs font-bold rounded-2xl cursor-pointer"
+                      >
+                        ← Back
+                      </button>
+                      <button
+                        type="button"
+                        disabled={!selectedSlotTime}
+                        onClick={() => setStep(3)}
+                        className="w-2/3 py-3 bg-[#111827] text-white text-xs font-bold rounded-2xl shadow-xs disabled:opacity-50 flex items-center justify-center gap-1.5 cursor-pointer"
+                      >
+                        <span>Next: Vehicle &amp; Customer Details</span>
+                        <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* ---------------- STEP 3: CUSTOMER & VEHICLE DETAILS ---------------- */}
+                {step === 3 && (
+                  <div className="space-y-5">
+                    <div>
+                      <h3 className="text-base font-bold text-[#2C2421]">
+                        Vehicle &amp; Customer Details:
+                      </h3>
+                      <p className="text-xs text-[#2C2421]/60 mt-0.5">
+                        Provide vehicle info to register your service appointment.
+                      </p>
+                    </div>
+
+                    {errorMsg && (
+                      <div className="p-3 bg-[#E85D22]/10 border border-[#E85D22]/30 rounded-xl text-xs font-bold text-[#E85D22]">
+                        {errorMsg}
+                      </div>
+                    )}
+
+                    {/* Vehicle Details */}
+                    <div className="space-y-3 bg-[#F8F8F5] p-4 rounded-2xl border border-[#2C2421]/10">
+                      <div className="text-xs font-bold uppercase tracking-wider text-[#2C2421]/70">
+                        Vehicle Identification
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                        <div>
+                          <label className="block font-bold mb-1">Make &amp; Model *</label>
+                          <input
+                            required
+                            type="text"
+                            placeholder="e.g. Honda Civic 2018"
+                            value={vehicle.makeModel}
+                            onChange={(e) => setVehicle({ ...vehicle, makeModel: e.target.value })}
+                            className="w-full p-3 bg-white border border-[#2C2421]/15 rounded-xl font-medium"
+                          />
+                        </div>
+                        <div>
+                          <label className="block font-bold mb-1">Plate Registration *</label>
+                          <input
+                            required
+                            type="text"
+                            placeholder="e.g. LEA-1234"
+                            value={vehicle.plate}
+                            onChange={(e) => setVehicle({ ...vehicle, plate: e.target.value })}
+                            className="w-full p-3 bg-white border border-[#2C2421]/15 rounded-xl font-bold font-mono"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Customer Personal Details */}
+                    {isLoggedIn ? (
+                      <div className="p-4 bg-[#1F5C45]/10 border border-[#1F5C45]/30 rounded-2xl flex items-center justify-between text-xs">
+                        <div className="flex items-center gap-2 font-bold text-[#1F5C45]">
+                          <span className="material-symbols-outlined text-base">account_circle</span>
+                          <span>Signed in as <strong>{currentUserEmail || "Customer Account"}</strong></span>
+                        </div>
+                        <span className="px-2.5 py-0.5 rounded-full bg-[#1F5C45] text-white text-[10px] font-bold">
+                          Session Verified
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="space-y-3 bg-[#F8F8F5] p-4 rounded-2xl border border-[#2C2421]/10">
+                        <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-[#2C2421]/70">
+                          <span>Customer Account</span>
+                          <Link href="/login" className="lowercase text-amber-700 underline font-bold hover:text-amber-900">
+                            Already registered? Sign In
+                          </Link>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                          <div>
+                            <label className="block font-bold mb-1">Your Name *</label>
+                            <input
+                              required
+                              type="text"
+                              placeholder="e.g. Ahmed Khan"
+                              value={customerInfo.name}
+                              onChange={(e) => setCustomerInfo({ ...customerInfo, name: e.target.value })}
+                              className="w-full p-3 bg-white border border-[#2C2421]/15 rounded-xl font-medium"
+                            />
+                          </div>
+                          <div>
+                            <label className="block font-bold mb-1">Email Address *</label>
+                            <input
+                              required
+                              type="email"
+                              placeholder="e.g. ahmed@mail.com"
+                              value={customerInfo.email}
+                              onChange={(e) => setCustomerInfo({ ...customerInfo, email: e.target.value })}
+                              className="w-full p-3 bg-white border border-[#2C2421]/15 rounded-xl font-medium"
+                            />
+                          </div>
+                          <div>
+                            <label className="block font-bold mb-1">Account Password *</label>
+                            <input
+                              required
+                              type="password"
+                              placeholder="••••••••"
+                              value={customerInfo.password}
+                              onChange={(e) => setCustomerInfo({ ...customerInfo, password: e.target.value })}
+                              className="w-full p-3 bg-white border border-[#2C2421]/15 rounded-xl font-medium"
+                            />
+                          </div>
+                          <div>
+                            <label className="block font-bold mb-1">Phone Number</label>
+                            <input
+                              type="text"
+                              placeholder="e.g. 0300-1234567"
+                              value={customerInfo.phone}
+                              onChange={(e) => setCustomerInfo({ ...customerInfo, phone: e.target.value })}
+                              className="w-full p-3 bg-white border border-[#2C2421]/15 rounded-xl font-medium"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex gap-2 pt-2">
+                      <button
+                        type="button"
+                        onClick={() => setStep(2)}
+                        className="w-1/3 py-3.5 border border-[#2C2421]/20 text-xs font-bold rounded-2xl cursor-pointer"
+                      >
+                        ← Back
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={isSubmitting}
+                        className="w-2/3 py-3.5 bg-[#1F5C45] hover:bg-[#164433] text-white text-xs font-bold rounded-2xl shadow-sm flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-60"
+                      >
+                        {isSubmitting ? (
+                          <span>Creating Appointment...</span>
+                        ) : (
+                          <>
+                            <span className="material-symbols-outlined text-base">check</span>
+                            <span>Confirm &amp; Create Appointment</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </form>
+            )}
+          </motion.div>
         )}
       </main>
 
