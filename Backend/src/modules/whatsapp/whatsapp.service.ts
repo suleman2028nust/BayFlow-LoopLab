@@ -1,6 +1,7 @@
 import { Client, LocalAuth } from 'whatsapp-web.js';
 import QRCode from 'qrcode';
 import fs from 'fs';
+import path from 'path';
 
 let qrCodeData: string | null = null;
 let isConnected = false;
@@ -15,8 +16,52 @@ process.on('unhandledRejection', (reason: any) => {
   }
 });
 
+function findChromeInCache(): string | undefined {
+  const searchDirs = [
+    path.resolve(process.cwd(), '.cache', 'puppeteer'),
+    path.resolve(process.cwd(), '..', '.cache', 'puppeteer'),
+    '/opt/render/project/src/Backend/.cache/puppeteer',
+    '/opt/render/.cache/puppeteer',
+  ];
+
+  function walk(dir: string): string | undefined {
+    try {
+      if (!fs.existsSync(dir)) return undefined;
+      const entries = fs.readdirSync(dir, { withFileTypes: true });
+      for (const entry of entries) {
+        const fullPath = path.join(dir, entry.name);
+        if (entry.isDirectory()) {
+          const res = walk(fullPath);
+          if (res) return res;
+        } else if (
+          entry.isFile() &&
+          (entry.name === 'chrome' || entry.name === 'chrome.exe' || entry.name === 'chromium')
+        ) {
+          return fullPath;
+        }
+      }
+    } catch {
+      return undefined;
+    }
+    return undefined;
+  }
+
+  for (const dir of searchDirs) {
+    const found = walk(dir);
+    if (found) return found;
+  }
+  return undefined;
+}
+
 // Auto-detect installed Chrome or Edge executable on Windows & Linux
 function getExecutablePath(): string | undefined {
+  if (process.env.PUPPETEER_EXECUTABLE_PATH && fs.existsSync(process.env.PUPPETEER_EXECUTABLE_PATH)) {
+    return process.env.PUPPETEER_EXECUTABLE_PATH;
+  }
+
+  const cached = findChromeInCache();
+  if (cached) return cached;
+
   if (process.platform === 'win32') {
     const windowsPaths = [
       'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
@@ -45,11 +90,8 @@ function getExecutablePath(): string | undefined {
 
 const execPath = getExecutablePath();
 
-// Only initialize WhatsApp client if Chrome/Edge binary is available
-// or if not on a restricted headless cloud container
-const shouldStartWhatsApp =
-  process.env.DISABLE_WHATSAPP !== 'true' &&
-  (execPath !== undefined || process.platform === 'win32');
+// Initialize WhatsApp client unless explicitly disabled
+const shouldStartWhatsApp = process.env.DISABLE_WHATSAPP !== 'true';
 
 if (shouldStartWhatsApp) {
   try {

@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/app.ts",
-    "build": "tsc",
+    "build": "npx puppeteer browsers install chrome || true && tsc",
     "start": "node dist/app.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "postinstall": "prisma generate || exit 0"
