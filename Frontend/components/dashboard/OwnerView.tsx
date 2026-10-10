@@ -640,24 +640,91 @@ export default function OwnerView({ token, userId, email }: OwnerViewProps) {
               <p className="text-xs text-[#2C2421]/70">Revenue metrics, repair completion turnaround, and quality control fail rates.</p>
 
               {analytics ? (
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
-                  <div className="p-4 bg-[#F8F8F5] rounded-2xl border border-[#2C2421]/10">
-                    <span className="text-[10px] font-mono font-bold text-[#2C2421]/50 uppercase">Total Revenue</span>
-                    <span className="font-headline text-xl font-bold text-[#111827] block mt-1">
-                      PKR {analytics.revenue?.toLocaleString() || "0"}
-                    </span>
+                <div className="space-y-4 pt-2">
+                  {/* Row 1: Core Financial & Operational KPIs */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                    <div className="p-4 bg-[#F8F8F5] rounded-2xl border border-[#2C2421]/10">
+                      <span className="text-[10px] font-mono font-bold text-[#2C2421]/50 uppercase">Total Revenue</span>
+                      <span className="font-headline text-xl font-bold text-[#111827] block mt-1">
+                        PKR {analytics.revenue?.toLocaleString() || "0"}
+                      </span>
+                      <span className="text-[10px] text-[#1F5C45] font-semibold mt-0.5 block">Delivered &amp; Settled</span>
+                    </div>
+
+                    <div className="p-4 bg-[#F8F8F5] rounded-2xl border border-[#2C2421]/10">
+                      <span className="text-[10px] font-mono font-bold text-[#2C2421]/50 uppercase">Active Workshop Jobs</span>
+                      <span className="font-headline text-xl font-bold text-[#0284C7] block mt-1">
+                        {analytics.summary?.activeJobs || 0} In Progress
+                      </span>
+                      <span className="text-[10px] text-[#2C2421]/60 font-medium mt-0.5 block">Intake to Road Test</span>
+                    </div>
+
+                    <div className="p-4 bg-[#F8F8F5] rounded-2xl border border-[#2C2421]/10">
+                      <span className="text-[10px] font-mono font-bold text-[#2C2421]/50 uppercase">Completed Repairs</span>
+                      <span className="font-headline text-xl font-bold text-[#1F5C45] block mt-1">
+                        {analytics.completedCount || 0} Vehicles
+                      </span>
+                      <span className="text-[10px] text-[#2C2421]/60 font-medium mt-0.5 block">100% Turnaround</span>
+                    </div>
+
+                    <div className="p-4 bg-[#F8F8F5] rounded-2xl border border-[#2C2421]/10">
+                      <span className="text-[10px] font-mono font-bold text-[#2C2421]/50 uppercase">Total Lifetime Bookings</span>
+                      <span className="font-headline text-xl font-bold text-[#111827] block mt-1">
+                        {analytics.summary?.totalBookings || 0} Orders
+                      </span>
+                      <span className="text-[10px] text-[#2C2421]/60 font-medium mt-0.5 block">All booking records</span>
+                    </div>
                   </div>
-                  <div className="p-4 bg-[#F8F8F5] rounded-2xl border border-[#2C2421]/10">
-                    <span className="text-[10px] font-mono font-bold text-[#2C2421]/50 uppercase">Completed Repairs</span>
-                    <span className="font-headline text-xl font-bold text-[#111827] block mt-1">
-                      {analytics.completedCount || 0} Vehicles
-                    </span>
-                  </div>
-                  <div className="p-4 bg-[#F8F8F5] rounded-2xl border border-[#2C2421]/10">
-                    <span className="text-[10px] font-mono font-bold text-[#2C2421]/50 uppercase">QC Fail Rate</span>
-                    <span className="font-headline text-xl font-bold text-[#1F5C45] block mt-1">
-                      {analytics.qcFailRate || "0%"}
-                    </span>
+
+                  {/* Row 2: Inventory & Quality Control Breakdown */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Inventory Analytics */}
+                    <div className="p-5 bg-[#F8F8F5] rounded-2xl border border-[#2C2421]/10 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="font-headline font-bold text-sm text-[#2C2421]">Inventory Valuation &amp; Stock</span>
+                        <span className="text-[10px] font-mono font-bold bg-[#7C3AED]/10 text-[#7C3AED] px-2 py-0.5 rounded">
+                          {analytics.inventorySummary?.totalCatalogItems || 0} SKUs Cataloged
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3 pt-1">
+                        <div className="bg-white p-3 rounded-xl border border-[#2C2421]/10">
+                          <span className="text-[10px] text-[#2C2421]/60 uppercase font-mono font-bold">Total Stock Value</span>
+                          <span className="font-headline text-base font-bold text-[#111827] block mt-0.5">
+                            PKR {(analytics.inventorySummary?.totalValuationPKR || 0).toLocaleString()}
+                          </span>
+                        </div>
+                        <div className="bg-white p-3 rounded-xl border border-[#2C2421]/10">
+                          <span className="text-[10px] text-[#2C2421]/60 uppercase font-mono font-bold">Low Stock Reorders</span>
+                          <span className={`font-headline text-base font-bold block mt-0.5 ${analytics.inventorySummary?.lowStockCount > 0 ? "text-[#E85D22]" : "text-[#1F5C45]"}`}>
+                            {analytics.inventorySummary?.lowStockCount || 0} Items
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* QC Quality Control Metrics */}
+                    <div className="p-5 bg-[#F8F8F5] rounded-2xl border border-[#2C2421]/10 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="font-headline font-bold text-sm text-[#2C2421]">Quality Assurance (QC)</span>
+                        <span className="text-[10px] font-mono font-bold bg-[#059669]/10 text-[#059669] px-2 py-0.5 rounded">
+                          {analytics.qualityControl?.qcPassRatePercent ?? 100}% Pass Rate
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3 pt-1">
+                        <div className="bg-white p-3 rounded-xl border border-[#2C2421]/10">
+                          <span className="text-[10px] text-[#2C2421]/60 uppercase font-mono font-bold">Road Test Defect Rate</span>
+                          <span className="font-headline text-base font-bold text-[#E85D22] block mt-0.5">
+                            {analytics.qcFailRate || "0%"}
+                          </span>
+                        </div>
+                        <div className="bg-white p-3 rounded-xl border border-[#2C2421]/10">
+                          <span className="text-[10px] text-[#2C2421]/60 uppercase font-mono font-bold">Defect Logs Caught</span>
+                          <span className="font-headline text-base font-bold text-[#111827] block mt-0.5">
+                            {analytics.qualityControl?.totalQcIssuesLogged || 0} Issues
+                          </span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               ) : (
